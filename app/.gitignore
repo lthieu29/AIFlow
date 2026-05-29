@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual env
+.venv/
+venv/
+
+# Storage (runtime data + secrets)
+storage/
+!storage/.gitkeep
+
+# Secrets
+.env
+.env.local
+*.pem
+*.key
+
+# Cookies (tránh leak personal cookies)
+storage/cookies/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# UI
+ui/node_modules/
+ui/dist/
+
+# Logs
+*.log

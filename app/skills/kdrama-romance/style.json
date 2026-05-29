@@ -1,0 +1,28 @@
+{
+  "art_style": "cinematic Korean drama, live-action drama series",
+  "lighting": "soft diffused key light, warm golden hour, blue-hour twilight for emotional scenes",
+  "color_palette": "pastel tones, soft pinks and creams, muted blues for melancholy, warm ambers for romance",
+  "lens": "50mm cinematic, shallow DOF for close-ups, wide for establishing shots",
+  "camera_rules": "slow push-in for emotional beats, rack focus between characters, handheld for tension",
+  "post": "soft film grain, slight desaturation, warm tone curve, gentle vignette",
+  "mood": "romantic, emotional, bittersweet, hopeful",
+  "character_framing": "medium close-up for dialogue, extreme close-up for emotional reactions",
+  "scene_transitions": "slow dissolve, match cut on eye contact",
+  "negative_prompts": [
+    "blurry",
+    "low quality",
+    "watermark",
+    "text overlay",
+    "harsh shadows",
+    "overexposed",
+    "NSFW",
+    "explicit content",
+    "violence",
+    "real persons",
+    "copyrighted characters",
+    "anime style",
+    "cartoon",
+    "illustration"
+  ],
+  "aspect_ratio": "9:16"
+}

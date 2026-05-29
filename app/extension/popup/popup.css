@@ -1,0 +1,113 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 280px;
+  background: #14161c;
+  color: #e6e8ec;
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+header {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 12px 12px 8px;
+  border-bottom: 1px solid #23263a;
+}
+
+.header-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e6e8ec;
+}
+
+.header-version {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.module-header {
+  padding: 6px 12px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  border-top: 1px solid #23263a;
+  margin-top: 2px;
+}
+
+.section {
+  padding: 6px 12px;
+  border-bottom: 1px solid #1a1d2a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.section-label {
+  color: #6b7280;
+  min-width: 56px;
+  flex-shrink: 0;
+}
+
+.section-value {
+  color: #e6e8ec;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Status colours */
+.status-connecting       { color: #6b7280; }
+.status-agent-not-running{ color: #ef4444; }
+.status-token-missing    { color: #f5b301; }
+.status-connected        { color: #6ee7b7; }
+
+.error-value {
+  color: #ef4444;
+  font-size: 11px;
+}
+
+/* Hint bar */
+.hint {
+  padding: 6px 12px;
+  font-size: 11px;
+  color: #a0a8c0;
+  background: #1a1d2a;
+  border-bottom: 1px solid #23263a;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.actions {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+button {
+  width: 100%;
+  padding: 6px 10px;
+  background: #23263a;
+  color: #a0a8c0;
+  border: 1px solid #2e3250;
+  border-radius: 8px;
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+
+button:hover {
+  background: #2a2e4a;
+  color: #e6e8ec;
+}

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1080, height=1920">
+  <title>Lower Third</title>
+  <script src="{{__VENDOR_GSAP__}}"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      font-family: 'Inter', 'Segoe UI', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    }
+    #stage {
+      width: 1080px;
+      height: 1920px;
+      position: relative;
+    }
+    #card {
+      position: absolute;
+      /* Bottom 20% of 1920px = 384px from bottom */
+      bottom: 384px;
+      left: 72px;
+      background: rgba(14, 14, 20, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-left: 6px solid #FF6F00;
+      border-radius: 0 12px 12px 0;
+      padding: 24px 40px 24px 32px;
+      transform: translateX(-110%);
+      max-width: 700px;
+    }
+    #name {
+      font-size: 48px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.15;
+      letter-spacing: -0.5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #title-text {
+      font-size: 28px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.65);
+      margin-top: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div id="card">
+      <div id="name">{{NAME}}</div>
+      <div id="title-text">{{TITLE}}</div>
+    </div>
+  </div>
+
+  <script>
+    document.body.style.background = 'transparent';
+
+    const tl = gsap.timeline({ paused: true });
+
+    // Slide in from left
+    tl.to('#card', { x: 0, duration: 0.55, ease: 'power3.out' }, 0)
+    // Hold for ~2s
+      .to({}, { duration: 2.0 })
+    // Slide out to left
+      .to('#card', { x: '-110%', duration: 0.45, ease: 'power3.in' });
+
+    window.__hf = {
+      duration: tl.duration(),
+      seek(t) { tl.seek(t); }
+    };
+  </script>
+</body>
+</html>

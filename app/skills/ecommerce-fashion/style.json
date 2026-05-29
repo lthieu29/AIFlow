@@ -1,0 +1,20 @@
+{
+  "art_style": "editorial fashion photography",
+  "lighting": "soft even key light, golden hour optional",
+  "color_palette": "muted earth tones with cream highlights",
+  "lens": "85mm portrait, shallow DOF",
+  "camera_rules": "locked-off static frame, knees-up framing when product is in shot",
+  "post": "slight film grain, warm tone curve",
+  "negative_prompts": [
+    "blurry",
+    "low quality",
+    "watermark",
+    "text overlay",
+    "harsh shadows",
+    "overexposed",
+    "NSFW",
+    "real persons",
+    "copyrighted characters"
+  ],
+  "aspect_ratio": "9:16"
+}

@@ -1,0 +1,17 @@
+{
+  "art_style": "photorealistic",
+  "lighting": "natural even lighting",
+  "color_palette": "neutral",
+  "camera_rules": "static locked-off frame, no camera movement",
+  "negative_prompts": [
+    "blurry",
+    "low quality",
+    "watermark",
+    "text overlay",
+    "NSFW",
+    "violence",
+    "real persons",
+    "copyrighted characters"
+  ],
+  "aspect_ratio": "9:16"
+}

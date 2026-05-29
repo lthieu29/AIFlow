@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1080, height=1920">
+  <title>Product Card</title>
+  <script src="{{__VENDOR_GSAP__}}"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      font-family: 'Inter', 'Segoe UI', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    }
+    #stage {
+      width: 1080px;
+      height: 1920px;
+      position: relative;
+    }
+    #card {
+      position: absolute;
+      bottom: 60px;
+      left: 48px;
+      right: 48px;
+      background: #ffffff;
+      border-radius: 28px;
+      padding: 36px 36px 40px;
+      box-shadow: 0 24px 72px rgba(0, 0, 0, 0.35);
+      transform: translateY(120%);
+    }
+    #card-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+      margin-bottom: 20px;
+    }
+    #product-name {
+      font-size: 40px;
+      font-weight: 800;
+      color: #111111;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+      flex: 1;
+      word-break: break-word;
+    }
+    #price-badge {
+      background: #FF6F00;
+      color: #ffffff;
+      font-size: 36px;
+      font-weight: 800;
+      padding: 10px 24px;
+      border-radius: 14px;
+      white-space: nowrap;
+      margin-left: 20px;
+      flex-shrink: 0;
+      align-self: flex-start;
+    }
+    #description {
+      font-size: 30px;
+      font-weight: 400;
+      color: #555555;
+      line-height: 1.5;
+      margin-bottom: 28px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    #card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1.5px solid rgba(0, 0, 0, 0.08);
+      padding-top: 20px;
+    }
+    #cta-btn {
+      background: #FF6F00;
+      color: #ffffff;
+      font-size: 30px;
+      font-weight: 700;
+      padding: 16px 40px;
+      border-radius: 14px;
+      letter-spacing: 0.3px;
+    }
+    #badge {
+      font-size: 24px;
+      font-weight: 600;
+      color: #888888;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #badge-dot {
+      width: 10px;
+      height: 10px;
+      background: #22c55e;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div id="card">
+      <div id="card-header">
+        <div id="product-name">{{PRODUCT_NAME}}</div>
+        <div id="price-badge">{{PRICE}}</div>
+      </div>
+      <div id="description">{{DESCRIPTION}}</div>
+      <div id="card-footer">
+        <div id="cta-btn">Xem ngay →</div>
+        <div id="badge">
+          <div id="badge-dot"></div>
+          Còn hàng
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.body.style.background = 'transparent';
+
+    const tl = gsap.timeline({ paused: true });
+
+    // Card slides up from bottom
+    tl.to('#card', { y: 0, duration: 0.65, ease: 'back.out(1.3)' }, 0)
+    // Subtle CTA pulse to draw attention
+      .to('#cta-btn', {
+        scale: 1.06,
+        duration: 0.35,
+        ease: 'power2.inOut',
+        yoyo: true,
+        repeat: 2,
+      }, 0.9)
+    // Hold for ~3s then slide back down
+      .to('#card', { y: '120%', duration: 0.55, ease: 'power3.in' }, '+=3.0');
+
+    window.__hf = {
+      duration: tl.duration(),
+      seek(t) { tl.seek(t); }
+    };
+  </script>
+</body>
+</html>

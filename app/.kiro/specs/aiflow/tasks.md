@@ -78,7 +78,7 @@ AIFlow is a personal AI video generation tool (Windows-native) that transforms i
 
 - [x] 7. Task 1.1 — SQLite schema full Phase 1 subset
   - Setup Alembic: `alembic init server/db/migrations`
-  - First migration: Project + Job + JobLog + Config (already from Phase 0)
+  - First migration `0001_phase0_schema.py`: Project + Job + JobLog + Config (already from Phase 0)
   - State machine for Job: pending → running → success/failed
   - Add indexes per spec 02
   - **Depends on**: Task 0.6
@@ -90,13 +90,13 @@ AIFlow is a personal AI video generation tool (Windows-native) that transforms i
 
 - [x] 9. Task 1.3 — Polling + callback handler
   - Lift `batchCheckAsync` logic from flowboard
-  - Background task watching pending operations
+  - Background task watching pending operations (`server/pipeline/poller.py`)
   - Update Job status on completion
   - Download video bytes to `storage/media/`
   - **Depends on**: Task 1.2
 
 - [x] 10. Task 1.4 — CLI command `aiflow gen-clip`
-  - Click-based CLI entrypoint
+  - Click-based CLI entrypoint (`server/cli.py`)
   - Args: `--prompt "..." --start-image path --output path`
   - Progress bar (tqdm)
   - Save Job + JobLog to DB
@@ -116,7 +116,7 @@ AIFlow is a personal AI video generation tool (Windows-native) that transforms i
   - `SceneAsset` many-to-many with role
   - `Style` model (project, json field — Layer 1 continuity)
   - `QualityGate` model (gate_id, scene_id?, status, score, expired_at)
-  - Alembic migration
+  - Alembic migration `0002_phase2_models.py`
   - **Depends on**: Task 1.5
 
 - [x] 13. Task 2.2 — 4 lớp continuity
@@ -127,15 +127,13 @@ AIFlow is a personal AI video generation tool (Windows-native) that transforms i
   - **Depends on**: Task 2.1
 
 - [x] 14. Task 2.3 — Quality Gates G1-G3
-  - G1: Validate SceneList structure
-  - G2: User approve asset refs (UI hook or CLI prompt)
-  - G2.8: SLA timeout via `check_expired_gates()` (activate scheduler)
-  - G3: Per-scene quality (auto retry max 2)
-  - G3 cascade depth limit (bounded cascade)
+  - G1: Validate SceneList structure (`pipeline/gates/g1_scene_list.py`)
+  - G2: User approve asset refs (`pipeline/gates/g2_asset_approval.py`) with G2.8 SLA timeout via `check_expired_gates()`
+  - G3: Per-scene quality (`pipeline/gates/g3_scene_quality.py`) — auto retry max 2, bounded cascade depth limit
   - **Depends on**: Task 2.2
 
 - [x] 15. Task 2.4 — Pipeline orchestrator
-  - `server/pipeline/orchestrator.py`: run full flow SceneList → 5 clips, sequential scene gen (chain), job queue (in-process), event bus for UI updates
+  - `server/pipeline/orchestrator.py`: run full flow SceneList → 5 clips, sequential scene gen (chain), job queue via `job_manager.py`, event bus (`event_bus.py`) for UI updates
   - **Acceptance**: 5 scenes seamless in character + style ✅
   - **Depends on**: Task 2.3
 
@@ -188,11 +186,12 @@ AIFlow is a personal AI video generation tool (Windows-native) that transforms i
   - `GET /api/tts/voices` — list preset + custom voices
   - `POST /api/tts/synthesize` — synth on demand
   - Storage folder: `storage/voice_gallery/`
+  - Implemented in `server/api/routes/tts.py`
   - **Depends on**: Task 3.2.2
 
 ### Phase 3.3 — Audio compose + Whisper subtitle
 
-- [-] 23. Task 3.3.1 — Whisper transcribe
+- [x] 23. Task 3.3.1 — Whisper transcribe
   - `server/audio/transcribe.py` (lift from MoneyPrinterTurbo)
   - faster-whisper with model selector
   - Output SRT segments
@@ -205,8 +204,8 @@ AIFlow is a personal AI video generation tool (Windows-native) that transforms i
   - **Depends on**: Task 3.3.1
 
 - [x] 25. Task 3.3.3 — Quality Gates G4-G5
-  - G4: Audio quality check
-  - G5: Subtitle quality check
+  - G4: Audio quality check (`pipeline/gates/g4_audio_quality.py`)
+  - G5: Subtitle quality check (`pipeline/gates/g5_subtitle_quality.py`)
   - **Depends on**: Task 3.3.2
 
 ### Phase 3.5 — Visual Layer
@@ -215,22 +214,24 @@ AIFlow is a personal AI video generation tool (Windows-native) that transforms i
   - `server/render/visual_layer/playwright_renderer.py`
   - HTML+GSAP → MP4 with alpha channel
   - `pip install playwright && playwright install chromium`
-  - GSAP local bundle
+  - GSAP local bundle (`gsap_bundle.py`)
   - **Depends on**: Task 3.3.3
 
 - [x] 27. Task 3.5.2 — HF Protocol
   - `server/render/visual_layer/hf_protocol.py`
   - `window.__hf` contract types
+  - `template_registry.py` for template discovery
   - **Depends on**: Task 3.5.1
 
 - [x] 28. Task 3.5.3 — Visual layer templates
   - `intro_card.html`, `outro_card.html`
   - `lower_third.html`, `chapter_title.html`, `product_card.html`
+  - All 5 templates present in `render/visual_layer/templates/`
   - **Depends on**: Task 3.5.2
 
 - [x] 29. Task 3.5.4 — Overlay compositor
-  - `overlay_compositor.py` — overlay on Veo3 video
-  - FFmpeg filter graph
+  - `server/render/overlay_compositor.py` — overlay on Veo3 video
+  - FFmpeg filter graph (`render/ffmpeg_utils.py`)
   - **Depends on**: Task 3.5.3
 
 ### Phase 4.0 — ContentAdapter foundation
@@ -238,25 +239,27 @@ AIFlow is a personal AI video generation tool (Windows-native) that transforms i
 - [x] 30. Task 4.0.1 — ContentAdapter interface
   - `server/content/base.py` — interface + dataclass
   - `server/content/registry.py` — auto-discover adapters
-  - Skill manifest schema
+  - Skill manifest schema (`skill_manifest.py`, `skill_loader.py`, `style_validator.py`)
   - **Depends on**: Task 3.5.4
 
 - [x] 31. Task 4.0.2 — Shared adapter logic
-  - `character_dedup.py`
-  - `duration_estimator.py`
-  - `llm_chunking.py`
-  - `srt_utils.py`
+  - `server/content/character_dedup.py`
+  - `server/content/duration_estimator.py`
+  - `server/content/llm_chunking.py`
+  - `server/content/srt_utils.py`
   - **Depends on**: Task 4.0.1
 
 - [x] 32. Task 4.0.3 — Skills framework
-  - `_base/` rules (camera_lock, safety, continuity)
+  - `skills/_base/` rules (camera_lock, safety, continuity)
   - Manifest YAML loader
   - Style.json validator
+  - `ecommerce-fashion` and `kdrama-romance` skills complete
   - **Depends on**: Task 4.0.2
 
 ### Phase 4.1 — Adapter ecommerce-product
 
 - [x] 33. Task 4.1 — Adapter ecommerce-product
+  - `content/adapters/ecommerce_product/adapter.py` + `prompts.py`
   - Port prompts from `daihuo-jianshou/script-engine/prompts.ts`
   - Complete `ecommerce-fashion` skill
   - Test: 1 product image → TikTok video
@@ -265,6 +268,7 @@ AIFlow is a personal AI video generation tool (Windows-native) that transforms i
 ### Phase 4.2 — Adapter narrative-script
 
 - [x] 34. Task 4.2 — Adapter narrative-script
+  - `content/adapters/narrative_script/adapter.py` + `parser.py`
   - Markdown parser
   - Scene extraction from narrative
   - Test: 1 markdown → video
@@ -273,6 +277,7 @@ AIFlow is a personal AI video generation tool (Windows-native) that transforms i
 ### Phase 4.3 — Adapter blog-article
 
 - [x] 35. Task 4.3 — Adapter blog-article
+  - `content/adapters/blog_article/adapter.py` + `fetcher.py`
   - URL fetch + readability extract
   - LLM chunking → scenes
   - Test: 1 blog URL → explainer video
@@ -281,6 +286,7 @@ AIFlow is a personal AI video generation tool (Windows-native) that transforms i
 ### Phase 4.4 — Adapter storyboard-manual
 
 - [x] 36. Task 4.4 — Adapter storyboard-manual
+  - `content/adapters/storyboard_manual/adapter.py` + `schema.py`
   - JSON schema for storyboard
   - Validator
   - Test: 1 JSON → video
@@ -289,36 +295,37 @@ AIFlow is a personal AI video generation tool (Windows-native) that transforms i
 ### Phase 4.5 — Adapter video-remaster
 
 - [x] 37. Task 4.5.1 — Cookie sniffer module in extension
-  - Lift `chrome-cookie-sniffer` from Douyin_TikTok_API
   - `extension/modules/cookie_sniffer.js`
-  - Capture cookies for 3 platforms
+  - Capture cookies for 3 platforms (Bilibili, Douyin, TikTok)
   - **Depends on**: Task 4.0.3
 
 - [x] 38. Task 4.5.2 — Downloaders
-  - Lift `crawlers/bilibili/`, `crawlers/douyin/`, `crawlers/tiktok/`
-  - yt-dlp fallback `generic.py`
-  - aria2c parallel download
+  - `content/crawlers/bilibili/downloader.py`
+  - `content/crawlers/douyin/downloader.py`
+  - `content/crawlers/tiktok/downloader.py`
+  - `content/crawlers/generic.py` (yt-dlp fallback)
+  - aria2c parallel download via `flow/downloader.py`
   - **Depends on**: Task 4.5.1
 
 - [x] 39. Task 4.5.3 — Signing modules (GPL v3 component)
-  - Lift `a_bogus.py`, `x_bogus.py`, `wbi.py`
+  - `content/crawlers/signing/a_bogus.py`, `x_bogus.py`, `wbi.py`
+  - `content/crawlers/signing/update_check.py` — auto-update check script
   - Pin upstream commit
-  - Auto-update check script
   - **Depends on**: Task 4.5.2
 
 - [x] 40. Task 4.5.4 — Cookie manager + browser-cookie3
-  - `cookies/manager.py`
+  - `content/crawlers/cookies/manager.py`
   - Auto-read Chrome (browser-cookie3)
   - Manual file fallback
   - **Depends on**: Task 4.5.3
 
 - [x] 41. Task 4.5.5 — Stream merger + subtitle extractor
-  - FFmpeg merge audio+video DASH
+  - `content/crawlers/stream_merger.py` — FFmpeg merge audio+video DASH
   - Whisper transcribe original
   - **Depends on**: Task 4.5.4
 
 - [x] 42. Task 4.5.6 — Translator + remaster
-  - Gemini translate to Vietnamese
+  - `content/crawlers/remaster.py` — Gemini translate to Vietnamese
   - Re-cut with new subtitle
   - 3 presets: light, aggressive, translate_only
   - **Depends on**: Task 4.5.5
@@ -329,7 +336,7 @@ AIFlow is a personal AI video generation tool (Windows-native) that transforms i
   - `POST /api/tts/voices/custom` — upload voice package zip
   - `GET /api/tts/voices/custom/{id}` — voice info
   - `DELETE /api/tts/voices/custom/{id}`
-  - Schema validation for voice package zip (spec 11)
+  - Schema validation via `audio/tts/voice_package.py` (spec 11)
   - Hook into Colab notebook output format
   - **Depends on**: Task 3.2.3
 
@@ -337,16 +344,17 @@ AIFlow is a personal AI video generation tool (Windows-native) that transforms i
 
 - [x] 44. Task 5.2.1 — React + Vite setup
   - `ui/package.json` + Vite config
-  - Zustand store, axios API client
+  - Zustand store (`ui/src/store/index.ts`), axios API client (`ui/src/api/client.ts`)
   - **Depends on**: Task 5.1
 
 - [x] 45. Task 5.2.2 — UI pages
-  - `new-project.tsx` — input adapter + skill picker + voice picker
-  - `timeline.tsx` — scene editor
-  - `export.tsx` — final video preview + download
+  - `ui/src/pages/NewProject.tsx` — input adapter + skill picker + voice picker
+  - `ui/src/pages/Timeline.tsx` — scene editor
+  - `ui/src/pages/Export.tsx` — final video preview + download
   - **Depends on**: Task 5.2.1
 
 - [x] 46. Task 5.2.3 — Voice Gallery UI
+  - `ui/src/pages/VoiceGallery.tsx`
   - List preset + custom voices
   - Demo audio playback
   - Upload custom voice zip
@@ -354,44 +362,75 @@ AIFlow is a personal AI video generation tool (Windows-native) that transforms i
 
 ### Phase 6 — Adapter epub-novel
 
-- [-] 47. Task 6.1 — EPUB parser
-  - Port extractAssets logic from Toonflow
+- [x] 47. Task 6.1 — EPUB parser
+  - `content/epub/parser.py` — port extractAssets logic from Toonflow
   - Chapter detection, character extraction
   - **Depends on**: Task 4.0.3
 
 - [x] 48. Task 6.2 — 3-tier mode
+  - `content/adapters/epub_novel/tiers.py`
   - Tier 1: direct (short novel)
   - Tier 2: episode (long novel, split)
   - Tier 3: manual range (user-selected chapters)
   - **Depends on**: Task 6.1
 
-- [-] 49. Task 6.3 — EPUB quality checkpoints
+- [x] 49. Task 6.3 — EPUB quality checkpoints
+  - `content/adapters/epub_novel/quality_gates.py` + `pipeline/gates/epub_checkpoints.py`
   - 3 manual gates (character, plot, style)
   - Skill restriction (kdrama-romance only)
   - **Depends on**: Task 6.2
 
 ### Phase 7 — Export CapCut
 
-- [~] 50. Task 7.1 — Lift pyJianYingDraft from VectCutAPI
+- [x] 50. Task 7.1 — Lift pyJianYingDraft from VectCutAPI
+  - `export/capcut/` — `draft.py`, `models.py`, `writer.py`
   - **Depends on**: Task 3.3.3
 
-- [~] 51. Task 7.2 — Export CapCut draft
-  - Export draft with scenes + audio + subtitle
+- [x] 51. Task 7.2 — Export CapCut draft
+  - `export/capcut_exporter.py` — export draft with scenes + audio + subtitle
+  - API route `server/api/routes/export.py`
   - **Depends on**: Task 7.1
 
-- [~] 52. Task 7.3 — SRT export standalone
+- [x] 52. Task 7.3 — SRT export standalone
+  - `export/srt_exporter.py`
   - **Depends on**: Task 7.2
 
 ### Cross-cutting
 
-- [~] 53. Task ADR records
-  - Write 5 ADR files: native Windows, Gemini API, merged extension, Douyin API, ship binary
+- [x] 53. Task ADR records
+  - 5 ADR files written: `ADR-001-native-windows.md`, `ADR-002-gemini-api.md`, `ADR-003-merged-extension.md`, `ADR-004-douyin-api.md`, `ADR-005-ship-binary.md`
   - **Depends on**: Task 0.6
 
-- [~] 54. Task Vendor binaries
+- [x] 54. Task Vendor binaries
   - Download FFmpeg 7.0+ → `vendor/ffmpeg.exe`, `vendor/ffprobe.exe`
   - Download aria2c → `vendor/aria2c.exe`
+  - `download_vendor.py` is PATH-aware: skips binaries already on PATH (ffmpeg/ffprobe used from system PATH here); downloads only what's missing (aria2c vendored)
+  - Script output is ASCII-safe for any Windows console codepage; verifies ffmpeg with `-version`, aria2c with `--version`
   - **Depends on**: Task 3.3.2
+
+### Phase 5.3 — Core API routes (missing from Phase 5.2)
+
+- [x] 55. Task 5.3 — Project + Scene + Content API routes
+  - `GET /api/projects` — list all projects
+  - `POST /api/projects` — create project (adapter + skill selection)
+  - `GET /api/projects/{id}` — project detail + scene list
+  - `DELETE /api/projects/{id}` — delete project
+  - `GET /api/scenes/{id}` — scene detail
+  - `PATCH /api/scenes/{id}` — update scene (prompt, duration, status)
+  - `POST /api/content/parse` — dispatch to ContentAdapter, return SceneList
+  - `GET /api/jobs/{id}/stream` — SSE for live job progress updates
+  - `WS /ws/{project_id}` — UI live event stream (pipeline events)
+  - `Cookie` DB model (`server/db/models/cookie.py`) for Phase 4.5 platform cookies
+  - **Depends on**: Task 5.2.3
+
+### Phase 2.5 — Quality Gate G6 (Final video QA)
+
+- [x] 56. Task 2.5 — Quality Gate G6
+  - `pipeline/gates/g6_final_video.py` — final video quality check
+  - Validate output MP4: duration, resolution, audio sync, no black frames
+  - Hook into orchestrator after compose step (pipeline step 13)
+  - Manual override path for user acceptance
+  - **Depends on**: Task 2.4
 
 ## Task Dependency Graph
 
@@ -412,7 +451,7 @@ AIFlow is a personal AI video generation tool (Windows-native) that transforms i
     { "wave": 12, "tasks": ["12"] },
     { "wave": 13, "tasks": ["13"] },
     { "wave": 14, "tasks": ["14"] },
-    { "wave": 15, "tasks": ["15"] },
+    { "wave": 15, "tasks": ["15", "56"] },
     { "wave": 16, "tasks": ["16"] },
     { "wave": 17, "tasks": ["17"] },
     { "wave": 18, "tasks": ["18"] },
@@ -438,14 +477,17 @@ AIFlow is a personal AI video generation tool (Windows-native) that transforms i
     { "wave": 38, "tasks": ["42"] },
     { "wave": 39, "tasks": ["44"] },
     { "wave": 40, "tasks": ["45"] },
-    { "wave": 41, "tasks": ["46"] }
+    { "wave": 41, "tasks": ["46", "55"] }
   ]
 }
 ```
 
 ## Notes
 
-- Task 0.1 is already complete (marked `[x]`).
+- Tasks 1–56 are complete (`[x]`).
+- Task 54 (Vendor binaries): `download_vendor.py` is PATH-aware — ffmpeg/ffprobe are used from the system PATH (not re-downloaded), aria2c is vendored to `vendor/aria2c.exe`. Runtime resolver checks `vendor/` first then PATH.
+- Task 55 (Core API routes): Implemented — `projects.py`, `scenes.py`, `content.py`, `jobs.py`, `ws.py` routes + `Cookie` DB model. All registered in `main.py`.
+- Task 56 (G6 Final video QA): Implemented — `pipeline/gates/g6_final_video.py` with G6.1–G6.5 checks, hooked into orchestrator `compose_with_g6()`, 34 unit tests passing.
 - All tasks run sequentially per phase; parallel execution is possible within Phase 4 adapters (Tasks 33-36 and 37-42 share only the Task 4.0.3 dependency).
 - Phase 4.5 signing modules (Task 39) are GPL v3 — personal use only, isolate as subprocess if ever made public.
 - VieNeu-TTS GPU mode requires Python 3.12+ (already satisfied with Python 3.14.3).

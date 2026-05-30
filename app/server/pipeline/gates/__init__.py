@@ -6,6 +6,7 @@ Gates:
     G3 — Per-scene quality check (auto, max 2 retries)
     G4 — Audio quality check (auto)
     G5 — Subtitle quality check (auto)
+    G6 — Final video quality check (auto, max 2 retries)
 
 EPUB checkpoints (Task 6.3):
     EG1 — Character gate (manual, EPUB only)
@@ -41,6 +42,7 @@ from server.pipeline.gates.g3_scene_quality import (
 )
 from server.pipeline.gates.g4_audio_quality import check_audio_quality
 from server.pipeline.gates.g5_subtitle_quality import check_subtitle_quality
+from server.pipeline.gates.g6_final_video import G6FinalVideoGate, G6Result, check_final_video
 
 __all__ = [
     # G1
@@ -59,6 +61,10 @@ __all__ = [
     "check_audio_quality",
     # G5
     "check_subtitle_quality",
+    # G6
+    "G6FinalVideoGate",
+    "G6Result",
+    "check_final_video",
     # EPUB checkpoints (EG1, EG2, EG3)
     "EPUB_ALLOWED_SKILL",
     "EPUB_GATE_DEFAULT_TIMEOUT_HOURS",

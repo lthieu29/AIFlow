@@ -262,6 +262,10 @@ def parse_epub(epub_path: Path) -> EpubBook:
             continue
         if item.get_type() != ebooklib.ITEM_DOCUMENT:
             continue
+        # Skip navigation documents (nav.xhtml, toc.ncx) — they contain
+        # structural text (book title, chapter list) that is not content.
+        if isinstance(item, epub.EpubNav):
+            continue
 
         try:
             html_bytes = item.get_content()

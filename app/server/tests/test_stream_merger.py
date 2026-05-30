@@ -608,6 +608,22 @@ class TestProbeVideo:
 
 
 class TestTranscribeAudio:
+    @pytest.fixture(autouse=True)
+    def _clear_whisper_cache(self):
+        """Isolate tests that mock faster_whisper.
+
+        The module-level ``_default_transcriber`` caches loaded models by
+        ``model_size:device:compute_type``. Without clearing it, a mock model
+        cached by one test would be reused by the next (since ``_get_model``
+        returns the cached instance without re-importing faster_whisper),
+        breaking ``patch.dict(sys.modules, ...)`` mocking.
+        """
+        from server.audio import transcribe as transcribe_module
+
+        transcribe_module._default_transcriber.clear_cache()
+        yield
+        transcribe_module._default_transcriber.clear_cache()
+
     def test_raises_when_audio_missing(self, tmp_path):
         from server.audio.transcribe import transcribe_audio
 

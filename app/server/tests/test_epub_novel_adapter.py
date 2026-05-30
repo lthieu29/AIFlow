@@ -568,6 +568,7 @@ class TestEpubNovelAdapterAdapt:
         return AdapterInput(
             source_type="epub_novel",
             raw_content=str(epub_path),
+            skill_name="kdrama-romance",
             options=options or {},
         )
 

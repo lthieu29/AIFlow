@@ -475,10 +475,10 @@ class TestParseEpub:
     def test_empty_documents_skipped(self):
         from server.content.epub.parser import parse_epub
 
-        # One chapter with content, one that is effectively empty
+        # One chapter with content, one that is effectively empty (only whitespace/tags)
         chapters = [
             ("chap1.xhtml", "Real Chapter", "<h1>Real</h1><p>Real content here.</p>"),
-            ("empty.xhtml", "Empty", "<html><body></body></html>"),
+            ("empty.xhtml", "Empty", "<html><body><p>   </p></body></html>"),
         ]
         epub_path = _make_epub(chapters=chapters)
         try:

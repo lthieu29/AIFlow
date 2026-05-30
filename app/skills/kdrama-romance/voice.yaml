@@ -1,0 +1,29 @@
+# skills/kdrama-romance/voice.yaml
+# TTS voice profile for the kdrama-romance skill.
+# Consumed by the TTS service for EPUB-novel drama narration when a project
+# uses this skill and does not override the voice. Tuned slower and warmer
+# for storytelling delivery.
+
+voice_profile:
+  # Primary: VieNeu local preset (Vietnamese, storytelling emotion)
+  primary_backend: vieneu
+  primary_voice: Binh
+  primary_emotion: storytelling
+
+  # Fallback: edge_tts online (Vietnamese female, soft narration)
+  fallback_backend: edge_tts
+  fallback_voice: vi-VN-HoaiMyNeural
+
+  # Delivery — slower, emotional, narrative pacing
+  rate: "-6%"        # slower for emotional storytelling
+  pitch: "+0%"
+  volume: "+0%"
+  emotion: storytelling
+
+  language: vi-VN
+
+  # Optional secondary voices for character dialogue (Phase 6+).
+  # The adapter may assign these per character when multi-voice is enabled.
+  character_voices:
+    male_lead: vi-VN-NamMinhNeural
+    female_lead: vi-VN-HoaiMyNeural

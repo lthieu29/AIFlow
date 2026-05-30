@@ -64,6 +64,9 @@ from server.pipeline.gates.g3_scene_quality import (
     get_scene_retry_count,
 )
 
+# Maximum retries for G6 final video gate
+_G6_MAX_RETRIES: int = 2
+
 if TYPE_CHECKING:
     from server.config import Settings
     from server.db.models.asset import Asset
@@ -270,6 +273,119 @@ class PipelineOrchestrator:
             result.output_path,
         )
         return result.output_path
+
+    def compose_with_g6(
+        self,
+        project_id: int,
+        compose_config: "object",
+        expected_duration: Optional[float] = None,
+        aspect_ratio: Optional[str] = None,
+        override: bool = False,
+    ) -> "Path":
+        """Compose the final video and validate it with Quality Gate G6.
+
+        Runs the VideoComposer to produce final.mp4, then checks it with
+        G6FinalVideoGate.  If G6 fails and retries < _G6_MAX_RETRIES (2),
+        re-triggers compose with the same config and increments the retry
+        counter.  After exhausting retries, emits a pipeline_failed event
+        and raises RuntimeError.
+
+        If override=True or G6 passes, returns the output path.
+
+        Args:
+            project_id:        DB primary key of the project.
+            compose_config:    ComposeConfig instance for VideoComposer.
+            expected_duration: Expected video duration in seconds (G6.2).
+            aspect_ratio:      Project aspect ratio string, e.g. "9:16" (G6.3).
+            override:          If True, skip G6 checks after composing.
+
+        Returns:
+            Path to the validated final.mp4.
+
+        Raises:
+            RuntimeError: If G6 fails after _G6_MAX_RETRIES retries.
+            FileNotFoundError: If ffmpeg is not available.
+        """
+        from server.pipeline.gates.g6_final_video import G6FinalVideoGate
+        from server.render.composer import VideoComposer
+
+        gate = G6FinalVideoGate()
+        retry_count = 0
+
+        while True:
+            # ── Compose step ──────────────────────────────────────────────────
+            logger.info(
+                "PipelineOrchestrator.compose_with_g6: project_id={} attempt={}/{}",
+                project_id,
+                retry_count + 1,
+                _G6_MAX_RETRIES + 1,
+            )
+            composer = VideoComposer()
+            compose_result = composer.compose(compose_config)  # type: ignore[arg-type]
+            output_path = compose_result.output_path
+
+            # ── G6 quality gate ───────────────────────────────────────────────
+            g6_result = gate.check(
+                output_path=output_path,
+                expected_duration=expected_duration,
+                aspect_ratio=aspect_ratio,
+                override=override,
+            )
+            gate_result = g6_result.to_gate_result()
+
+            self._bus.publish(
+                EVENT_GATE_STATUS_CHANGED,
+                {
+                    "gate_id": "G6",
+                    "status": gate_result.status,
+                    "message": gate_result.message,
+                    "project_id": project_id,
+                    "attempt": retry_count + 1,
+                    "details": g6_result.details,
+                },
+            )
+
+            if g6_result.passed:
+                logger.info(
+                    "PipelineOrchestrator.compose_with_g6: G6 passed — {}",
+                    output_path,
+                )
+                return output_path
+
+            # G6 failed
+            retry_count += 1
+            logger.warning(
+                "PipelineOrchestrator.compose_with_g6: G6 failed (attempt {}/{}) — {}",
+                retry_count,
+                _G6_MAX_RETRIES,
+                g6_result.error,
+            )
+
+            if retry_count >= _G6_MAX_RETRIES:
+                # Exhausted retries — mark job as failed
+                reason = (
+                    f"G6 quality gate failed after {retry_count} retries: {g6_result.error}"
+                )
+                self._bus.publish(
+                    EVENT_PIPELINE_FAILED,
+                    {
+                        "project_id": project_id,
+                        "reason": reason,
+                        "gate_id": "G6",
+                        "retry_count": retry_count,
+                    },
+                )
+                logger.error(
+                    "PipelineOrchestrator.compose_with_g6: G6 exhausted retries — {}",
+                    reason,
+                )
+                raise RuntimeError(reason)
+
+            logger.info(
+                "PipelineOrchestrator.compose_with_g6: retrying compose ({}/{})",
+                retry_count,
+                _G6_MAX_RETRIES,
+            )
 
     # ── Internal helpers ──────────────────────────────────────────────────────
 

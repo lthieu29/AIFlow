@@ -38,6 +38,13 @@ import logging
 from pathlib import Path
 from typing import Union
 
+from server.content.adapters.epub_novel.quality_gates import (
+    EpubGateResult,
+    check_epub_skill,
+    run_character_gate,
+    run_plot_gate,
+    run_style_gate,
+)
 from server.content.adapters.epub_novel.tiers import (
     EPISODE_MAX_WORDS,
     TIER1_MAX_WORDS,
@@ -50,6 +57,7 @@ from server.content.adapters.epub_novel.tiers import (
 )
 from server.content.base import AdapterError, AdapterInput, SceneList
 from server.content.epub.parser import EpubParseError, parse_epub
+from server.pipeline.gates.epub_checkpoints import EpubSkillRestrictionError
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +117,19 @@ class EpubNovelAdapter:
                 details={"errors": errors},
             )
 
+        # 1b. Enforce skill restriction — EPUB novel only works with kdrama-romance.
+        try:
+            check_epub_skill(input.skill_name)
+        except EpubSkillRestrictionError as exc:
+            raise AdapterError(
+                "ADAPTER_SKILL_RESTRICTED",
+                str(exc),
+                details={
+                    "requested_skill": exc.requested_skill,
+                    "allowed_skill": exc.allowed_skill,
+                },
+            ) from exc
+
         # 2. Parse EPUB
         epub_path = Path(input.raw_content.strip())
         try:
@@ -161,11 +182,25 @@ class EpubNovelAdapter:
             tier.value,
         )
 
-        # 5. Dispatch to tier processor
-        if tier == ProcessingTier.DIRECT:
-            return process_tier1(book, project_id=project_id, voice=voice)
+        # 5. EG1 — Character Gate: extract characters and pause for user review.
+        from server.content.epub.parser import extract_characters
 
-        if tier == ProcessingTier.EPISODE:
+        characters = extract_characters(book)
+        eg1_result: EpubGateResult = await run_character_gate(
+            characters,
+            project_id=None,  # No DB session in adapter layer; gate is informational.
+        )
+        logger.info(
+            "EpubNovelAdapter: EG1 gate status=%s, characters=%d",
+            eg1_result.status,
+            len(characters),
+        )
+
+        # 6. Dispatch to tier processor
+        if tier == ProcessingTier.DIRECT:
+            scene_list = process_tier1(book, project_id=project_id, voice=voice)
+
+        elif tier == ProcessingTier.EPISODE:
             return process_tier2(
                 book,
                 project_id=project_id,
@@ -173,20 +208,50 @@ class EpubNovelAdapter:
                 episode_max_words=episode_max_words,
             )
 
-        # Tier 3 — manual range
-        if chapter_start is None or chapter_end is None:
-            raise AdapterError(
-                "ADAPTER_INVALID_INPUT",
-                "Tier 3 (manual) requires both 'chapter_start' and 'chapter_end' "
-                "in options.",
+        else:
+            # Tier 3 — manual range
+            if chapter_start is None or chapter_end is None:
+                raise AdapterError(
+                    "ADAPTER_INVALID_INPUT",
+                    "Tier 3 (manual) requires both 'chapter_start' and 'chapter_end' "
+                    "in options.",
+                )
+            scene_list = process_tier3(
+                book,
+                project_id=project_id,
+                chapter_start=chapter_start,
+                chapter_end=chapter_end,
+                voice=voice,
             )
-        return process_tier3(
-            book,
-            project_id=project_id,
-            chapter_start=chapter_start,
-            chapter_end=chapter_end,
-            voice=voice,
+
+        # 7. EG2 — Plot Gate: review scene/chapter breakdown before Veo3 calls.
+        eg2_result: EpubGateResult = await run_plot_gate(
+            scene_list,
+            project_id=None,
         )
+        logger.info(
+            "EpubNovelAdapter: EG2 gate status=%s, scenes=%d",
+            eg2_result.status,
+            len(scene_list.scenes),
+        )
+
+        # 8. EG3 — Style Gate: review skill style configuration.
+        style_info = {
+            "skill_name": input.skill_name or "kdrama-romance",
+            "book_title": book.title,
+            "tier": tier.value,
+        }
+        eg3_result: EpubGateResult = await run_style_gate(
+            style_info,
+            project_id=None,
+        )
+        logger.info(
+            "EpubNovelAdapter: EG3 gate status=%s, skill=%r",
+            eg3_result.status,
+            style_info["skill_name"],
+        )
+
+        return scene_list
 
     def validate_input(self, input: AdapterInput) -> list[str]:  # noqa: A002
         """Validate the adapter input without calling any external APIs.

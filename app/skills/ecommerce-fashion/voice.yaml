@@ -1,0 +1,22 @@
+# skills/ecommerce-fashion/voice.yaml
+# TTS voice profile for the ecommerce-fashion skill.
+# Consumed by the TTS service when a project uses this skill and does not
+# override the voice explicitly. Mirrors the project default (Binh primary,
+# vi-VN-HoaiMyNeural edge fallback) but tuned brighter for product/sales tone.
+
+voice_profile:
+  # Primary: VieNeu local preset (Vietnamese male, northern accent)
+  primary_backend: vieneu
+  primary_voice: Binh
+
+  # Fallback: edge_tts online (Vietnamese female, clear and upbeat)
+  fallback_backend: edge_tts
+  fallback_voice: vi-VN-HoaiMyNeural
+
+  # Delivery — energetic, friendly sales tone
+  rate: "+8%"        # slightly faster, keeps energy up
+  pitch: "+0%"
+  volume: "+0%"
+  emotion: natural
+
+  language: vi-VN

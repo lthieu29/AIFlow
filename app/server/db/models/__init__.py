@@ -8,6 +8,7 @@ create_all() will skip that table.
 
 from server.db.models.asset import Asset
 from server.db.models.config import Config
+from server.db.models.cookie import Cookie
 from server.db.models.job import Job, JobLog
 from server.db.models.project import Project
 from server.db.models.quality_gate import QualityGate
@@ -26,8 +27,6 @@ __all__ = [
     "SceneAsset",
     "Style",
     "QualityGate",
+    # Phase 4.5 models
+    "Cookie",
 ]
-
-# Phase 4.5+ add:
-# from server.db.models.cookie import Cookie
-# __all__ += ["Cookie"]

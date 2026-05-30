@@ -1,0 +1,35 @@
+# skills/explainer-tech/manifest.yaml
+# Explainer Tech skill — clean, modern tech explainer style for educational content
+
+name: explainer-tech
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  Clean, modern tech explainer style — bright studio lighting, minimal UI-inspired
+  compositions, data visualisation aesthetics. Optimised for educational technology
+  content, product demos, and how-it-works narratives in 9:16 short-form format.
+
+# Compatibility — narrative adapters and document/script inputs
+supported_adapters:
+  - narrative_script
+  - blog_article
+  - document_summary
+  - script_direct
+
+# Style
+style_ref: style.json
+prefix_file: prefix.md
+
+# TTS voice — Vietnamese male, clear and authoritative for tech narration
+voice: vi-VN-NamMinhNeural
+
+# Camera — static by default (inherited from _base)
+camera_lock: true
+safety_level: standard
+
+options:
+  default_aspect_ratio: "9:16"
+  default_fps: 30
+  default_camera: static

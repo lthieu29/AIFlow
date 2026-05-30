@@ -73,6 +73,34 @@ TEMPLATE_REGISTRY: dict[str, HfTemplateMetadata] = {
         height=1920,
         variables=["PRODUCT_NAME", "PRICE", "DESCRIPTION"],
     ),
+    "stat_card": HfTemplateMetadata(
+        name="stat_card",
+        duration=4.0,
+        width=1080,
+        height=1920,
+        variables=["STAT_VALUE", "STAT_LABEL"],
+    ),
+    "quote_card": HfTemplateMetadata(
+        name="quote_card",
+        duration=5.0,
+        width=1080,
+        height=1920,
+        variables=["QUOTE", "AUTHOR"],
+    ),
+    "news_ticker": HfTemplateMetadata(
+        name="news_ticker",
+        duration=6.0,
+        width=1080,
+        height=1920,
+        variables=["HEADLINE", "SOURCE"],
+    ),
+    "lyric_line": HfTemplateMetadata(
+        name="lyric_line",
+        duration=4.0,
+        width=1080,
+        height=1920,
+        variables=["LINE", "NEXT_LINE"],
+    ),
 }
 
 

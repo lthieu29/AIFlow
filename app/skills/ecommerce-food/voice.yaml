@@ -1,0 +1,22 @@
+# skills/ecommerce-food/voice.yaml
+# TTS voice profile for the ecommerce-food skill.
+# Consumed by the TTS service when a project uses this skill and does not
+# override the voice explicitly. Warm, inviting tone suited for food and
+# beverage product content.
+
+voice_profile:
+  # Primary: VieNeu local preset (Vietnamese female, southern accent — warm and friendly)
+  primary_backend: vieneu
+  primary_voice: Lan
+
+  # Fallback: edge_tts online (Vietnamese female, clear and natural)
+  fallback_backend: edge_tts
+  fallback_voice: vi-VN-HoaiMyNeural
+
+  # Delivery — warm, inviting, appetite-stimulating tone
+  rate: "+0%"        # natural pace, unhurried
+  pitch: "+2%"       # slightly brighter, friendly
+  volume: "+0%"
+  emotion: natural
+
+  language: vi-VN

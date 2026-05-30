@@ -1,0 +1,22 @@
+{
+  "art_style": "clean tech explainer, modern UI-inspired illustration, photorealistic product render",
+  "lighting": "bright even studio light, soft diffused fill, no harsh shadows, cool-white key light",
+  "color_palette": "cool blues and whites with electric accent colours, dark navy backgrounds for contrast, minimal palette",
+  "camera_rules": "locked-off static frame, tight product or screen close-up, wide establishing for context shots",
+  "negative_prompts": [
+    "blurry",
+    "low quality",
+    "watermark",
+    "text overlay",
+    "harsh shadows",
+    "overexposed",
+    "NSFW",
+    "real persons",
+    "copyrighted characters",
+    "cluttered background",
+    "vintage or retro style",
+    "hand-drawn sketch",
+    "dark moody lighting"
+  ],
+  "aspect_ratio": "9:16"
+}

@@ -1,0 +1,21 @@
+{
+  "art_style": "clean studio tech product photography",
+  "lighting": "cool-white key light, rim light for edge definition, soft fill to eliminate harsh shadows",
+  "color_palette": "dark charcoal or gradient backgrounds, silver and white highlights, accent colors matching product",
+  "camera_rules": "locked-off static frame, tight detail shots for ports and buttons, macro for texture and finish",
+  "negative_prompts": [
+    "blurry",
+    "low quality",
+    "watermark",
+    "text overlay",
+    "harsh shadows",
+    "overexposed",
+    "NSFW",
+    "real persons",
+    "copyrighted characters",
+    "dust",
+    "scratches",
+    "fingerprints"
+  ],
+  "aspect_ratio": "9:16"
+}

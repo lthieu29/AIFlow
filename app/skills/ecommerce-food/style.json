@@ -1,0 +1,20 @@
+{
+  "art_style": "appetising food and beverage product photography",
+  "lighting": "warm natural window light, soft fill, no harsh shadows",
+  "color_palette": "rich warm tones — amber, cream, terracotta, deep green accents",
+  "camera_rules": "locked-off static frame, overhead or 45-degree hero angle, tight crop on product",
+  "negative_prompts": [
+    "blurry",
+    "low quality",
+    "watermark",
+    "text overlay",
+    "harsh shadows",
+    "overexposed",
+    "unappetising",
+    "mouldy",
+    "dirty surfaces",
+    "real persons",
+    "copyrighted characters"
+  ],
+  "aspect_ratio": "9:16"
+}

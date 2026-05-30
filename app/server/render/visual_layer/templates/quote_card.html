@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1080, height=1920">
+  <title>Quote Card</title>
+  <script src="{{__VENDOR_GSAP__}}"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      font-family: 'Inter', 'Segoe UI', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    }
+    #stage {
+      width: 1080px;
+      height: 1920px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 100px 80px;
+    }
+    #quote-mark-open {
+      font-size: 160px;
+      font-weight: 800;
+      line-height: 0.6;
+      color: rgba(255, 111, 0, 0.85);
+      opacity: 0;
+      transform: scale(0.6);
+      align-self: flex-start;
+      margin-left: 20px;
+      margin-bottom: 16px;
+    }
+    #quote-text {
+      font-size: 72px;
+      font-weight: 700;
+      line-height: 1.25;
+      letter-spacing: -1px;
+      color: #ffffff;
+      opacity: 0;
+      transform: translateY(40px);
+      max-width: 920px;
+      word-break: break-word;
+    }
+    #divider {
+      width: 0px;
+      height: 4px;
+      background: #FF6F00;
+      border-radius: 2px;
+      margin: 48px auto;
+    }
+    #author {
+      font-size: 38px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.65);
+      opacity: 0;
+      transform: translateY(20px);
+    }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div id="quote-mark-open">&ldquo;</div>
+    <div id="quote-text">{{QUOTE}}</div>
+    <div id="divider"></div>
+    <div id="author">{{AUTHOR}}</div>
+  </div>
+
+  <script>
+    document.body.style.background = 'transparent';
+
+    const tl = gsap.timeline({ paused: true });
+
+    // Opening quote mark pops in
+    tl.to('#quote-mark-open', { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.7)' }, 0.1)
+    // Quote text fades up
+      .to('#quote-text', { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }, 0.4)
+    // Divider line expands from center
+      .to('#divider', { width: 80, duration: 0.45, ease: 'power2.out' }, '-=0.1')
+    // Author slides up and fades in
+      .to('#author', { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out' }, '-=0.2')
+    // Hold for ~3s then fade everything out
+      .to(['#quote-mark-open', '#quote-text', '#divider', '#author'], {
+        opacity: 0,
+        duration: 0.5,
+        ease: 'power2.in',
+        stagger: 0.06,
+      }, '+=2.8');
+
+    window.__hf = {
+      duration: 5.0,
+      seek(t) { tl.seek(t); }
+    };
+  </script>
+</body>
+</html>

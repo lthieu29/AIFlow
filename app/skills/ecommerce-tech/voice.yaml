@@ -1,0 +1,22 @@
+# skills/ecommerce-tech/voice.yaml
+# TTS voice profile for the ecommerce-tech skill.
+# Consumed by the TTS service when a project uses this skill and does not
+# override the voice explicitly. Tuned clear and confident for tech product
+# review and sales delivery.
+
+voice_profile:
+  # Primary: VieNeu local preset (Vietnamese male, northern accent)
+  primary_backend: vieneu
+  primary_voice: Binh
+
+  # Fallback: edge_tts online (Vietnamese male, clear and authoritative)
+  fallback_backend: edge_tts
+  fallback_voice: vi-VN-NamMinhNeural
+
+  # Delivery — clear, confident, tech-review tone
+  rate: "+5%"        # slightly faster, keeps energy up for product demos
+  pitch: "-2%"       # slightly lower for authoritative tech tone
+  volume: "+0%"
+  emotion: natural
+
+  language: vi-VN

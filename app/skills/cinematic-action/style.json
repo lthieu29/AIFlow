@@ -1,0 +1,23 @@
+{
+  "art_style": "cinematic action film, live-action blockbuster, photorealistic",
+  "lighting": "dramatic high-contrast key light, rim lighting for silhouettes, muzzle flash and practical light sources",
+  "color_palette": "desaturated steel blues and grays, deep shadows, punchy orange-teal grade, high contrast",
+  "camera_rules": "dynamic handheld for combat, low-angle hero shots, fast tracking follow, Dutch tilt for tension",
+  "negative_prompts": [
+    "blurry",
+    "low quality",
+    "watermark",
+    "text overlay",
+    "soft lighting",
+    "pastel colors",
+    "NSFW",
+    "explicit content",
+    "real persons",
+    "copyrighted characters",
+    "anime style",
+    "cartoon",
+    "illustration",
+    "overexposed"
+  ],
+  "aspect_ratio": "9:16"
+}

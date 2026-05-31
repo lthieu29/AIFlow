@@ -65,12 +65,30 @@ Full specs and design docs: [`docs/PLAN.md`](docs/PLAN.md)
 
 ## Project Status
 
-- **Phase 0** (Setup): ⚪ In progress
-- **Phase 1** (Core video flow): ⚪ Not started
-- **Phase 2** (Continuity engine): ⚪ Not started
-- **Phase 3** (Audio + TTS): ⚪ Not started
-- **Phase 4** (Content adapters): ⚪ Not started
+- **Phase 0** (Setup): ✅ Done
+- **Phase 1–4.5** (Core flow + continuity + audio + adapters): ✅ Done
 - **Phase 5** (UI): ⚪ Not started
+- **Phase 6** (EPUB novel): ⚪ Not started
+- **Phase 7** (CapCut export): ✅ Done
+
+### Active spec — `content-expansion`
+
+Three orthogonal expansion axes are complete (no pipeline-core changes):
+
+- **Adapter axis** — 7 new adapters auto-discovered: `script_direct`,
+  `video_remaster`, `document_summary`, `lyric_video`, `news_bulletin`,
+  `podcast_caption`, `photo_slideshow`.
+- **Skill axis** — 4 new data-only skills: `explainer-tech`,
+  `cinematic-action`, `ecommerce-tech`, `ecommerce-food`.
+- **Visual-layer axis** — 4 new HTML+GSAP overlay templates: `quote_card`,
+  `stat_card`, `news_ticker`, `lyric_line`.
+
+Test suite: 1939 passed, 1 skipped (Playwright render — opt-in heavy test).
+
+The live `video_remaster` end-to-end verification (R7.6) is deferred — see
+[`docs/reviews/video-remaster-verification.md`](docs/reviews/video-remaster-verification.md).
+The remaining download → extract → translate → burn chain is verified offline
+by [`server/tests/test_remaster_e2e.py`](server/tests/test_remaster_e2e.py).
 
 ## License
 

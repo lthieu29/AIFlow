@@ -1,20 +1,21 @@
 {
-  "art_style": "editorial fashion photography",
-  "lighting": "soft even key light, golden hour optional",
-  "color_palette": "muted earth tones with cream highlights",
-  "lens": "85mm portrait, shallow DOF",
-  "camera_rules": "locked-off static frame, knees-up framing when product is in shot",
-  "post": "slight film grain, warm tone curve",
+  "art_style": "editorial fashion photography, magazine-grade photoreal, knees-up hero of model with product",
+  "lighting": "soft even key light from a large diffuser, paper-bounce fill, slight warm tone curve, fine film grain",
+  "color_palette": "muted earth tones with cream highlights; a single accent matching the featured product",
+  "camera_rules": "locked-off static knees-up frame; allowed slow Ken Burns push-in or single rack focus on macro detail; medium and macro shot framing; one move per clip",
   "negative_prompts": [
-    "blurry",
-    "low quality",
     "watermark",
+    "logo",
     "text overlay",
+    "subtitle",
     "harsh shadows",
-    "overexposed",
-    "NSFW",
-    "real persons",
-    "copyrighted characters"
+    "overexposed highlights",
+    "teeth visible in model expression",
+    "cluttered competing props",
+    "real identifiable persons",
+    "cartoon style"
   ],
-  "aspect_ratio": "9:16"
+  "aspect_ratio": "9:16",
+  "lens": "85mm portrait, shallow DOF",
+  "post": "slight film grain, warm tone curve"
 }

@@ -688,7 +688,10 @@ class TestRealSkillsDirectory:
         from server.content.style_validator import load_style_json
 
         style = load_style_json(skills_dir / "ecommerce-fashion" / "style.json")
-        assert style["art_style"] == "editorial fashion photography"
+        # ``art_style`` is allowed to grow with extra Veo 8-element detail
+        # (e.g. "editorial fashion photography, magazine-grade photoreal, ...").
+        # Just enforce the canonical phrase appears at the head.
+        assert "editorial fashion photography" in style["art_style"]
 
     def test_skill_loader_loads_ecommerce_fashion(self, skills_dir):
         from server.content.skill_loader import SkillLoader

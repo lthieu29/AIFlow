@@ -1,20 +1,21 @@
 {
-  "art_style": "appetising food and beverage product photography",
-  "lighting": "warm natural window light, soft fill, no harsh shadows",
-  "color_palette": "rich warm tones — amber, cream, terracotta, deep green accents",
-  "camera_rules": "locked-off static frame, overhead or 45-degree hero angle, tight crop on product",
+  "art_style": "appetising food and beverage product photography, photoreal magazine-grade detail",
+  "lighting": "warm natural window light with soft paper-bounce fill; rich warm tone curve; no harsh shadows; visible steam / condensation when the dish allows",
+  "color_palette": "rich warm tones — amber, cream, terracotta, deep green; one accent matching the featured dish or packaging",
+  "camera_rules": "locked-off static frame at overhead or 45-degree hero angle; allowed slow Ken Burns push-in on texture, soft parallax drift, rack focus from packaging label to food, gentle 15-20 degree turntable; tight crop on hero product; one move per clip",
   "negative_prompts": [
-    "blurry",
-    "low quality",
     "watermark",
+    "logo",
     "text overlay",
+    "subtitle",
     "harsh shadows",
     "overexposed",
-    "unappetising",
-    "mouldy",
+    "unappetising appearance",
+    "spoiled or mouldy food",
     "dirty surfaces",
-    "real persons",
-    "copyrighted characters"
+    "splashing mess",
+    "real identifiable persons",
+    "cartoon style"
   ],
   "aspect_ratio": "9:16"
 }

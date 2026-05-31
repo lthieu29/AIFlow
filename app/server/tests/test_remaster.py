@@ -401,6 +401,72 @@ class TestRemasterVideo:
         assert result.output_path == output
         assert result.preset == RemasterPreset.AGGRESSIVE
 
+    def test_aggressive_preset_emits_clear_warning_R7_5(
+        self, tmp_path, caplog
+    ):
+        """**R7.5** — AGGRESSIVE preset must emit a clear warning that TTS
+        replacement is not yet implemented (so the user is not misled into
+        thinking the audio was replaced) and must NOT execute any audio
+        substitution.  The behaviour falls back to LIGHT (subtitle burn-in)."""
+        import logging
+        from server.content.crawlers.remaster import (
+            RemasterConfig, RemasterPreset, remaster_video,
+        )
+
+        video = tmp_path / "video.mp4"
+        video.write_bytes(b"fake video")
+        srt = tmp_path / "subs_vi.srt"
+        srt.write_text("1\n00:00:01,000 --> 00:00:03,000\nXin chao\n\n", encoding="utf-8")
+        output = tmp_path / "out.mp4"
+        ffmpeg = _fake_ffmpeg(tmp_path)
+
+        cmds_run: list[list[str]] = []
+
+        def _capture_run(cmd, *args, **kwargs):
+            cmds_run.append(list(cmd))
+            m = MagicMock()
+            m.returncode = 0
+            return m
+
+        with caplog.at_level(logging.WARNING, logger="server.content.crawlers.remaster"), \
+             _patch_find_ffmpeg(ffmpeg), \
+             patch("subprocess.run", side_effect=_capture_run):
+            result = remaster_video(
+                video, srt, output, RemasterConfig(preset=RemasterPreset.AGGRESSIVE)
+            )
+
+        # 1. A WARNING-level message about TTS not being implemented was logged
+        warning_messages = [
+            r.getMessage()
+            for r in caplog.records
+            if r.levelno >= logging.WARNING
+        ]
+        assert any(
+            "TTS" in m and "not yet implemented" in m for m in warning_messages
+        ), (
+            f"Expected an AGGRESSIVE warning about TTS not yet implemented, "
+            f"got: {warning_messages}"
+        )
+
+        # 2. The single FFmpeg call burns subs (LIGHT behaviour) and does
+        #    NOT do any audio substitution (no -map / -i for a TTS audio file).
+        assert len(cmds_run) == 1
+        cmd = cmds_run[0]
+        # subtitle burn-in path is asserted by the presence of -vf subtitles=
+        joined = " ".join(cmd)
+        assert "subtitles=" in joined, (
+            f"Expected subtitles burn-in, got cmd: {cmd}"
+        )
+        # audio is copied, not regenerated
+        assert "-c:a" in cmd and "copy" in cmd, (
+            f"Expected -c:a copy (no audio replacement), got cmd: {cmd}"
+        )
+
+        # 3. The result still tags itself as AGGRESSIVE so the caller can see
+        #    which preset was requested, but the actual behaviour was LIGHT.
+        assert result.preset == RemasterPreset.AGGRESSIVE
+        assert result.output_path == output
+
     def test_raises_when_video_missing(self, tmp_path):
         from server.content.crawlers.remaster import RemasterConfig, remaster_video
 

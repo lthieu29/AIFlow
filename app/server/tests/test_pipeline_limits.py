@@ -246,8 +246,10 @@ def test_property7_one_over_duration_limit_raises() -> None:
 
     A SceneList whose total duration is 600.01 s (just over the limit) MUST raise.
     """
-    # 20 scenes × 30.0005 s ≈ 600.01 s
-    n = 20
+    # 21 scenes × ~28.57 s ≈ 600.01 s — each scene stays within the per-scene
+    # [3, 30] bound so SceneList.validate() passes, while the TOTAL just
+    # exceeds Max_Duration (600 s).
+    n = 21
     dur = (DEFAULT_MAX_DURATION_SEC + 0.01) / n
     scene_list = _make_scene_list([dur] * n)
     ok, _ = scene_list.validate()

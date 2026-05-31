@@ -65,13 +65,41 @@ EXPECTED_TEMPLATES: dict[str, dict] = {
         "height": 1920,
         "variables": {"PRODUCT_NAME", "PRICE", "DESCRIPTION"},
     },
+    # ── content-expansion task 10 (4 new templates) ──────────────────────────
+    "quote_card": {
+        "duration": 5.0,
+        "width": 1080,
+        "height": 1920,
+        "variables": {"QUOTE", "AUTHOR"},
+    },
+    "stat_card": {
+        "duration": 4.0,
+        "width": 1080,
+        "height": 1920,
+        "variables": {"STAT_VALUE", "STAT_LABEL"},
+    },
+    "news_ticker": {
+        "duration": 6.0,
+        "width": 1080,
+        "height": 1920,
+        "variables": {"HEADLINE", "SOURCE"},
+    },
+    "lyric_line": {
+        "duration": 4.0,
+        "width": 1080,
+        "height": 1920,
+        "variables": {"LINE", "NEXT_LINE"},
+    },
 }
+
+#: Required template set introduced by content-expansion R5.10.
+REQUIRED_NEW_TEMPLATES = {"quote_card", "stat_card", "news_ticker", "lyric_line"}
 
 
 # ─── TEMPLATE_REGISTRY ────────────────────────────────────────────────────────
 
 class TestTemplateRegistry:
-    def test_registry_has_all_five_templates(self):
+    def test_registry_has_all_expected_templates(self):
         assert set(TEMPLATE_REGISTRY.keys()) == set(EXPECTED_TEMPLATES.keys())
 
     def test_registry_values_are_hf_template_metadata(self):
@@ -171,7 +199,7 @@ class TestListTemplates:
         result = list_templates()
         assert isinstance(result, list)
 
-    def test_returns_all_five_names(self):
+    def test_returns_all_expected_names(self):
         result = list_templates()
         assert set(result) == set(EXPECTED_TEMPLATES.keys())
 
@@ -195,8 +223,8 @@ class TestTemplatesDir:
 
     def test_templates_dir_contains_html_files(self):
         html_files = list(TEMPLATES_DIR.glob("*.html"))
-        assert len(html_files) >= 5, (
-            f"Expected at least 5 HTML files in {TEMPLATES_DIR}, found {len(html_files)}"
+        assert len(html_files) >= len(EXPECTED_TEMPLATES), (
+            f"Expected at least {len(EXPECTED_TEMPLATES)} HTML files in {TEMPLATES_DIR}, found {len(html_files)}"
         )
 
 
@@ -436,3 +464,104 @@ class TestInitReexports:
         }
         for sym in expected:
             assert sym in pkg.__all__, f"{sym!r} missing from __all__"
+
+# ─── content-expansion task 10.6 — new templates (R5.1/5.2/5.5/5.6/5.10) ─────
+
+class TestNewTemplatesRegistered:
+    """The 4 content-expansion templates must be registered + present on disk."""
+
+    @pytest.mark.parametrize("name", sorted(REQUIRED_NEW_TEMPLATES))
+    def test_in_registry(self, name: str):
+        assert name in TEMPLATE_REGISTRY, f"{name!r} missing from TEMPLATE_REGISTRY"
+
+    @pytest.mark.parametrize("name", sorted(REQUIRED_NEW_TEMPLATES))
+    def test_file_exists_on_disk(self, name: str):
+        path = get_template_path(name)
+        assert path.is_file(), f"Template file missing on disk: {path}"
+
+
+class TestRequiredTemplateSet:
+    """R5.10 — the required template set acceptance gate.
+
+    Implemented as a pytest gate (not an import-time check): the suite FAILS
+    if any required template is missing, and an empty set does NOT pass.
+    """
+
+    def test_all_required_templates_present(self):
+        missing = REQUIRED_NEW_TEMPLATES - set(TEMPLATE_REGISTRY.keys())
+        assert not missing, f"Missing required templates: {sorted(missing)}"
+        for name in REQUIRED_NEW_TEMPLATES:
+            assert get_template_path(name).is_file()
+
+    def test_missing_one_fails_the_set(self):
+        """Removing any required template must make the set-check fail."""
+        available = set(TEMPLATE_REGISTRY.keys())
+        for victim in REQUIRED_NEW_TEMPLATES:
+            simulated = available - {victim}
+            assert REQUIRED_NEW_TEMPLATES - simulated, (
+                f"Set check should fail when {victim!r} is absent"
+            )
+
+    def test_empty_set_does_not_pass(self):
+        """An empty registry must not satisfy the required set."""
+        assert REQUIRED_NEW_TEMPLATES - set(), "Empty set must not satisfy required gate"
+
+
+class TestQuoteCardTemplate:
+    @pytest.fixture
+    def html(self) -> str:
+        return get_template_path("quote_card").read_text(encoding="utf-8")
+
+    def test_has_quote_element(self, html: str):
+        assert "QUOTE" in html
+
+    def test_has_author_element(self, html: str):
+        assert "AUTHOR" in html
+
+    def test_has_animation(self, html: str):
+        assert "opacity" in html or "scale" in html
+
+
+class TestStatCardTemplate:
+    @pytest.fixture
+    def html(self) -> str:
+        return get_template_path("stat_card").read_text(encoding="utf-8")
+
+    def test_has_stat_value_element(self, html: str):
+        assert "STAT_VALUE" in html
+
+    def test_has_stat_label_element(self, html: str):
+        assert "STAT_LABEL" in html
+
+    def test_has_animation(self, html: str):
+        assert "scale" in html or "opacity" in html
+
+
+class TestNewsTickerTemplate:
+    @pytest.fixture
+    def html(self) -> str:
+        return get_template_path("news_ticker").read_text(encoding="utf-8")
+
+    def test_has_headline_element(self, html: str):
+        assert "HEADLINE" in html
+
+    def test_has_source_element(self, html: str):
+        assert "SOURCE" in html
+
+    def test_has_horizontal_motion(self, html: str):
+        assert "translateX" in html or "x:" in html or "xPercent" in html
+
+
+class TestLyricLineTemplate:
+    @pytest.fixture
+    def html(self) -> str:
+        return get_template_path("lyric_line").read_text(encoding="utf-8")
+
+    def test_has_line_element(self, html: str):
+        assert "{{LINE}}" in html
+
+    def test_has_next_line_element(self, html: str):
+        assert "NEXT_LINE" in html
+
+    def test_has_fade_animation(self, html: str):
+        assert "opacity" in html

@@ -1,0 +1,19 @@
+{
+  "art_style": "minimal studio product turntable photography, e-commerce catalogue grade",
+  "lighting": "soft three-point: large key + soft fill + gentle rim; even shadowless illumination on seamless backdrop",
+  "color_palette": "pure white or muted grey backdrop; product colours kept true to specification",
+  "camera_rules": "locked-off three-quarter angle; single controlled rotation 30 / 90 / 360 degrees; medium hero shot framing with negative space",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "harsh shadows",
+    "coloured backdrop",
+    "props or accessories",
+    "hands or human limbs in frame",
+    "real identifiable persons",
+    "cartoon style"
+  ],
+  "aspect_ratio": "1:1"
+}

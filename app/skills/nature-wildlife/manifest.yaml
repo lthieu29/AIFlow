@@ -1,0 +1,28 @@
+name: nature-wildlife
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  Wildlife documentary style. Telephoto observation, naturalist patience,
+  documentary nature grade. Optimised for narrative wildlife storytelling
+  in 21:9 documentary format.
+
+supported_adapters:
+  - narrative_script
+  - script_direct
+  - photo_slideshow
+  - blog_article
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-NamMinhNeural
+
+camera_lock: false
+safety_level: standard
+
+options:
+  default_aspect_ratio: "21:9"
+  default_fps: 24
+  default_camera: telephoto
+  category: nature

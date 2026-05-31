@@ -1,0 +1,19 @@
+{
+  "art_style": "confessional handheld vlog, photoreal short-form, warm domestic grade",
+  "lighting": "soft window or ring-light key from one side; warm domestic fill; gentle film grain",
+  "color_palette": "warm cream, oat, butter yellow, sage; soft teal shadow contrast",
+  "camera_rules": "handheld breathing on confessional close-up; tilt-down on desk reveals; locked-off wide for room establishment; medium close-up to extreme close-up shot framing",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "burned-in caption",
+    "real branded gear",
+    "real identifiable persons",
+    "clickbait reaction face",
+    "real merch products",
+    "cartoon style"
+  ],
+  "aspect_ratio": "9:16"
+}

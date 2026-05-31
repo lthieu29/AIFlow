@@ -1,0 +1,19 @@
+{
+  "art_style": "documentary nature landscape, planet-Earth-grade photoreal, anamorphic widescreen",
+  "lighting": "golden-hour key with low-sun rim, blue-hour cool fill, volumetric shafts through cloud breaks",
+  "color_palette": "warm sandstone, deep emerald, autumn amber, glacier teal; cool indigo for distant peaks",
+  "camera_rules": "slow drone push-in across vistas, locked-off wide static of feature, single tilt-up reveal; one move per clip; extreme wide and wide shot framing",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "drone propeller artefacts",
+    "people in frame",
+    "real identifiable persons",
+    "CG plastic foliage",
+    "fake godrays",
+    "cartoon style"
+  ],
+  "aspect_ratio": "21:9"
+}

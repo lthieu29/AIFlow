@@ -1,0 +1,10 @@
+voice_profile:
+  primary_backend: vieneu
+  primary_voice: HoaiMy
+  fallback_backend: edge_tts
+  fallback_voice: vi-VN-HoaiMyNeural
+  rate: "+0%"
+  pitch: "+0%"
+  volume: "+0%"
+  emotion: conversational
+  language: vi-VN

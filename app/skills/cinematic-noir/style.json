@@ -1,0 +1,19 @@
+{
+  "art_style": "film noir cinematic, high-contrast B&W with selective colour, anamorphic lens character",
+  "lighting": "hard low-key key light from a single source (window, street lamp, neon sign); deep chiaroscuro shadows; rim light only on silhouette edges",
+  "color_palette": "graphite blacks, silver highlights, smoke greys; selective neon orange / red / cyan reserved for signs and rain reflections",
+  "camera_rules": "slow tracking shot down a wet street, dolly out from face to environment, or rack focus from foreground rain to figure; one move per clip",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "daylight scenes",
+    "bright primary colours",
+    "anime style",
+    "cartoon style",
+    "real identifiable persons",
+    "happy upbeat mood"
+  ],
+  "aspect_ratio": "21:9"
+}

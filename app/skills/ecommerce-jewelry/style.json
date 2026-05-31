@@ -1,0 +1,19 @@
+{
+  "art_style": "editorial macro jewellery photography, polished metal and faceted gemstones",
+  "lighting": "hard side key light to strike facets, soft fill, gentle volumetric rim light",
+  "color_palette": "warm gold, cool platinum, deep midnight velvet, ivory matte stone",
+  "camera_rules": "locked-off static macro; single slow orbit or rack focus only; extreme close-up shot framing",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "fake CG sparkle",
+    "melting metal",
+    "tarnished surface",
+    "fingerprints on gem",
+    "real identifiable persons",
+    "cartoon style"
+  ],
+  "aspect_ratio": "9:16"
+}

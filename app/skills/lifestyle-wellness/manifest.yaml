@@ -1,0 +1,28 @@
+name: lifestyle-wellness
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  Wellness lifestyle style. Soft sunrise tones, slow yoga / mindful
+  rituals / kitchen prep cutaways. Optimised for short narrative
+  wellness reels and morning-routine content.
+
+supported_adapters:
+  - narrative_script
+  - blog_article
+  - script_direct
+  - photo_slideshow
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-HoaiMyNeural
+
+camera_lock: false
+safety_level: standard
+
+options:
+  default_aspect_ratio: "9:16"
+  default_fps: 30
+  default_camera: dolly
+  category: lifestyle

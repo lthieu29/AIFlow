@@ -1,0 +1,27 @@
+name: dialogue-interview
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  Long-form interview style. Two-camera setup feel, soft window key,
+  attentive medium-close framing on the speaker. Optimised for editorial
+  interview narratives.
+
+supported_adapters:
+  - narrative_script
+  - script_direct
+  - podcast_caption
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-HoaiMyNeural
+
+camera_lock: false
+safety_level: standard
+
+options:
+  default_aspect_ratio: "16:9"
+  default_fps: 24
+  default_camera: dolly
+  category: dialogue-driven

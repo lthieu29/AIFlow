@@ -1,0 +1,27 @@
+name: product-minimal-rotate
+version: 1.0.0
+adapter_type: ecommerce_product
+extends: _base
+
+description: >
+  Minimalist product turntable style. White seamless backdrop, controlled
+  360-style rotation, clean studio lighting. Ideal for product catalogue,
+  e-commerce hero, photo-slideshow conversion.
+
+supported_adapters:
+  - ecommerce_product
+  - script_direct
+  - photo_slideshow
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-HoaiMyNeural
+
+camera_lock: false
+safety_level: standard
+
+options:
+  default_aspect_ratio: "1:1"
+  default_fps: 30
+  default_camera: orbit
+  category: commercial

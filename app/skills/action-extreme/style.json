@@ -1,0 +1,20 @@
+{
+  "art_style": "high-octane third-person action, kinetic photoreal blockbuster grade, anamorphic lens",
+  "lighting": "hard rim light from low sun or practical lamp; deep shadow falloff; allowed muzzle-flash and spark accents kept naturalistic",
+  "color_palette": "desaturated steel blue and graphite shadow contrast; warm orange-teal grade; one warm spark accent per peak beat",
+  "camera_rules": "slow tracking dolly behind protagonist, low-angle hero shot during leaps, locked-off medium two-shot for confrontations, single Dutch tilt for tension; one move per clip",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "real branded gear",
+    "live ammunition shown",
+    "explicit gore",
+    "blood spray",
+    "anime style",
+    "cartoon style",
+    "real identifiable persons"
+  ],
+  "aspect_ratio": "21:9"
+}

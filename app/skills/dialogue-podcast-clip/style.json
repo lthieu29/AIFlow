@@ -1,0 +1,19 @@
+{
+  "art_style": "podcast highlight clip, photoreal narrative, vertical caption-first composition",
+  "lighting": "warm key light on the speaker, deep dark booth backdrop, single practical lamp behind for rim",
+  "color_palette": "graphite black, warm amber on the speaker's face, single accent neon for waveform overlay",
+  "camera_rules": "absolutely locked-off booth-style framing; one-shot or two-shot composition; medium and medium close-up shot framing",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "real podcast network branding",
+    "real branded mic",
+    "burned-in caption",
+    "any camera motion",
+    "real identifiable persons",
+    "cartoon style"
+  ],
+  "aspect_ratio": "9:16"
+}

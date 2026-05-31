@@ -1,0 +1,19 @@
+{
+  "art_style": "abstract motion design, photoreal CG aesthetic, synthwave neon palette",
+  "lighting": "volumetric beam light from a single source, neon edge-light, glossy specular highlights",
+  "color_palette": "magenta, cyan, electric purple, chrome silver, deep black; one accent gold or lime",
+  "camera_rules": "slow continuous orbit around the abstract subject; locked-off macro on texture; rack focus from foreground particle to background field; one move per clip",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "human form",
+    "real product references",
+    "epilepsy strobe",
+    "anime style",
+    "cartoon style",
+    "real identifiable persons"
+  ],
+  "aspect_ratio": "1:1"
+}

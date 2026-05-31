@@ -1,0 +1,28 @@
+name: cinematic-period
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  Period drama cinematic style. 1900s-1940s era, candlelit interiors,
+  carriages and gas lamps, muted period palette. Optimised for historical
+  novel-to-screen excerpts.
+
+supported_adapters:
+  - narrative_script
+  - storyboard_manual
+  - script_direct
+  - epub_novel
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-NamMinhNeural
+
+camera_lock: false
+safety_level: standard
+
+options:
+  default_aspect_ratio: "21:9"
+  default_fps: 24
+  default_camera: dolly
+  category: cinematic

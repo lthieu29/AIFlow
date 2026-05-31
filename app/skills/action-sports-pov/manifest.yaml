@@ -1,0 +1,27 @@
+name: action-sports-pov
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  First-person sports POV style. Helmet / chest mount perspective with
+  natural rig sway. Optimised for surf, ski, MTB, BMX, parkour POV
+  narrative content.
+
+supported_adapters:
+  - narrative_script
+  - script_direct
+  - storyboard_manual
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-NamMinhNeural
+
+camera_lock: true
+safety_level: standard
+
+options:
+  default_aspect_ratio: "16:9"
+  default_fps: 30
+  default_camera: pov
+  category: action

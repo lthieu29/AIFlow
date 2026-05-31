@@ -1,0 +1,26 @@
+name: dialogue-vlog
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  Personal vlog style. Confessional close-up handheld with chatty
+  one-take pacing. Optimised for short narrative vlog excerpts.
+
+supported_adapters:
+  - narrative_script
+  - script_direct
+  - blog_article
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-HoaiMyNeural
+
+camera_lock: false
+safety_level: standard
+
+options:
+  default_aspect_ratio: "9:16"
+  default_fps: 30
+  default_camera: handheld
+  category: dialogue-driven

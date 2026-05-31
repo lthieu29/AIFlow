@@ -1,0 +1,28 @@
+name: product-tech-launch
+version: 1.0.0
+adapter_type: ecommerce_product
+extends: _base
+
+description: >
+  Tech product launch hero style. High-impact reveal of a single hero
+  device against dark backdrop with rim and key light. Optimised for
+  short-form launch reveals, Apple-style 9:16 hero clips.
+
+supported_adapters:
+  - ecommerce_product
+  - storyboard_manual
+  - script_direct
+  - narrative_script
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-NamMinhNeural
+
+camera_lock: false
+safety_level: standard
+
+options:
+  default_aspect_ratio: "9:16"
+  default_fps: 30
+  default_camera: orbit
+  category: commercial

@@ -1,0 +1,28 @@
+name: cinematic-thriller
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  Cinematic thriller style. Cold anamorphic look, top-key + practical
+  lighting, navy / graphite palette, tight tense framing. Optimised for
+  short narrative thriller excerpts and EPUB chapter previews.
+
+supported_adapters:
+  - narrative_script
+  - storyboard_manual
+  - script_direct
+  - epub_novel
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-NamMinhNeural
+
+camera_lock: false
+safety_level: standard
+
+options:
+  default_aspect_ratio: "21:9"
+  default_fps: 24
+  default_camera: tracking
+  category: cinematic

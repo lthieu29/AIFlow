@@ -1,0 +1,19 @@
+{
+  "art_style": "cinematic romance, vintage warm tone curve, bokeh-rich photoreal narrative",
+  "lighting": "warm golden-hour key with halation, soft side-light through windows, subtle ambient haze",
+  "color_palette": "amber, peach, cream, dusty rose; muted teal shadow contrast",
+  "camera_rules": "slow push-in on close-ups, slow pull-back on reactions, locked-off two-shot; one move per clip; medium close-up to extreme close-up shot framing",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "harsh shadows",
+    "explicit physical contact",
+    "anime style",
+    "cartoon style",
+    "real identifiable persons",
+    "violence"
+  ],
+  "aspect_ratio": "16:9"
+}

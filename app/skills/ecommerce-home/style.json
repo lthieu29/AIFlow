@@ -1,0 +1,19 @@
+{
+  "art_style": "cosy interior product photography, lifestyle home decor",
+  "lighting": "soft window light at golden hour, warm tungsten practical lamp, overcast diffuser fill",
+  "color_palette": "warm cream, oat, terracotta, sage, soft brass accents",
+  "camera_rules": "locked-off static at chest or eye level; allowed slow dolly forward or single tilt-up; medium and close-up shot framing",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "harsh shadows",
+    "cluttered background",
+    "construction tools",
+    "price tags",
+    "real identifiable persons",
+    "cartoon style"
+  ],
+  "aspect_ratio": "9:16"
+}

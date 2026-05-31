@@ -1,0 +1,28 @@
+name: cinematic-noir
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  Film noir cinematic style. High-contrast B&W with selective colour,
+  rain-slicked streets, neon spill, low-key chiaroscuro lighting,
+  anamorphic lens character, dramatic shadows.
+
+supported_adapters:
+  - narrative_script
+  - storyboard_manual
+  - script_direct
+  - epub_novel
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-NamMinhNeural
+
+camera_lock: false
+safety_level: standard
+
+options:
+  default_aspect_ratio: "21:9"
+  default_fps: 24
+  default_camera: tracking
+  category: cinematic

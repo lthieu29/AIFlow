@@ -1,0 +1,19 @@
+{
+  "art_style": "wuxia / xianxia martial arts cinematic, photoreal narrative film, Chinese ink-wash backdrop influence",
+  "lighting": "misted soft volumetric daylight through bamboo or fog; gentle backlit silk robes; brass lantern accents at night",
+  "color_palette": "ink-wash grey, jade green, imperial red, antique gold, pale silk white",
+  "camera_rules": "slow tracking dolly, locked-off wide of duel, single tilt-up for robe leap, extreme close-up on sword draw; one move per clip",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "modern slang",
+    "anachronistic props",
+    "anime style",
+    "cartoon style",
+    "explicit gore",
+    "real identifiable persons"
+  ],
+  "aspect_ratio": "21:9"
+}

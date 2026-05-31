@@ -1,0 +1,19 @@
+{
+  "art_style": "Chinese ink-wash (shui-mo) translated into photoreal motion, sumi-e brush-stroke aesthetic, classical narrative",
+  "lighting": "soft volumetric daylight through mountain mist; brush-stroke negative space; gentle backlit silhouette",
+  "color_palette": "ink black, rice-paper beige, antique gold, jade green, single vermilion accent",
+  "camera_rules": "slow dolly across misted ridge; locked-off wide of brush at work; single rack focus from brush tip to distant peak; one move per clip; extreme wide and extreme close-up shot framing",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "modern slang",
+    "anachronistic props",
+    "anime style",
+    "cartoon style",
+    "real identifiable persons",
+    "real Chinese brand markings"
+  ],
+  "aspect_ratio": "21:9"
+}

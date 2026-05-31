@@ -1,16 +1,20 @@
 {
-  "art_style": "photorealistic",
-  "lighting": "natural even lighting",
-  "color_palette": "neutral",
-  "camera_rules": "static locked-off frame, no camera movement",
+  "art_style": "photorealistic by default; named illustration style when the scene declares one (anime, claymation, ink-wash, film noir, Wes Anderson)",
+  "lighting": "natural with a named light source; never generic dramatic lighting alone",
+  "color_palette": "scene-driven and consistent across the continuity block",
+  "camera_rules": "locked-off static framing by default; named shot type; one primary motion per clip drawn from the standard camera lexicon (dolly, pan, tilt, tracking, orbit, handheld, gimbal, steadicam, drone)",
   "negative_prompts": [
-    "blurry",
-    "low quality",
     "watermark",
+    "logo",
     "text overlay",
+    "subtitle",
+    "extra limbs",
+    "distorted hands",
+    "twin or clone of the same person",
+    "blurry low-quality output",
     "NSFW",
     "violence",
-    "real persons",
+    "real identifiable persons",
     "copyrighted characters"
   ],
   "aspect_ratio": "9:16"

@@ -1,0 +1,27 @@
+name: action-extreme
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  Extreme action set-piece. High-octane third-person action with dramatic
+  rim lighting, kinetic camera, energetic colour grade. Optimised for
+  parkour, stunt, fight choreography narrative excerpts.
+
+supported_adapters:
+  - narrative_script
+  - script_direct
+  - storyboard_manual
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-NamMinhNeural
+
+camera_lock: false
+safety_level: standard
+
+options:
+  default_aspect_ratio: "21:9"
+  default_fps: 24
+  default_camera: tracking
+  category: action

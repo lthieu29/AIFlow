@@ -1,0 +1,26 @@
+name: ecommerce-home
+version: 1.0.0
+adapter_type: ecommerce_product
+extends: _base
+
+description: >
+  Home and decor e-commerce style. Cosy interior product photography of
+  furniture, lamps, ceramics, textiles. Optimised for TikTok / Reels 9:16.
+
+supported_adapters:
+  - ecommerce_product
+  - storyboard_manual
+  - script_direct
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-HoaiMyNeural
+
+camera_lock: true
+safety_level: standard
+
+options:
+  default_aspect_ratio: "9:16"
+  default_fps: 30
+  default_camera: static
+  category: commercial

@@ -1,0 +1,28 @@
+name: cinematic-drama
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  Cinematic prestige drama style. Naturalistic key light, muted earth-tone
+  grade, intimate close-ups, slow deliberate camera. Optimised for
+  dialogue-driven prestige narrative excerpts.
+
+supported_adapters:
+  - narrative_script
+  - storyboard_manual
+  - script_direct
+  - epub_novel
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-HoaiMyNeural
+
+camera_lock: false
+safety_level: standard
+
+options:
+  default_aspect_ratio: "16:9"
+  default_fps: 24
+  default_camera: dolly
+  category: cinematic

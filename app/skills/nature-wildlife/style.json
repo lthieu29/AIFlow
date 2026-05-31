@@ -1,0 +1,19 @@
+{
+  "art_style": "wildlife documentary photography, telephoto observation, planet-Earth-grade photoreal",
+  "lighting": "naturalistic golden-hour, dappled forest shafts, overcast soft fill; no studio look",
+  "color_palette": "deep emerald, ochre, slate, sun-warmed amber; animal natural fur and feather colours preserved",
+  "camera_rules": "long telephoto lens with natural sway, slow rack focus from foliage to subject; no drone close to wildlife; medium close-up to extreme close-up shot framing",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "captive zoo backdrop",
+    "trophies or hunting context",
+    "anthropomorphised animals",
+    "real identifiable persons",
+    "drone propeller artefacts",
+    "cartoon style"
+  ],
+  "aspect_ratio": "21:9"
+}

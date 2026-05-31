@@ -1,0 +1,19 @@
+{
+  "art_style": "hero tech product launch photography, Apple-style reveal aesthetic",
+  "lighting": "hard top-front key light with rim light on edges; matte-black or graphite backdrop; strong controlled specular highlights",
+  "color_palette": "deep graphite, brushed aluminium, single accent colour (blue, orange, magenta) reserved for screen content",
+  "camera_rules": "controlled orbit 15-30 degrees combined with synchronised dolly push-in; shot framing transitions from wide hero to extreme close-up; one move per clip",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "real brand markings",
+    "fingerprints on glass",
+    "glitch artefacts",
+    "melting CG material",
+    "real identifiable persons",
+    "cartoon style"
+  ],
+  "aspect_ratio": "9:16"
+}

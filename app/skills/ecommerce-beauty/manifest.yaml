@@ -1,0 +1,31 @@
+# skills/ecommerce-beauty/manifest.yaml
+# E-commerce beauty skill - cosmetics, skincare, fragrance hero shots
+
+name: ecommerce-beauty
+version: 1.0.0
+adapter_type: ecommerce_product
+extends: _base
+
+description: >
+  Beauty / cosmetics e-commerce style. Hero macro of bottle / tube / palette
+  with soft butterfly key, polished glass and gold accents. Optimised for
+  TikTok / Reels 9:16 product reveal.
+
+supported_adapters:
+  - ecommerce_product
+  - storyboard_manual
+  - script_direct
+
+style_ref: style.json
+prefix_file: prefix.md
+
+voice: vi-VN-HoaiMyNeural
+
+camera_lock: true
+safety_level: standard
+
+options:
+  default_aspect_ratio: "9:16"
+  default_fps: 30
+  default_camera: static
+  category: commercial

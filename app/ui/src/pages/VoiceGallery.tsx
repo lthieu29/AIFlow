@@ -24,9 +24,9 @@ type GenderFilter = "all" | "male" | "female" | "neutral";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function genderLabel(gender: string): string {
-  if (gender === "male") return "Male";
-  if (gender === "female") return "Female";
-  if (gender === "neutral") return "Neutral";
+  if (gender === "male") return "Nam";
+  if (gender === "female") return "Nữ";
+  if (gender === "neutral") return "Trung tính";
   return gender;
 }
 
@@ -72,12 +72,12 @@ function DeleteDialog({ voice, onConfirm, onCancel, deleting }: DeleteDialogProp
     >
       <div className="bg-white rounded-xl shadow-xl max-w-sm w-full mx-4 p-6">
         <h2 id="delete-dialog-title" className="text-base font-semibold text-gray-900 mb-2">
-          Delete voice?
+          Xóa giọng nói?
         </h2>
         <p id="delete-dialog-desc" className="text-sm text-gray-600 mb-6">
-          Are you sure you want to delete{" "}
-          <span className="font-medium text-gray-900">{voice.name}</span>? This
-          action cannot be undone.
+          Bạn có chắc muốn xóa{" "}
+          <span className="font-medium text-gray-900">{voice.name}</span> không?
+          Hành động này không thể hoàn tác.
         </p>
         <div className="flex justify-end gap-3">
           <button
@@ -86,7 +86,7 @@ function DeleteDialog({ voice, onConfirm, onCancel, deleting }: DeleteDialogProp
             disabled={deleting}
             className="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 disabled:opacity-50"
           >
-            Cancel
+            Hủy
           </button>
           <button
             ref={confirmRef}
@@ -95,7 +95,7 @@ function DeleteDialog({ voice, onConfirm, onCancel, deleting }: DeleteDialogProp
             disabled={deleting}
             className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {deleting ? "Deleting…" : "Delete"}
+            {deleting ? "Đang xóa…" : "Xóa"}
           </button>
         </div>
       </div>
@@ -132,10 +132,10 @@ function VoiceCard({ voice, isPlaying, onPlay, onStop, onDelete }: VoiceCardProp
         <div className="flex items-center gap-1.5 shrink-0">
           {voice.is_custom && (
             <span
-              aria-label="Custom voice"
+              aria-label="Giọng tùy chỉnh"
               className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium"
             >
-              Custom
+              Tùy chỉnh
             </span>
           )}
           <span
@@ -155,7 +155,7 @@ function VoiceCard({ voice, isPlaying, onPlay, onStop, onDelete }: VoiceCardProp
 
       {/* Backend badge */}
       <p className="text-xs text-gray-400">
-        Backend:{" "}
+        Nền tảng:{" "}
         <span className="font-medium text-gray-600">{backendLabel(voice.backend)}</span>
       </p>
 
@@ -167,17 +167,17 @@ function VoiceCard({ voice, isPlaying, onPlay, onStop, onDelete }: VoiceCardProp
             <button
               type="button"
               onClick={onStop}
-              aria-label={`Stop demo for ${voice.name}`}
+              aria-label={`Dừng demo của ${voice.name}`}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1"
             >
               <span aria-hidden="true">⏹</span>
-              Stop
+              Dừng
             </button>
           ) : (
             <button
               type="button"
               onClick={() => onPlay(voice)}
-              aria-label={`Play demo for ${voice.name}`}
+              aria-label={`Phát demo của ${voice.name}`}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-blue-50 border border-blue-200 text-blue-700 rounded hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1"
             >
               <span aria-hidden="true">▶</span>
@@ -185,7 +185,7 @@ function VoiceCard({ voice, isPlaying, onPlay, onStop, onDelete }: VoiceCardProp
             </button>
           )
         ) : (
-          <span className="text-xs text-gray-300 italic">No demo</span>
+          <span className="text-xs text-gray-300 italic">Không có demo</span>
         )}
 
         {/* Delete (custom voices only) */}
@@ -193,11 +193,11 @@ function VoiceCard({ voice, isPlaying, onPlay, onStop, onDelete }: VoiceCardProp
           <button
             type="button"
             onClick={() => onDelete(voice)}
-            aria-label={`Delete voice ${voice.name}`}
+            aria-label={`Xóa giọng ${voice.name}`}
             className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-xs border border-red-200 text-red-600 rounded hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1"
           >
             <span aria-hidden="true">🗑</span>
-            Delete
+            Xóa
           </button>
         )}
       </div>
@@ -233,13 +233,13 @@ function UploadPanel({ onUploaded }: UploadPanelProps) {
 
     try {
       const result = await uploadCustomVoice(file);
-      setSuccess(`Voice "${result.name}" uploaded successfully (status: ${result.status}).`);
+      setSuccess(`Đã tải lên giọng "${result.name}" thành công (trạng thái: ${result.status}).`);
       setFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
       onUploaded();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Upload failed. Please try again."
+        err instanceof Error ? err.message : "Tải lên thất bại. Vui lòng thử lại."
       );
     } finally {
       setUploading(false);
@@ -252,24 +252,24 @@ function UploadPanel({ onUploaded }: UploadPanelProps) {
       className="bg-white border border-gray-200 rounded-xl p-5"
     >
       <h2 id="upload-heading" className="text-sm font-semibold text-gray-800 mb-3">
-        Upload custom voice
+        Tải lên giọng tùy chỉnh
       </h2>
       <p className="text-xs text-gray-500 mb-4">
-        Upload a <code className="bg-gray-100 px-1 rounded">.zip</code> package
-        produced by the Colab training notebook.
+        Tải lên gói <code className="bg-gray-100 px-1 rounded">.zip</code> được tạo
+        bởi notebook huấn luyện trên Colab.
       </p>
 
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
         {/* File input */}
         <label className="flex-1">
-          <span className="sr-only">Choose voice zip file</span>
+          <span className="sr-only">Chọn file zip giọng nói</span>
           <input
             ref={fileInputRef}
             type="file"
             accept=".zip"
             onChange={handleFileChange}
             disabled={uploading}
-            aria-label="Choose voice zip file"
+            aria-label="Chọn file zip giọng nói"
             className="block w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-gray-300 file:text-xs file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 disabled:opacity-50"
           />
         </label>
@@ -282,14 +282,14 @@ function UploadPanel({ onUploaded }: UploadPanelProps) {
           aria-busy={uploading}
           className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 whitespace-nowrap"
         >
-          {uploading ? "Uploading…" : "Upload"}
+          {uploading ? "Đang tải lên…" : "Tải lên"}
         </button>
       </div>
 
       {/* Selected file name */}
       {file && !uploading && (
         <p className="mt-2 text-xs text-gray-500">
-          Selected: <span className="font-medium">{file.name}</span> (
+          Đã chọn: <span className="font-medium">{file.name}</span> (
           {(file.size / 1024).toFixed(1)} KB)
         </p>
       )}
@@ -297,7 +297,7 @@ function UploadPanel({ onUploaded }: UploadPanelProps) {
       {/* Progress indicator */}
       {uploading && (
         <p role="status" aria-live="polite" className="mt-2 text-xs text-blue-600">
-          Uploading, please wait…
+          Đang tải lên, vui lòng đợi…
         </p>
       )}
 
@@ -414,7 +414,7 @@ export default function VoiceGallery() {
       void fetchVoices();
     } catch (err) {
       setDeleteError(
-        err instanceof Error ? err.message : "Failed to delete voice."
+        err instanceof Error ? err.message : "Không xóa được giọng nói."
       );
     } finally {
       setDeleting(false);
@@ -433,12 +433,12 @@ export default function VoiceGallery() {
       {/* Header */}
       <div className="mb-6">
         <Link to="/" className="text-sm text-blue-600 hover:underline">
-          ← Back to home
+          ← Về trang chủ
         </Link>
-        <h1 className="text-2xl font-bold mt-2">Voice Gallery</h1>
+        <h1 className="text-2xl font-bold mt-2">Thư viện giọng nói</h1>
         <p className="text-gray-500 text-sm mt-1">
-          Browse and manage TTS voices. Preset voices are built-in; custom
-          voices are trained models you upload.
+          Duyệt và quản lý giọng nói TTS. Giọng có sẵn (preset) là tích hợp sẵn;
+          giọng tùy chỉnh là các model bạn tự huấn luyện và tải lên.
         </p>
       </div>
 
@@ -458,12 +458,12 @@ export default function VoiceGallery() {
       <div
         className="mb-6 flex flex-wrap gap-4 items-end"
         role="group"
-        aria-label="Filter voices"
+        aria-label="Lọc giọng nói"
       >
         {/* Type filter */}
         <div>
           <label htmlFor="filter-type" className="block text-xs font-medium text-gray-600 mb-1">
-            Type
+            Loại
           </label>
           <select
             id="filter-type"
@@ -471,16 +471,16 @@ export default function VoiceGallery() {
             onChange={(e) => setTypeFilter(e.target.value as VoiceTypeFilter)}
             className="border border-gray-300 rounded px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
-            <option value="all">All ({voices.length})</option>
-            <option value="preset">Preset ({presetCount})</option>
-            <option value="custom">Custom ({customCount})</option>
+            <option value="all">Tất cả ({voices.length})</option>
+            <option value="preset">Có sẵn ({presetCount})</option>
+            <option value="custom">Tùy chỉnh ({customCount})</option>
           </select>
         </div>
 
         {/* Language filter */}
         <div>
           <label htmlFor="filter-language" className="block text-xs font-medium text-gray-600 mb-1">
-            Language
+            Ngôn ngữ
           </label>
           <select
             id="filter-language"
@@ -488,7 +488,7 @@ export default function VoiceGallery() {
             onChange={(e) => setLanguageFilter(e.target.value)}
             className="border border-gray-300 rounded px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
-            <option value="all">All languages</option>
+            <option value="all">Tất cả ngôn ngữ</option>
             {languages.map((lang) => (
               <option key={lang} value={lang}>
                 {lang}
@@ -500,7 +500,7 @@ export default function VoiceGallery() {
         {/* Gender filter */}
         <div>
           <label htmlFor="filter-gender" className="block text-xs font-medium text-gray-600 mb-1">
-            Gender
+            Giới tính
           </label>
           <select
             id="filter-gender"
@@ -508,10 +508,10 @@ export default function VoiceGallery() {
             onChange={(e) => setGenderFilter(e.target.value as GenderFilter)}
             className="border border-gray-300 rounded px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
-            <option value="all">All genders</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="neutral">Neutral</option>
+            <option value="all">Tất cả giới tính</option>
+            <option value="male">Nam</option>
+            <option value="female">Nữ</option>
+            <option value="neutral">Trung tính</option>
           </select>
         </div>
 
@@ -526,7 +526,7 @@ export default function VoiceGallery() {
             }}
             className="text-xs text-blue-600 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 rounded"
           >
-            Reset filters
+            Đặt lại bộ lọc
           </button>
         )}
       </div>
@@ -534,7 +534,7 @@ export default function VoiceGallery() {
       {/* Voice list */}
       {loading && (
         <p role="status" aria-live="polite" className="text-sm text-gray-400 py-8 text-center">
-          Loading voices…
+          Đang tải giọng nói…
         </p>
       )}
 
@@ -546,7 +546,7 @@ export default function VoiceGallery() {
             onClick={() => void fetchVoices()}
             className="ml-3 underline hover:no-underline focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 rounded"
           >
-            Retry
+            Thử lại
           </button>
         </div>
       )}
@@ -554,20 +554,19 @@ export default function VoiceGallery() {
       {!loading && !error && filteredVoices.length === 0 && (
         <p className="text-sm text-gray-400 py-8 text-center">
           {voices.length === 0
-            ? "No voices found. Make sure the server is running."
-            : "No voices match the current filters."}
+            ? "Không tìm thấy giọng nói nào. Hãy đảm bảo server đang chạy."
+            : "Không có giọng nói nào khớp bộ lọc hiện tại."}
         </p>
       )}
 
       {!loading && filteredVoices.length > 0 && (
         <>
           <p className="text-xs text-gray-400 mb-3" aria-live="polite">
-            Showing {filteredVoices.length} of {voices.length} voice
-            {voices.length !== 1 ? "s" : ""}
+            Hiển thị {filteredVoices.length} trong tổng {voices.length} giọng
           </p>
           <ul
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-            aria-label="Voice list"
+            aria-label="Danh sách giọng nói"
           >
             {filteredVoices.map((voice) => (
               <li key={voice.id}>

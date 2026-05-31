@@ -28,29 +28,29 @@ interface AdapterMeta {
 
 const ADAPTERS: Record<AdapterName, AdapterMeta> = {
   ecommerce_product: {
-    label: "E-commerce Product",
-    description: "Generate a TikTok/Reels-style product video from an image path and metadata.",
+    label: "Sản phẩm thương mại điện tử",
+    description: "Tạo video sản phẩm kiểu TikTok/Reels từ đường dẫn ảnh và thông tin.",
     inputType: "text",
-    inputLabel: "Product image path",
+    inputLabel: "Đường dẫn ảnh sản phẩm",
     inputPlaceholder: "storage/media/product.jpg",
   },
   narrative_script: {
-    label: "Narrative Script",
-    description: "Turn a markdown vlog/script into a video.",
+    label: "Kịch bản tường thuật",
+    description: "Biến một kịch bản/vlog dạng markdown thành video.",
     inputType: "textarea",
-    inputLabel: "Markdown script",
-    inputPlaceholder: "# My Story\n\nScene 1: ...",
+    inputLabel: "Kịch bản markdown",
+    inputPlaceholder: "# Câu chuyện của tôi\n\nCảnh 1: ...",
   },
   blog_article: {
-    label: "Blog Article",
-    description: "Convert a blog URL or markdown into an explainer video.",
+    label: "Bài viết blog",
+    description: "Chuyển một URL blog hoặc markdown thành video giải thích.",
     inputType: "url",
-    inputLabel: "Article URL",
+    inputLabel: "URL bài viết",
     inputPlaceholder: "https://example.com/article",
   },
   storyboard_manual: {
-    label: "Manual Storyboard",
-    description: "Provide a JSON storyboard with scenes defined manually.",
+    label: "Storyboard thủ công",
+    description: "Cung cấp một storyboard JSON với các cảnh tự định nghĩa.",
     inputType: "json",
     inputLabel: "Storyboard JSON",
     inputPlaceholder: '{"scenes": [{"narration": "...", "visual_prompt": "..."}]}',
@@ -58,7 +58,7 @@ const ADAPTERS: Record<AdapterName, AdapterMeta> = {
 };
 
 const SKILLS = [
-  { id: "ecommerce-fashion", label: "E-commerce Fashion" },
+  { id: "ecommerce-fashion", label: "Thời trang TMĐT" },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -105,27 +105,27 @@ export default function NewProject() {
     const errors: Record<string, string> = {};
 
     if (!title.trim()) {
-      errors.title = "Project title is required.";
+      errors.title = "Bắt buộc nhập tên dự án.";
     }
 
     if (!inputValue.trim()) {
-      errors.input = `${ADAPTERS[adapter].inputLabel} is required.`;
+      errors.input = `Bắt buộc nhập ${ADAPTERS[adapter].inputLabel.toLowerCase()}.`;
     } else if (ADAPTERS[adapter].inputType === "url") {
       try {
         new URL(inputValue.trim());
       } catch {
-        errors.input = "Please enter a valid URL.";
+        errors.input = "Vui lòng nhập URL hợp lệ.";
       }
     } else if (ADAPTERS[adapter].inputType === "json") {
       try {
         JSON.parse(inputValue.trim());
       } catch {
-        errors.input = "Please enter valid JSON.";
+        errors.input = "Vui lòng nhập JSON hợp lệ.";
       }
     }
 
     if (!skillId) {
-      errors.skill = "Please select a skill.";
+      errors.skill = "Vui lòng chọn một skill.";
     }
 
     setFieldErrors(errors);
@@ -150,7 +150,7 @@ export default function NewProject() {
       try {
         adapterInput = JSON.parse(inputValue.trim()) as Record<string, unknown>;
       } catch {
-        setFieldErrors((prev) => ({ ...prev, input: "Invalid JSON." }));
+        setFieldErrors((prev) => ({ ...prev, input: "JSON không hợp lệ." }));
         return;
       }
     } else {
@@ -175,7 +175,7 @@ export default function NewProject() {
       const msg =
         err instanceof Error
           ? err.message
-          : "Failed to create project. Is the server running?";
+          : "Không tạo được dự án. Server đã chạy chưa?";
       setError(msg);
     } finally {
       setSubmitting(false);
@@ -191,11 +191,11 @@ export default function NewProject() {
       {/* Header */}
       <div className="mb-6">
         <Link to="/" className="text-sm text-blue-600 hover:underline">
-          ← Back to home
+          ← Về trang chủ
         </Link>
-        <h1 className="text-2xl font-bold mt-2">New Project</h1>
+        <h1 className="text-2xl font-bold mt-2">Dự án mới</h1>
         <p className="text-gray-500 text-sm mt-1">
-          Choose an input type, fill in the details, then generate your video.
+          Chọn loại đầu vào, điền thông tin, rồi tạo video của bạn.
         </p>
       </div>
 
@@ -203,14 +203,14 @@ export default function NewProject() {
         {/* Project title */}
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-            Project title <span aria-hidden="true" className="text-red-500">*</span>
+            Tên dự án <span aria-hidden="true" className="text-red-500">*</span>
           </label>
           <input
             id="title"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="My product video"
+            placeholder="Video sản phẩm của tôi"
             aria-required="true"
             aria-describedby={fieldErrors.title ? "title-error" : undefined}
             className={`w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
@@ -227,7 +227,7 @@ export default function NewProject() {
         {/* Adapter selector */}
         <fieldset>
           <legend className="block text-sm font-medium text-gray-700 mb-2">
-            Input type <span aria-hidden="true" className="text-red-500">*</span>
+            Loại đầu vào <span aria-hidden="true" className="text-red-500">*</span>
           </legend>
           <div className="grid grid-cols-2 gap-2">
             {(Object.entries(ADAPTERS) as [AdapterName, AdapterMeta][]).map(
@@ -300,8 +300,7 @@ export default function NewProject() {
         <div>
           <label htmlFor="skill" className="block text-sm font-medium text-gray-700 mb-1">
             Skill <span aria-hidden="true" className="text-red-500">*</span>
-          </label>
-          <select
+          </label>          <select
             id="skill"
             value={skillId}
             onChange={(e) => setSkillId(e.target.value)}
@@ -326,10 +325,10 @@ export default function NewProject() {
         {/* Voice picker */}
         <div>
           <label htmlFor="voice" className="block text-sm font-medium text-gray-700 mb-1">
-            TTS Voice
+            Giọng nói (TTS)
           </label>
           {voicesLoading ? (
-            <p className="text-sm text-gray-400">Loading voices…</p>
+            <p className="text-sm text-gray-400">Đang tải giọng nói…</p>
           ) : (
             <select
               id="voice"
@@ -337,11 +336,11 @@ export default function NewProject() {
               onChange={(e) => setVoiceId(e.target.value)}
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             >
-              <option value="">— Use skill default —</option>
+              <option value="">— Dùng mặc định của skill —</option>
               {voices.map((v) => (
                 <option key={v.id} value={v.id}>
                   {v.name} ({v.language}, {v.gender})
-                  {v.is_custom ? " ★ custom" : ""}
+                  {v.is_custom ? " ★ tùy chỉnh" : ""}
                 </option>
               ))}
             </select>
@@ -351,7 +350,7 @@ export default function NewProject() {
         {/* Aspect ratio */}
         <fieldset>
           <legend className="block text-sm font-medium text-gray-700 mb-2">
-            Aspect ratio
+            Tỉ lệ khung hình
           </legend>
           <div className="flex gap-3">
             {(["9:16", "16:9", "1:1"] as const).map((ratio) => (
@@ -391,10 +390,10 @@ export default function NewProject() {
             disabled={submitting}
             className="px-6 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
-            {submitting ? "Creating…" : "Create project"}
+            {submitting ? "Đang tạo…" : "Tạo dự án"}
           </button>
           <Link to="/" className="text-sm text-gray-500 hover:underline">
-            Cancel
+            Hủy
           </Link>
         </div>
       </form>

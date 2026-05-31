@@ -60,7 +60,7 @@ function SceneRow({
       {/* Header row */}
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-          Scene {index + 1}
+          Cảnh {index + 1}
         </span>
 
         {/* Status badge */}
@@ -84,7 +84,7 @@ function SceneRow({
             type="button"
             onClick={() => onMoveUp(scene.scene_id)}
             disabled={disabled || index === 0}
-            aria-label={`Move scene ${index + 1} up`}
+            aria-label={`Di chuyển cảnh ${index + 1} lên`}
             className="p-1 rounded text-gray-400 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
             ▲
@@ -93,7 +93,7 @@ function SceneRow({
             type="button"
             onClick={() => onMoveDown(scene.scene_id)}
             disabled={disabled || index === total - 1}
-            aria-label={`Move scene ${index + 1} down`}
+            aria-label={`Di chuyển cảnh ${index + 1} xuống`}
             className="p-1 rounded text-gray-400 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
             ▼
@@ -102,7 +102,7 @@ function SceneRow({
             type="button"
             onClick={() => onRemove(scene.scene_id)}
             disabled={disabled || total <= 1}
-            aria-label={`Remove scene ${index + 1}`}
+            aria-label={`Xóa cảnh ${index + 1}`}
             className="p-1 rounded text-red-300 hover:text-red-600 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-400 ml-1"
           >
             ✕
@@ -116,7 +116,7 @@ function SceneRow({
           htmlFor={`prompt-${scene.scene_id}`}
           className="block text-xs font-medium text-gray-600 mb-1"
         >
-          Visual prompt
+          Prompt hình ảnh
         </label>
         <textarea
           id={`prompt-${scene.scene_id}`}
@@ -134,7 +134,7 @@ function SceneRow({
           htmlFor={`narration-${scene.scene_id}`}
           className="block text-xs font-medium text-gray-600 mb-1"
         >
-          Narration (TTS)
+          Lời thuyết minh (TTS)
         </label>
         <textarea
           id={`narration-${scene.scene_id}`}
@@ -152,7 +152,7 @@ function SceneRow({
           htmlFor={`duration-${scene.scene_id}`}
           className="text-xs font-medium text-gray-600 whitespace-nowrap"
         >
-          Duration (sec)
+          Thời lượng (giây)
         </label>
         <input
           id={`duration-${scene.scene_id}`}
@@ -203,7 +203,7 @@ export default function Timeline() {
       const sorted = [...(data.scenes ?? [])].sort((a, b) => a.order - b.order);
       setScenes(sorted);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to load project.");
+      setError(err instanceof Error ? err.message : "Không tải được dự án.");
     } finally {
       setLoading(false);
     }
@@ -345,7 +345,7 @@ export default function Timeline() {
         );
       await Promise.all(patches);
     } catch (err: unknown) {
-      setSaveError(err instanceof Error ? err.message : "Failed to save scenes.");
+      setSaveError(err instanceof Error ? err.message : "Không lưu được các cảnh.");
     } finally {
       setSaving(false);
     }
@@ -366,7 +366,7 @@ export default function Timeline() {
     } catch (err: unknown) {
       setGenStatus("failed");
       setSaveError(
-        err instanceof Error ? err.message : "Failed to start generation."
+        err instanceof Error ? err.message : "Không khởi động được quá trình tạo video."
       );
     }
   }
@@ -379,7 +379,7 @@ export default function Timeline() {
   if (loading) {
     return (
       <div className="p-8 text-gray-500" aria-live="polite">
-        Loading project…
+        Đang tải dự án…
       </div>
     );
   }
@@ -391,7 +391,7 @@ export default function Timeline() {
           {error}
         </p>
         <Link to="/" className="text-blue-600 hover:underline text-sm">
-          ← Back to home
+          ← Về trang chủ
         </Link>
       </div>
     );
@@ -403,12 +403,12 @@ export default function Timeline() {
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <Link to="/" className="text-sm text-blue-600 hover:underline">
-            ← Back
+            ← Quay lại
           </Link>
           <h1 className="text-2xl font-bold mt-1">{project?.title ?? projectId}</h1>
           <p className="text-xs text-gray-400 mt-0.5">
-            {scenes.length} scene{scenes.length !== 1 ? "s" : ""} ·{" "}
-            {totalDuration.toFixed(1)} s total
+            {scenes.length} cảnh ·{" "}
+            {totalDuration.toFixed(1)} giây tổng
           </p>
         </div>
 
@@ -420,7 +420,7 @@ export default function Timeline() {
             disabled={saving || isGenerating}
             className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
-            {saving ? "Saving…" : "Save"}
+            {saving ? "Đang lưu…" : "Lưu"}
           </button>
           <button
             type="button"
@@ -428,17 +428,17 @@ export default function Timeline() {
             disabled={isGenerating || scenes.length === 0}
             className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
-            {isGenerating ? "Generating…" : "Generate Video"}
+            {isGenerating ? "Đang tạo…" : "Tạo video"}
           </button>
         </div>
       </div>
 
       {/* Progress bar */}
       {(isGenerating || genStatus === "success") && (
-        <div className="mb-6" aria-live="polite" aria-label="Generation progress">
+        <div className="mb-6" aria-live="polite" aria-label="Tiến trình tạo video">
           <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
             <span>
-              {genStatus === "success" ? "Generation complete!" : "Generating video…"}
+              {genStatus === "success" ? "Tạo video hoàn tất!" : "Đang tạo video…"}
             </span>
             <span>{Math.round(genProgress * 100)}%</span>
           </div>
@@ -461,7 +461,7 @@ export default function Timeline() {
                 onClick={() => navigate(`/export/${projectId ?? ""}`)}
                 className="text-sm text-blue-600 hover:underline"
               >
-                Go to Export →
+                Tới trang Xuất →
               </button>
             </div>
           )}
@@ -471,7 +471,7 @@ export default function Timeline() {
       {/* Generation failed */}
       {genStatus === "failed" && (
         <div role="alert" className="mb-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
-          Generation failed. Check server logs and try again.
+          Tạo video thất bại. Kiểm tra log server và thử lại.
         </div>
       )}
 
@@ -483,7 +483,7 @@ export default function Timeline() {
       )}
 
       {/* Scene list */}
-      <div className="space-y-3" aria-label="Scene list">
+      <div className="space-y-3" aria-label="Danh sách cảnh">
         {scenes.map((scene, idx) => (
           <SceneRow
             key={scene.scene_id}
@@ -506,7 +506,7 @@ export default function Timeline() {
         disabled={isGenerating}
         className="mt-4 w-full border-2 border-dashed border-gray-300 rounded-lg py-3 text-sm text-gray-400 hover:border-blue-400 hover:text-blue-500 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
       >
-        + Add scene
+        + Thêm cảnh
       </button>
 
       {/* Bottom export link */}
@@ -516,7 +516,7 @@ export default function Timeline() {
             to={`/export/${projectId ?? ""}`}
             className="inline-block px-6 py-2 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
           >
-            View Export →
+            Xem trang Xuất →
           </Link>
         </div>
       )}

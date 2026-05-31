@@ -63,7 +63,7 @@ export const useVoiceStore = create<VoiceState>((set) => ({
       set({ voices, loading: false });
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Failed to fetch voices";
+        err instanceof Error ? err.message : "Không tải được danh sách giọng nói";
       set({ error: message, loading: false });
     }
   },

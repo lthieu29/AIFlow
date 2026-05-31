@@ -53,7 +53,7 @@ export default function Export() {
       })
       .catch((err: unknown) => {
         setError(
-          err instanceof Error ? err.message : "Failed to load project."
+          err instanceof Error ? err.message : "Không tải được dự án."
         );
       })
       .finally(() => setLoading(false));
@@ -94,7 +94,7 @@ export default function Export() {
   if (loading) {
     return (
       <div className="p-8 text-gray-500" aria-live="polite">
-        Loading project…
+        Đang tải dự án…
       </div>
     );
   }
@@ -106,7 +106,7 @@ export default function Export() {
           {error}
         </p>
         <Link to="/" className="text-blue-600 hover:underline text-sm">
-          ← Back to home
+          ← Về trang chủ
         </Link>
       </div>
     );
@@ -122,13 +122,13 @@ export default function Export() {
           to={`/timeline/${projectId ?? ""}`}
           className="text-sm text-blue-600 hover:underline"
         >
-          ← Back to timeline
+          ← Quay lại timeline
         </Link>
         <h1 className="text-2xl font-bold mt-2">
           {project?.title ?? projectId}
         </h1>
         <p className="text-xs text-gray-400 mt-0.5">
-          Status:{" "}
+          Trạng thái:{" "}
           <span
             className={
               isReady
@@ -136,7 +136,7 @@ export default function Export() {
                 : "text-yellow-600 font-medium"
             }
           >
-            {project?.status ?? "unknown"}
+            {project?.status ?? "không rõ"}
           </span>
         </p>
       </div>
@@ -147,14 +147,14 @@ export default function Export() {
           role="status"
           className="mb-6 rounded border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800"
         >
-          The video is not ready yet. Go back to the{" "}
+          Video chưa sẵn sàng. Quay lại{" "}
           <Link
             to={`/timeline/${projectId ?? ""}`}
             className="underline font-medium"
           >
             timeline
           </Link>{" "}
-          and click "Generate Video".
+          và bấm "Tạo video".
         </div>
       )}
 
@@ -168,26 +168,26 @@ export default function Export() {
             playsInline
             preload="metadata"
             className="w-full h-full"
-            aria-label={`Preview of ${project?.title ?? "project"}`}
+            aria-label={`Xem trước ${project?.title ?? "dự án"}`}
           >
-            <track kind="captions" src={srtUrl} label="Vietnamese" default />
-            Your browser does not support the video element.
+            <track kind="captions" src={srtUrl} label="Tiếng Việt" default />
+            Trình duyệt của bạn không hỗ trợ thẻ video.
           </video>
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-500 text-sm">
-            Video not available yet
+            Video chưa có sẵn
           </div>
         )}
       </div>
 
       {/* Export options */}
       <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-700">Export options</h2>
+        <h2 className="text-sm font-semibold text-gray-700">Tùy chọn xuất</h2>
 
         {/* Quality */}
         <div>
           <label htmlFor="quality" className="block text-xs font-medium text-gray-600 mb-1">
-            Quality
+            Chất lượng
           </label>
           <select
             id="quality"
@@ -195,7 +195,7 @@ export default function Export() {
             onChange={(e) => setQuality(e.target.value as ExportQuality)}
             className="border border-gray-200 rounded px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
-            <option value="original">Original (as rendered)</option>
+            <option value="original">Gốc (như khi render)</option>
             <option value="1080p">1080p</option>
             <option value="720p">720p</option>
             <option value="480p">480p</option>
@@ -205,7 +205,7 @@ export default function Export() {
         {/* Format */}
         <div>
           <fieldset>
-            <legend className="text-xs font-medium text-gray-600 mb-1">Format</legend>
+            <legend className="text-xs font-medium text-gray-600 mb-1">Định dạng</legend>
             <div className="flex gap-3">
               {(["mp4", "webm"] as ExportFormat[]).map((f) => (
                 <label
@@ -234,9 +234,8 @@ export default function Export() {
         {/* Note about quality/format */}
         {(quality !== "original" || format !== "mp4") && (
           <p className="text-xs text-gray-400">
-            Note: quality and format re-encoding is handled server-side. The
-            download link will reflect your selection when the server supports
-            it.
+            Lưu ý: việc re-encode chất lượng và định dạng được xử lý phía server.
+            Link tải sẽ phản ánh lựa chọn của bạn khi server hỗ trợ.
           </p>
         )}
       </div>
@@ -259,7 +258,7 @@ export default function Export() {
           }`}
         >
           <span aria-hidden="true">⬇</span>
-          Download {format.toUpperCase()}
+          Tải {format.toUpperCase()}
         </a>
 
         {/* Download SRT */}
@@ -274,7 +273,7 @@ export default function Export() {
           }`}
         >
           <span aria-hidden="true">📄</span>
-          Download SRT
+          Tải SRT
         </a>
 
         {/* Copy link */}
@@ -284,16 +283,16 @@ export default function Export() {
           className="inline-flex items-center gap-2 px-5 py-2.5 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
         >
           <span aria-hidden="true">{copied ? "✓" : "🔗"}</span>
-          {copied ? "Copied!" : "Copy link"}
+          {copied ? "Đã sao chép!" : "Sao chép link"}
         </button>
       </div>
 
       {/* Project metadata */}
       {project && (
         <div className="mt-8 border-t border-gray-100 pt-6 text-xs text-gray-400 space-y-1">
-          <p>Project ID: {project.short_id}</p>
+          <p>Mã dự án: {project.short_id}</p>
           <p>Skill: {project.skill}</p>
-          <p>Created: {new Date(project.created_at).toLocaleString()}</p>
+          <p>Tạo lúc: {new Date(project.created_at).toLocaleString()}</p>
         </div>
       )}
     </div>

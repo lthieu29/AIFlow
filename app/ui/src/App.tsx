@@ -14,21 +14,21 @@ function HomePage() {
     <div className="p-8 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-2">AIFlow</h1>
       <p className="text-gray-600 mb-6">
-        Personal AI video generation tool. Create a new project or manage
-        existing ones.
+        Công cụ tạo video AI cá nhân. Tạo dự án mới hoặc quản lý các dự án hiện
+        có.
       </p>
       <nav className="flex flex-wrap gap-3">
         <Link
           to="/new-project"
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
-          + New Project
+          + Dự án mới
         </Link>
         <Link
           to="/voices"
           className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
         >
-          Voice Gallery
+          Thư viện giọng nói
         </Link>
       </nav>
     </div>
@@ -39,9 +39,9 @@ function HomePage() {
 function NotFoundPage() {
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-2">404 — Not Found</h1>
+      <h1 className="text-2xl font-bold mb-2">404 — Không tìm thấy</h1>
       <Link to="/" className="text-blue-600 hover:underline">
-        Go home
+        Về trang chủ
       </Link>
     </div>
   );
@@ -83,7 +83,7 @@ function StatusBar() {
         }`}
       />
       <span>
-        Extension: {isConnected ? "connected" : "disconnected"}
+        Extension: {isConnected ? "đã kết nối" : "mất kết nối"}
       </span>
     </div>
   );

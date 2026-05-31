@@ -381,14 +381,25 @@ def _make_successful_subprocess_result(stdout: str = "", returncode: int = 0):
 
 
 class TestBilibiliDownloader:
+    """yt-dlp fallback path tests — native API is forced to fail so the
+    downloader falls through to the yt-dlp code path being tested here."""
+
     def _setup_vendor(self, tmp_path, monkeypatch):
-        """Create fake vendor binaries and patch _VENDOR_DIR."""
+        """Create fake vendor binaries, patch _VENDOR_DIR, force native fail."""
         from server.content.crawlers import base as base_mod
+        from server.content.crawlers.bilibili import downloader as bili_mod
+        from server.content.crawlers.native import NativeAPIError
 
         vendor = tmp_path / "vendor"
         vendor.mkdir()
         (vendor / "yt-dlp.exe").write_bytes(b"fake")
         monkeypatch.setattr(base_mod, "_VENDOR_DIR", vendor)
+
+        # Force the native API path to be unavailable so tests hit yt-dlp.
+        def _boom(*args, **kwargs):
+            raise NativeAPIError("forced native failure for fallback test")
+
+        monkeypatch.setattr(bili_mod, "bilibili_fetch_streams", _boom)
         return vendor
 
     def test_download_success(self, tmp_path, monkeypatch):
@@ -488,13 +499,24 @@ class TestBilibiliDownloader:
 
 
 class TestDouyinDownloader:
+    """yt-dlp fallback path tests — native API is forced to fail."""
+
     def _setup_vendor(self, tmp_path, monkeypatch):
         from server.content.crawlers import base as base_mod
+        from server.content.crawlers.douyin import downloader as dy_mod
+        from server.content.crawlers.native import NativeAPIError
 
         vendor = tmp_path / "vendor"
         vendor.mkdir()
         (vendor / "yt-dlp.exe").write_bytes(b"fake")
         monkeypatch.setattr(base_mod, "_VENDOR_DIR", vendor)
+
+        # Force native API path to fail so tests hit the yt-dlp fallback.
+        def _boom(*args, **kwargs):
+            raise NativeAPIError("forced native failure for fallback test")
+
+        monkeypatch.setattr(dy_mod, "douyin_fetch_video_url", _boom)
+        monkeypatch.setattr(dy_mod, "resolve_redirect", _boom)
 
     def test_download_success(self, tmp_path, monkeypatch):
         from server.content.crawlers.douyin.downloader import DouyinDownloader

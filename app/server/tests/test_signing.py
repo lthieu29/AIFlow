@@ -1,19 +1,25 @@
-"""Unit tests for the signing modules (Task 4.5.3).
+"""Unit tests for the signing modules (Task 4.5.3 — real implementations).
 
 Covers:
-- a_bogus.sign_a_bogus() — stub returns empty string, correct signature
-- x_bogus.sign_x_bogus() — stub returns empty string, correct signature
-- wbi.WbiSigner — init, sign() returns dict copy without mutation
-- wbi.get_wbi_keys() — stub returns ("", "")
-- update_check.check_upstream_updates() — stub returns no-update dict
+- a_bogus.sign_a_bogus()  — real A-Bogus signature (GPL v3 port, needs gmssl)
+- x_bogus.sign_x_bogus()  — real X-Bogus signature (Apache 2.0 port, stdlib)
+- wbi.WbiSigner           — adds wts + w_rid, no mutation, deterministic mixin
+- wbi.get_wbi_keys()      — parses Bilibili nav API (mocked httpx)
+- update_check.check_upstream_updates() — GitHub check (mocked / offline-safe)
 - update_check.PINNED_COMMITS — structure validation
 - Package __init__ re-exports
+
+A-Bogus tests are skipped automatically when ``gmssl`` is not installed
+(it is an optional ``[remaster]`` dependency).
 """
 
 from __future__ import annotations
 
+import hashlib
 import sys
+import urllib.parse
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -21,36 +27,85 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 
+def _gmssl_available() -> bool:
+    try:
+        import gmssl  # type: ignore[import]  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130.0.0.0 Safari/537.36"
+
+# Realistic Douyin web-API query params (>32 chars when serialised — the
+# upstream md5/sm3 routines treat <=32-char strings as hex digests).
+_DY_PARAMS_A = {
+    "device_platform": "webapp",
+    "aid": "6383",
+    "aweme_id": "7345492945006595379",
+    "version_code": "290100",
+}
+_DY_PARAMS_B = {
+    "device_platform": "webapp",
+    "aid": "6383",
+    "aweme_id": "7111111111111111111",
+    "version_code": "290100",
+}
+
+# Realistic WBI keys (32 hex chars each → 64-char concatenation).
+_WBI_IMG = "7cd084941338484aae1ad9425b84077d"
+_WBI_SUB = "4932caff0ff746eab6f01bf08b70ac45"
+
+requires_gmssl = pytest.mark.skipif(
+    not _gmssl_available(), reason="gmssl not installed (optional [remaster] dependency)"
+)
+
+
 # ─── a_bogus ─────────────────────────────────────────────────────────────────
 
 
 class TestSignABogus:
-    def test_returns_string(self):
+    @requires_gmssl
+    def test_returns_nonempty_string(self):
         from server.content.crawlers.signing.a_bogus import sign_a_bogus
 
-        result = sign_a_bogus({"aweme_id": "7123456789012345678"}, "Mozilla/5.0")
+        result = sign_a_bogus(_DY_PARAMS_A, _UA)
         assert isinstance(result, str)
+        assert len(result) > 0
 
-    def test_stub_returns_empty_string(self):
+    @requires_gmssl
+    def test_signature_is_url_encoded(self):
+        """sign_a_bogus URL-encodes its output (no raw spaces / unsafe chars)."""
         from server.content.crawlers.signing.a_bogus import sign_a_bogus
 
-        result = sign_a_bogus({"aweme_id": "7123456789012345678"}, "Mozilla/5.0")
-        assert result == ""
+        result = sign_a_bogus(_DY_PARAMS_A, _UA)
+        assert " " not in result
+        # Round-trips through unquote without error.
+        assert urllib.parse.unquote(result) is not None
 
-    def test_accepts_empty_params(self):
+    @requires_gmssl
+    def test_distinct_params_give_distinct_signatures(self):
         from server.content.crawlers.signing.a_bogus import sign_a_bogus
 
-        result = sign_a_bogus({}, "")
-        assert isinstance(result, str)
+        s1 = sign_a_bogus(_DY_PARAMS_A, _UA)
+        s2 = sign_a_bogus(_DY_PARAMS_B, _UA)
+        assert s1 != s2
 
-    def test_accepts_multiple_params(self):
+    def test_rejects_non_dict_params(self):
         from server.content.crawlers.signing.a_bogus import sign_a_bogus
 
-        result = sign_a_bogus(
-            {"aweme_id": "123", "device_platform": "webapp", "aid": "6383"},
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-        )
-        assert isinstance(result, str)
+        with pytest.raises(ValueError):
+            sign_a_bogus("not-a-dict", _UA)  # type: ignore[arg-type]
+
+    def test_raises_signing_unavailable_without_gmssl(self):
+        """When gmssl import fails, sign_a_bogus raises SigningUnavailableError."""
+        from server.content.crawlers.signing import a_bogus
+        from server.content.crawlers.signing.errors import SigningUnavailableError
+
+        # Force the lazy gmssl import to fail.
+        with patch.object(a_bogus, "_require_gmssl", side_effect=SigningUnavailableError("no gmssl")):
+            with pytest.raises(SigningUnavailableError):
+                a_bogus.sign_a_bogus({"aweme_id": "123"}, _UA)
 
     def test_upstream_repo_constant(self):
         from server.content.crawlers.signing.a_bogus import UPSTREAM_REPO
@@ -70,32 +125,40 @@ class TestSignABogus:
 
 
 class TestSignXBogus:
-    def test_returns_string(self):
+    def test_returns_nonempty_string(self):
         from server.content.crawlers.signing.x_bogus import sign_x_bogus
 
-        result = sign_x_bogus({"aweme_id": "7123456789012345678"}, "Mozilla/5.0")
+        result = sign_x_bogus(_DY_PARAMS_A, _UA)
         assert isinstance(result, str)
+        assert len(result) > 0
 
-    def test_stub_returns_empty_string(self):
+    def test_signature_charset(self):
+        """X-Bogus output uses the documented base-64-like alphabet only."""
         from server.content.crawlers.signing.x_bogus import sign_x_bogus
 
-        result = sign_x_bogus({"aweme_id": "7123456789012345678"}, "Mozilla/5.0")
-        assert result == ""
+        alphabet = set("Dkdpgh4ZKsQB80/Mfvw36XI1R25-WUAlEi7NLboqYTOPuzmFjJnryx9HVGcaStCe=")
+        result = sign_x_bogus(_DY_PARAMS_A, _UA)
+        assert set(result) <= alphabet
 
-    def test_accepts_empty_params(self):
+    def test_distinct_params_give_distinct_signatures(self):
         from server.content.crawlers.signing.x_bogus import sign_x_bogus
 
-        result = sign_x_bogus({}, "")
-        assert isinstance(result, str)
+        s1 = sign_x_bogus(_DY_PARAMS_A, _UA)
+        s2 = sign_x_bogus(_DY_PARAMS_B, _UA)
+        assert s1 != s2
 
-    def test_accepts_multiple_params(self):
+    def test_rejects_non_dict_params(self):
         from server.content.crawlers.signing.x_bogus import sign_x_bogus
 
-        result = sign_x_bogus(
-            {"aweme_id": "123", "device_platform": "webapp"},
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-        )
-        assert isinstance(result, str)
+        with pytest.raises(ValueError):
+            sign_x_bogus("not-a-dict", _UA)  # type: ignore[arg-type]
+
+    def test_stdlib_only_no_gmssl_required(self):
+        """X-Bogus must work even if gmssl is unavailable (stdlib MD5/RC4 only)."""
+        from server.content.crawlers.signing.x_bogus import sign_x_bogus
+
+        result = sign_x_bogus(_DY_PARAMS_A, _UA)
+        assert len(result) > 0
 
     def test_shares_upstream_reference_with_a_bogus(self):
         from server.content.crawlers.signing import a_bogus, x_bogus
@@ -111,162 +174,176 @@ class TestWbiSigner:
     def test_init_accepts_keys(self):
         from server.content.crawlers.signing.wbi import WbiSigner
 
-        signer = WbiSigner("img_key_abc", "sub_key_xyz")
-        assert signer._img_key == "img_key_abc"
-        assert signer._sub_key == "sub_key_xyz"
+        signer = WbiSigner(_WBI_IMG, _WBI_SUB)
+        assert signer._img_key == _WBI_IMG
+        assert signer._sub_key == _WBI_SUB
 
-    def test_init_accepts_empty_keys(self):
+    def test_mixin_key_matches_public_test_vector(self):
+        """Clean-room mixin-key derivation against the public reference vector."""
+        from server.content.crawlers.signing.wbi import _get_mixin_key
+
+        mixin = _get_mixin_key(_WBI_IMG + _WBI_SUB)
+        assert mixin == "ea1db124af3d7062474693fa704f4ff8"
+        assert len(mixin) == 32
+
+    def test_sign_adds_wts_and_w_rid(self):
         from server.content.crawlers.signing.wbi import WbiSigner
 
-        signer = WbiSigner("", "")
-        assert signer._img_key == ""
-        assert signer._sub_key == ""
-
-    def test_sign_returns_dict(self):
-        from server.content.crawlers.signing.wbi import WbiSigner
-
-        signer = WbiSigner("img", "sub")
+        signer = WbiSigner(_WBI_IMG, _WBI_SUB)
         result = signer.sign({"mid": "12345678"})
-        assert isinstance(result, dict)
+        assert "wts" in result
+        assert "w_rid" in result
+        assert len(result["w_rid"]) == 32  # MD5 hex digest
 
-    def test_sign_stub_preserves_original_params(self):
-        from server.content.crawlers.signing.wbi import WbiSigner
+    def test_sign_w_rid_is_correct_md5(self):
+        """w_rid == md5(sorted_encoded_params_including_wts + mixin_key)."""
+        from server.content.crawlers.signing.wbi import WbiSigner, _get_mixin_key
 
-        signer = WbiSigner("img", "sub")
-        params = {"mid": "12345678", "platform": "web"}
-        result = signer.sign(params)
-        assert result["mid"] == "12345678"
-        assert result["platform"] == "web"
+        signer = WbiSigner(_WBI_IMG, _WBI_SUB)
+        with patch("server.content.crawlers.signing.wbi.time") as mock_time:
+            mock_time.time.return_value = 1700000000
+            result = signer.sign({"foo": "bar", "baz": "qux"})
 
-    def test_sign_returns_copy_not_same_object(self):
-        from server.content.crawlers.signing.wbi import WbiSigner
-
-        signer = WbiSigner("img", "sub")
-        params = {"mid": "12345678"}
-        result = signer.sign(params)
-        assert result is not params
+        mixin = _get_mixin_key(_WBI_IMG + _WBI_SUB)
+        expected_params = {"baz": "qux", "foo": "bar", "wts": 1700000000}
+        query = urllib.parse.urlencode(dict(sorted(expected_params.items())))
+        expected = hashlib.md5((query + mixin).encode("utf-8")).hexdigest()
+        assert result["w_rid"] == expected
 
     def test_sign_does_not_mutate_original_params(self):
         from server.content.crawlers.signing.wbi import WbiSigner
 
-        signer = WbiSigner("img", "sub")
+        signer = WbiSigner(_WBI_IMG, _WBI_SUB)
         params = {"mid": "12345678"}
-        original_keys = set(params.keys())
         signer.sign(params)
-        assert set(params.keys()) == original_keys
+        assert params == {"mid": "12345678"}
 
-    def test_sign_accepts_empty_params(self):
+    def test_sign_returns_copy_not_same_object(self):
         from server.content.crawlers.signing.wbi import WbiSigner
 
-        signer = WbiSigner("img", "sub")
-        result = signer.sign({})
-        assert isinstance(result, dict)
+        signer = WbiSigner(_WBI_IMG, _WBI_SUB)
+        params = {"mid": "12345678"}
+        assert signer.sign(params) is not params
 
-    def test_sign_accepts_complex_params(self):
+    def test_sign_strips_reserved_chars(self):
+        """Reserved chars !'()* are stripped from values before hashing."""
         from server.content.crawlers.signing.wbi import WbiSigner
 
-        signer = WbiSigner("img", "sub")
-        params = {"mid": "12345678", "token": "", "platform": "web", "web_location": "1550101"}
-        result = signer.sign(params)
-        assert isinstance(result, dict)
+        signer = WbiSigner(_WBI_IMG, _WBI_SUB)
+        # Two inputs differing only by reserved chars produce same w_rid
+        # (at the same wts) because those chars are filtered out.
+        with patch("server.content.crawlers.signing.wbi.time") as mock_time:
+            mock_time.time.return_value = 1700000000
+            r1 = signer.sign({"q": "hello"})
+            r2 = signer.sign({"q": "h!e'l(l)o*"})
+        assert r1["w_rid"] == r2["w_rid"]
 
 
 # ─── get_wbi_keys ─────────────────────────────────────────────────────────────
 
 
 class TestGetWbiKeys:
-    def test_returns_tuple(self):
-        from server.content.crawlers.signing.wbi import get_wbi_keys
+    def test_parses_keys_from_nav_response(self):
+        from server.content.crawlers.signing import wbi
 
-        result = get_wbi_keys("some_cookie_string")
-        assert isinstance(result, tuple)
+        fake_resp = MagicMock()
+        fake_resp.raise_for_status = MagicMock()
+        fake_resp.json.return_value = {
+            "data": {
+                "wbi_img": {
+                    "img_url": "https://i0.hdslb.com/bfs/wbi/7cd084941338484aae1ad9425b84077d.png",
+                    "sub_url": "https://i0.hdslb.com/bfs/wbi/4932caff0ff746eab6f01bf08b70ac45.png",
+                }
+            }
+        }
+        fake_httpx = MagicMock()
+        fake_httpx.get.return_value = fake_resp
 
-    def test_returns_two_elements(self):
-        from server.content.crawlers.signing.wbi import get_wbi_keys
+        with patch.dict("sys.modules", {"httpx": fake_httpx}):
+            img_key, sub_key = wbi.get_wbi_keys("SESSDATA=abc")
 
-        result = get_wbi_keys("some_cookie_string")
-        assert len(result) == 2
+        assert img_key == "7cd084941338484aae1ad9425b84077d"
+        assert sub_key == "4932caff0ff746eab6f01bf08b70ac45"
 
-    def test_stub_returns_empty_strings(self):
-        from server.content.crawlers.signing.wbi import get_wbi_keys
+    def test_raises_signing_unavailable_on_network_error(self):
+        from server.content.crawlers.signing import wbi
+        from server.content.crawlers.signing.errors import SigningUnavailableError
 
-        img_key, sub_key = get_wbi_keys("some_cookie_string")
-        assert img_key == ""
-        assert sub_key == ""
+        fake_httpx = MagicMock()
+        fake_httpx.get.side_effect = RuntimeError("boom")
 
-    def test_accepts_empty_cookies(self):
-        from server.content.crawlers.signing.wbi import get_wbi_keys
+        with patch.dict("sys.modules", {"httpx": fake_httpx}):
+            with pytest.raises(SigningUnavailableError):
+                wbi.get_wbi_keys("")
 
-        img_key, sub_key = get_wbi_keys("")
-        assert isinstance(img_key, str)
-        assert isinstance(sub_key, str)
+    def test_raises_signing_unavailable_when_keys_missing(self):
+        from server.content.crawlers.signing import wbi
+        from server.content.crawlers.signing.errors import SigningUnavailableError
 
-    def test_return_values_are_strings(self):
-        from server.content.crawlers.signing.wbi import get_wbi_keys
+        fake_resp = MagicMock()
+        fake_resp.raise_for_status = MagicMock()
+        fake_resp.json.return_value = {"data": {"wbi_img": {}}}
+        fake_httpx = MagicMock()
+        fake_httpx.get.return_value = fake_resp
 
-        img_key, sub_key = get_wbi_keys("SESSDATA=abc123; bili_jct=xyz")
-        assert isinstance(img_key, str)
-        assert isinstance(sub_key, str)
+        with patch.dict("sys.modules", {"httpx": fake_httpx}):
+            with pytest.raises(SigningUnavailableError):
+                wbi.get_wbi_keys("")
 
 
 # ─── check_upstream_updates ───────────────────────────────────────────────────
 
 
 class TestCheckUpstreamUpdates:
-    def test_returns_dict(self):
+    def test_returns_dict_with_required_keys(self):
         from server.content.crawlers.signing.update_check import check_upstream_updates
 
-        result = check_upstream_updates()
+        # Force the offline path so this test never hits the network.
+        with patch.dict("sys.modules", {"httpx": None}):
+            result = check_upstream_updates()
         assert isinstance(result, dict)
+        for key in ("has_update", "latest_commit", "pinned_commit", "modules"):
+            assert key in result
 
-    def test_has_required_keys(self):
+    def test_offline_returns_has_update_false_with_error(self):
+        """When httpx is missing, the check is graceful (no raise)."""
         from server.content.crawlers.signing.update_check import check_upstream_updates
 
-        result = check_upstream_updates()
-        assert "has_update" in result
-        assert "latest_commit" in result
-        assert "pinned_commit" in result
-        assert "modules" in result
-
-    def test_stub_has_update_is_false(self):
-        from server.content.crawlers.signing.update_check import check_upstream_updates
-
-        result = check_upstream_updates()
+        with patch.dict("sys.modules", {"httpx": None}):
+            result = check_upstream_updates()
         assert result["has_update"] is False
+        assert "error" in result
 
-    def test_stub_latest_commit_is_string(self):
-        from server.content.crawlers.signing.update_check import check_upstream_updates
+    def test_detects_update_when_latest_differs(self):
+        from server.content.crawlers.signing import update_check
 
-        result = check_upstream_updates()
-        assert isinstance(result["latest_commit"], str)
+        fake_resp = MagicMock()
+        fake_resp.raise_for_status = MagicMock()
+        fake_resp.json.return_value = [{"sha": "ffffffffffffffff"}]
+        fake_httpx = MagicMock()
+        fake_httpx.get.return_value = fake_resp
 
-    def test_stub_pinned_commit_matches_pinned_commits_dict(self):
-        from server.content.crawlers.signing.update_check import (
-            PINNED_COMMITS,
-            check_upstream_updates,
-        )
+        with patch.dict("sys.modules", {"httpx": fake_httpx}):
+            result = update_check.check_upstream_updates()
 
-        result = check_upstream_updates()
-        assert result["pinned_commit"] == PINNED_COMMITS.get("a_bogus", "")
+        assert result["latest_commit"] == "ffffffffffffffff"
+        assert result["has_update"] is True
 
-    def test_modules_dict_contains_all_modules(self):
-        from server.content.crawlers.signing.update_check import (
-            PINNED_COMMITS,
-            check_upstream_updates,
-        )
+    def test_no_update_when_latest_matches_pinned(self):
+        from server.content.crawlers.signing import update_check
+        from server.content.crawlers.signing.update_check import PINNED_COMMITS
 
-        result = check_upstream_updates()
-        modules = result["modules"]
-        assert isinstance(modules, dict)
-        for mod in PINNED_COMMITS:
-            assert mod in modules
+        pinned = PINNED_COMMITS["a_bogus"]
+        fake_resp = MagicMock()
+        fake_resp.raise_for_status = MagicMock()
+        fake_resp.json.return_value = [{"sha": pinned + "abcdef0000"}]
+        fake_httpx = MagicMock()
+        fake_httpx.get.return_value = fake_resp
 
-    def test_stub_all_module_flags_are_false(self):
-        from server.content.crawlers.signing.update_check import check_upstream_updates
+        with patch.dict("sys.modules", {"httpx": fake_httpx}):
+            result = update_check.check_upstream_updates()
 
-        result = check_upstream_updates()
-        for mod, flag in result["modules"].items():
-            assert flag is False, f"Module {mod!r} unexpectedly has has_update=True"
+        assert result["has_update"] is False
 
 
 # ─── PINNED_COMMITS ───────────────────────────────────────────────────────────
@@ -278,20 +355,11 @@ class TestPinnedCommits:
 
         assert isinstance(PINNED_COMMITS, dict)
 
-    def test_contains_a_bogus(self):
+    def test_contains_a_bogus_and_x_bogus(self):
         from server.content.crawlers.signing.update_check import PINNED_COMMITS
 
         assert "a_bogus" in PINNED_COMMITS
-
-    def test_contains_x_bogus(self):
-        from server.content.crawlers.signing.update_check import PINNED_COMMITS
-
         assert "x_bogus" in PINNED_COMMITS
-
-    def test_contains_wbi(self):
-        from server.content.crawlers.signing.update_check import PINNED_COMMITS
-
-        assert "wbi" in PINNED_COMMITS
 
     def test_all_values_are_strings(self):
         from server.content.crawlers.signing.update_check import PINNED_COMMITS
@@ -334,3 +402,8 @@ class TestPackageExports:
         from server.content.crawlers.signing import PINNED_COMMITS
 
         assert isinstance(PINNED_COMMITS, dict)
+
+    def test_signing_errors_importable_from_package(self):
+        from server.content.crawlers.signing import SigningError, SigningUnavailableError
+
+        assert issubclass(SigningUnavailableError, SigningError)

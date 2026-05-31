@@ -86,6 +86,14 @@ target-version = "py312"
 select = ["E", "F", "I", "N", "W"]
 ignore = ["E501"]
 
+[tool.ruff.lint.per-file-ignores]
+# Signing modules are faithful ports of upstream anti-bot algorithms
+# (a_bogus = GPL v3, x_bogus = Apache 2.0). Their identifier names mirror the
+# original source on purpose, so PEP8 naming checks (N802/N803/N806) are off
+# here to keep them auditable against upstream.
+"server/content/crawlers/signing/a_bogus.py" = ["N801", "N802", "N803", "N806"]
+"server/content/crawlers/signing/x_bogus.py" = ["N801", "N802", "N803", "N806", "E741"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["server/tests"]

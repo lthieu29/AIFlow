@@ -444,6 +444,25 @@ class CookieManager:
 # ─── Internal helpers ─────────────────────────────────────────────────────────
 
 
+def read_cookie_string(file_path: Optional[Path]) -> str:
+    """Read a Netscape cookie file and return a ``key=value; ...`` header string.
+
+    Args:
+        file_path: Path to a Netscape-format cookie file, or ``None``.
+
+    Returns:
+        Cookie header string suitable for an HTTP ``Cookie`` header, or an
+        empty string when *file_path* is ``None`` / missing / unparseable.
+    """
+    if file_path is None:
+        return ""
+    file_path = Path(file_path)
+    if not file_path.is_file():
+        return ""
+    cookies = _parse_netscape_file(file_path)
+    return format_cookie_string(cookies)
+
+
 def _parse_cookie_string(cookie_str: str) -> list[tuple[str, str]]:
     """Parse a ``key=value; key2=value2`` cookie string into (name, value) pairs.
 

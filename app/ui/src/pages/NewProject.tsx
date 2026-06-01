@@ -5,10 +5,20 @@
  * pick a skill and a TTS voice, then submit to POST /api/projects.
  */
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { apiClient } from "../api/client";
+import {
+  ArrowLeft,
+  DeviceMobile,
+  Monitor,
+  Square,
+  WarningCircle,
+} from "@phosphor-icons/react";
+import { apiClient, getSkills } from "../api/client";
+import type { SkillInfo } from "../api/client";
 import { useVoiceStore } from "../store";
+import Combobox, { type ComboOption } from "../components/Combobox";
+import { btnPrimary, inputWith, fieldLabel, link } from "../components/ui";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -57,9 +67,69 @@ const ADAPTERS: Record<AdapterName, AdapterMeta> = {
   },
 };
 
-const SKILLS = [
-  { id: "ecommerce-fashion", label: "Thời trang TMĐT" },
-];
+const ADAPTER_TYPE_BY_NAME: Record<AdapterName, string> = {
+  ecommerce_product: "ecommerce_product",
+  narrative_script: "narrative_script",
+  blog_article: "blog_article",
+  storyboard_manual: "storyboard_manual",
+};
+
+// Nhãn tiếng Việt cho skill (ID thư mục là khóa kỹ thuật, không đổi được).
+const SKILL_LABELS_VI: Record<string, string> = {
+  "ecommerce-beauty": "TMĐT — Mỹ phẩm",
+  "ecommerce-fashion": "TMĐT — Thời trang",
+  "ecommerce-food": "TMĐT — Ẩm thực",
+  "ecommerce-home": "TMĐT — Đồ gia dụng",
+  "ecommerce-jewelry": "TMĐT — Trang sức",
+  "ecommerce-tech": "TMĐT — Công nghệ",
+  "product-minimal-rotate": "Sản phẩm — Xoay tối giản",
+  "product-tech-launch": "Sản phẩm — Ra mắt công nghệ",
+  "cinematic-action": "Điện ảnh — Hành động",
+  "cinematic-drama": "Điện ảnh — Chính kịch",
+  "cinematic-noir": "Điện ảnh — Noir",
+  "cinematic-romance": "Điện ảnh — Lãng mạn",
+  "cinematic-thriller": "Điện ảnh — Giật gân",
+  "cinematic-period": "Điện ảnh — Cổ trang",
+  "explainer-tech": "Giải thích — Công nghệ",
+  "explainer-finance": "Giải thích — Tài chính",
+  "explainer-history": "Giải thích — Lịch sử",
+  "kdrama-romance": "Phim Hàn — Lãng mạn",
+  "action-extreme": "Hành động — Mạo hiểm",
+  "action-sports-pov": "Hành động — Thể thao POV",
+  "action-wuxia": "Hành động — Võ hiệp",
+  "nature-landscape": "Thiên nhiên — Phong cảnh",
+  "nature-wildlife": "Thiên nhiên — Động vật hoang dã",
+  "nature-timelapse": "Thiên nhiên — Tua nhanh",
+  "social-viral-hook": "Viral — Hook 3 giây",
+  "social-viral-transform": "Viral — Biến hình",
+  "social-viral-pet-comedy": "Viral — Thú cưng hài",
+  "social-viral-meme": "Viral — Meme",
+  "dialogue-interview": "Hội thoại — Phỏng vấn",
+  "dialogue-vlog": "Hội thoại — Vlog",
+  "dialogue-podcast-clip": "Hội thoại — Clip podcast",
+  "travel-vlog": "Đời sống — Du lịch vlog",
+  "lifestyle-wellness": "Đời sống — Sức khỏe",
+  "experimental-abstract": "Thử nghiệm — Trừu tượng",
+  "experimental-asmr": "Thử nghiệm — ASMR",
+  "chinese-ink-wash": "Tranh thủy mặc Trung Hoa",
+};
+
+function skillLabel(id: string, fallback: string): string {
+  return SKILL_LABELS_VI[id] ?? fallback ?? id;
+}
+
+function genderLabel(gender: string): string {
+  if (gender === "male") return "Nam";
+  if (gender === "female") return "Nữ";
+  if (gender === "neutral") return "Trung tính";
+  return gender;
+}
+
+const ASPECT_RATIOS = [
+  { value: "9:16", label: "9:16", Icon: DeviceMobile },
+  { value: "16:9", label: "16:9", Icon: Monitor },
+  { value: "1:1", label: "1:1", Icon: Square },
+] as const;
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -67,25 +137,39 @@ export default function NewProject() {
   const navigate = useNavigate();
   const { voices, loading: voicesLoading, fetchVoices } = useVoiceStore();
 
-  // Form state
   const [title, setTitle] = useState("");
   const [adapter, setAdapter] = useState<AdapterName>("ecommerce_product");
   const [inputValue, setInputValue] = useState("");
-  const [skillId, setSkillId] = useState("ecommerce-fashion");
+  const [skillId, setSkillId] = useState("");
   const [voiceId, setVoiceId] = useState("");
   const [aspectRatio, setAspectRatio] = useState<"9:16" | "16:9" | "1:1">("9:16");
 
-  // UI state
+  const [allSkills, setAllSkills] = useState<SkillInfo[]>([]);
+  const [skillsLoading, setSkillsLoading] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Load voices on mount
   useEffect(() => {
     fetchVoices();
   }, [fetchVoices]);
 
-  // Set default voice once voices load
+  useEffect(() => {
+    setSkillsLoading(true);
+    getSkills()
+      .then(setAllSkills)
+      .catch(() => setAllSkills([]))
+      .finally(() => setSkillsLoading(false));
+  }, []);
+
+  const adapterType = ADAPTER_TYPE_BY_NAME[adapter];
+  const compatibleSkills = allSkills.filter(
+    (s) =>
+      s.adapter_type === adapterType ||
+      (s.supported_adapters ?? []).includes(adapterType)
+  );
+
   useEffect(() => {
     if (voices.length > 0 && !voiceId) {
       const defaultVoice = voices.find((v) => v.id === "Binh") ?? voices[0];
@@ -93,11 +177,20 @@ export default function NewProject() {
     }
   }, [voices, voiceId]);
 
-  // Reset input when adapter changes
   useEffect(() => {
     setInputValue("");
     setFieldErrors({});
   }, [adapter]);
+
+  useEffect(() => {
+    if (compatibleSkills.length === 0) {
+      setSkillId("");
+      return;
+    }
+    if (!compatibleSkills.some((s) => s.id === skillId)) {
+      setSkillId(compatibleSkills[0].id);
+    }
+  }, [compatibleSkills, skillId]);
 
   // ─── Validation ─────────────────────────────────────────────────────────────
 
@@ -140,7 +233,6 @@ export default function NewProject() {
 
     if (!validate()) return;
 
-    // Build adapter_input based on adapter type
     let adapterInput: Record<string, unknown>;
     if (adapter === "ecommerce_product") {
       adapterInput = { product_image_path: inputValue.trim() };
@@ -182,28 +274,52 @@ export default function NewProject() {
     }
   }
 
-  // ─── Render ──────────────────────────────────────────────────────────────────
+  // ─── Combobox options ──────────────────────────────────────────────────────
 
   const adapterMeta = ADAPTERS[adapter];
 
-  return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="mb-6">
-        <Link to="/" className="text-sm text-blue-600 hover:underline">
-          ← Về trang chủ
-        </Link>
-        <h1 className="text-2xl font-bold mt-2">Dự án mới</h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Chọn loại đầu vào, điền thông tin, rồi tạo video của bạn.
-        </p>
-      </div>
+  const skillOptions: ComboOption[] = compatibleSkills.map((s) => ({
+    value: s.id,
+    label: skillLabel(s.id, s.name),
+  }));
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-6">
+  const voiceOptions: ComboOption[] = [
+    { value: "", label: "Dùng mặc định của skill" },
+    ...voices.map((v) => ({
+      value: v.id,
+      label: v.name + (v.is_custom ? " ★" : ""),
+      hint: `${v.language}, ${genderLabel(v.gender)}`,
+    })),
+  ];
+
+  const Required = () => (
+    <span aria-hidden="true" className="text-emerald-400">
+      *
+    </span>
+  );
+
+  // ─── Render ──────────────────────────────────────────────────────────────────
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
+      <Link to="/" className={link}>
+        <span className="inline-flex items-center gap-1.5">
+          <ArrowLeft size={16} />
+          Về trang chủ
+        </span>
+      </Link>
+      <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-50">
+        Dự án mới
+      </h1>
+      <p className="mt-1 text-sm text-zinc-400">
+        Chọn loại đầu vào, điền thông tin, rồi tạo video của bạn.
+      </p>
+
+      <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-7">
         {/* Project title */}
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-            Tên dự án <span aria-hidden="true" className="text-red-500">*</span>
+        <div className="space-y-2">
+          <label htmlFor="title" className={fieldLabel}>
+            Tên dự án <Required />
           </label>
           <input
             id="title"
@@ -213,54 +329,63 @@ export default function NewProject() {
             placeholder="Video sản phẩm của tôi"
             aria-required="true"
             aria-describedby={fieldErrors.title ? "title-error" : undefined}
-            className={`w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              fieldErrors.title ? "border-red-400" : "border-gray-300"
-            }`}
+            className={inputWith(Boolean(fieldErrors.title))}
           />
           {fieldErrors.title && (
-            <p id="title-error" role="alert" className="mt-1 text-xs text-red-600">
+            <p id="title-error" role="alert" className="flex items-center gap-1.5 text-xs text-rose-400">
+              <WarningCircle size={14} weight="fill" />
               {fieldErrors.title}
             </p>
           )}
         </div>
 
         {/* Adapter selector */}
-        <fieldset>
-          <legend className="block text-sm font-medium text-gray-700 mb-2">
-            Loại đầu vào <span aria-hidden="true" className="text-red-500">*</span>
+        <fieldset className="space-y-2">
+          <legend className={fieldLabel}>
+            Loại đầu vào <Required />
           </legend>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {(Object.entries(ADAPTERS) as [AdapterName, AdapterMeta][]).map(
-              ([key, meta]) => (
-                <label
-                  key={key}
-                  className={`flex flex-col gap-1 border rounded p-3 cursor-pointer transition-colors ${
-                    adapter === key
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:border-gray-400"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="adapter"
-                    value={key}
-                    checked={adapter === key}
-                    onChange={() => setAdapter(key)}
-                    className="sr-only"
-                  />
-                  <span className="text-sm font-medium">{meta.label}</span>
-                  <span className="text-xs text-gray-500">{meta.description}</span>
-                </label>
-              )
+              ([key, meta]) => {
+                const checked = adapter === key;
+                return (
+                  <label
+                    key={key}
+                    className={`flex cursor-pointer flex-col gap-1 rounded-xl border p-3.5 transition-colors ${
+                      checked
+                        ? "border-emerald-500/50 bg-emerald-500/10"
+                        : "border-white/10 bg-white/[0.02] hover:border-white/20"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="adapter"
+                      value={key}
+                      checked={checked}
+                      onChange={() => setAdapter(key)}
+                      className="sr-only"
+                    />
+                    <span
+                      className={`text-sm font-medium ${
+                        checked ? "text-emerald-100" : "text-zinc-200"
+                      }`}
+                    >
+                      {meta.label}
+                    </span>
+                    <span className="text-xs leading-relaxed text-zinc-500">
+                      {meta.description}
+                    </span>
+                  </label>
+                );
+              }
             )}
           </div>
         </fieldset>
 
         {/* Dynamic input field */}
-        <div>
-          <label htmlFor="adapter-input" className="block text-sm font-medium text-gray-700 mb-1">
-            {adapterMeta.inputLabel}{" "}
-            <span aria-hidden="true" className="text-red-500">*</span>
+        <div className="space-y-2">
+          <label htmlFor="adapter-input" className={fieldLabel}>
+            {adapterMeta.inputLabel} <Required />
           </label>
           {adapterMeta.inputType === "textarea" || adapterMeta.inputType === "json" ? (
             <textarea
@@ -271,9 +396,7 @@ export default function NewProject() {
               rows={6}
               aria-required="true"
               aria-describedby={fieldErrors.input ? "input-error" : undefined}
-              className={`w-full border rounded px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y ${
-                fieldErrors.input ? "border-red-400" : "border-gray-300"
-              }`}
+              className={`${inputWith(Boolean(fieldErrors.input))} resize-y font-mono`}
             />
           ) : (
             <input
@@ -284,115 +407,114 @@ export default function NewProject() {
               placeholder={adapterMeta.inputPlaceholder}
               aria-required="true"
               aria-describedby={fieldErrors.input ? "input-error" : undefined}
-              className={`w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                fieldErrors.input ? "border-red-400" : "border-gray-300"
-              }`}
+              className={inputWith(Boolean(fieldErrors.input))}
             />
           )}
           {fieldErrors.input && (
-            <p id="input-error" role="alert" className="mt-1 text-xs text-red-600">
+            <p id="input-error" role="alert" className="flex items-center gap-1.5 text-xs text-rose-400">
+              <WarningCircle size={14} weight="fill" />
               {fieldErrors.input}
             </p>
           )}
         </div>
 
         {/* Skill picker */}
-        <div>
-          <label htmlFor="skill" className="block text-sm font-medium text-gray-700 mb-1">
-            Skill <span aria-hidden="true" className="text-red-500">*</span>
-          </label>          <select
+        <div className="space-y-2">
+          <label htmlFor="skill" className={fieldLabel}>
+            Skill <Required />
+          </label>
+          <Combobox
             id="skill"
             value={skillId}
-            onChange={(e) => setSkillId(e.target.value)}
-            aria-describedby={fieldErrors.skill ? "skill-error" : undefined}
-            className={`w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white ${
-              fieldErrors.skill ? "border-red-400" : "border-gray-300"
-            }`}
-          >
-            {SKILLS.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.label}
-              </option>
-            ))}
-          </select>
+            onChange={setSkillId}
+            options={skillOptions}
+            disabled={skillsLoading || compatibleSkills.length === 0}
+            invalid={Boolean(fieldErrors.skill)}
+            placeholder={
+              skillsLoading
+                ? "Đang tải skill…"
+                : compatibleSkills.length === 0
+                ? "Không có skill phù hợp"
+                : "Chọn skill"
+            }
+            ariaDescribedby={fieldErrors.skill ? "skill-error" : undefined}
+          />
+          {!skillsLoading && (
+            <p className="text-xs text-zinc-500">
+              {compatibleSkills.length} skill phù hợp với loại "{adapterMeta.label}"
+            </p>
+          )}
           {fieldErrors.skill && (
-            <p id="skill-error" role="alert" className="mt-1 text-xs text-red-600">
+            <p id="skill-error" role="alert" className="flex items-center gap-1.5 text-xs text-rose-400">
+              <WarningCircle size={14} weight="fill" />
               {fieldErrors.skill}
             </p>
           )}
         </div>
 
         {/* Voice picker */}
-        <div>
-          <label htmlFor="voice" className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="space-y-2">
+          <label htmlFor="voice" className={fieldLabel}>
             Giọng nói (TTS)
           </label>
-          {voicesLoading ? (
-            <p className="text-sm text-gray-400">Đang tải giọng nói…</p>
-          ) : (
-            <select
-              id="voice"
-              value={voiceId}
-              onChange={(e) => setVoiceId(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            >
-              <option value="">— Dùng mặc định của skill —</option>
-              {voices.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.name} ({v.language}, {v.gender})
-                  {v.is_custom ? " ★ tùy chỉnh" : ""}
-                </option>
-              ))}
-            </select>
-          )}
+          <Combobox
+            id="voice"
+            value={voiceId}
+            onChange={setVoiceId}
+            options={voiceOptions}
+            disabled={voicesLoading}
+            placeholder={voicesLoading ? "Đang tải giọng nói…" : "Chọn giọng nói"}
+          />
         </div>
 
         {/* Aspect ratio */}
-        <fieldset>
-          <legend className="block text-sm font-medium text-gray-700 mb-2">
-            Tỉ lệ khung hình
-          </legend>
-          <div className="flex gap-3">
-            {(["9:16", "16:9", "1:1"] as const).map((ratio) => (
-              <label
-                key={ratio}
-                className={`flex items-center gap-2 border rounded px-3 py-2 cursor-pointer text-sm transition-colors ${
-                  aspectRatio === ratio
-                    ? "border-blue-500 bg-blue-50 font-medium"
-                    : "border-gray-200 hover:border-gray-400"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="aspect"
-                  value={ratio}
-                  checked={aspectRatio === ratio}
-                  onChange={() => setAspectRatio(ratio)}
-                  className="sr-only"
-                />
-                {ratio}
-              </label>
-            ))}
+        <fieldset className="space-y-2">
+          <legend className={fieldLabel}>Tỉ lệ khung hình</legend>
+          <div className="inline-flex gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-1">
+            {ASPECT_RATIOS.map(({ value, label, Icon }) => {
+              const checked = aspectRatio === value;
+              return (
+                <label
+                  key={value}
+                  className={`flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm transition-colors ${
+                    checked
+                      ? "bg-emerald-500 font-medium text-zinc-950"
+                      : "text-zinc-300 hover:bg-white/[0.06]"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="aspect"
+                    value={value}
+                    checked={checked}
+                    onChange={() => setAspectRatio(value)}
+                    className="sr-only"
+                  />
+                  <Icon size={16} weight={checked ? "fill" : "regular"} />
+                  {label}
+                </label>
+              );
+            })}
           </div>
         </fieldset>
 
         {/* Global error */}
         {error && (
-          <div role="alert" className="rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div
+            role="alert"
+            className="flex items-start gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200"
+          >
+            <WarningCircle size={18} weight="fill" className="mt-0.5 shrink-0 text-rose-400" />
             {error}
           </div>
         )}
 
         {/* Submit */}
-        <div className="flex items-center gap-4 pt-2">
-          <button
-            type="submit"
-            disabled={submitting}
-            className="px-6 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
+        <div className="flex items-center gap-4 pt-1">
+          <button type="submit" disabled={submitting} className={btnPrimary}>
             {submitting ? "Đang tạo…" : "Tạo dự án"}
           </button>
-          <Link to="/" className="text-sm text-gray-500 hover:underline">
+          <Link to="/" className="text-sm text-zinc-500 hover:text-zinc-300">
             Hủy
           </Link>
         </div>

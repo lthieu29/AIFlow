@@ -23,6 +23,7 @@ from sqlmodel import SQLModel, create_engine
 
 if TYPE_CHECKING:
     from sqlalchemy import Engine
+
     from server.config import Settings
 
 _engine: "Engine | None" = None
@@ -71,6 +72,13 @@ def bootstrap_schema(settings: "Settings") -> None:
     engine = get_engine(settings)
     SQLModel.metadata.create_all(engine)
 
+    # Additive, idempotent column migration for SQLite databases created
+    # before new columns were added to existing models. create_all() only
+    # creates missing *tables*, never alters existing ones — so we add any
+    # missing columns here. This is purely additive (never drops/renames) and
+    # a no-op when the columns already exist.
+    _ensure_columns(engine)
+
     # Set schema_version in Config table
     from sqlmodel import Session, select
 
@@ -81,6 +89,38 @@ def bootstrap_schema(settings: "Settings") -> None:
         if existing is None:
             session.add(models.Config(key="schema_version", value="0.1.0"))
             session.commit()
+
+
+# Columns added to existing tables after the initial schema. Each entry is
+# (table, column, SQL column definition). Applied idempotently on bootstrap.
+_ADDED_COLUMNS: list[tuple[str, str, str]] = [
+    ("scene", "prompt", "VARCHAR DEFAULT ''"),
+    ("scene", "narration", "VARCHAR DEFAULT ''"),
+    ("scene", "video_path", "VARCHAR"),
+    ("scene", "last_frame_path", "VARCHAR"),
+    ("scene", "audio_path", "VARCHAR"),
+]
+
+
+def _ensure_columns(engine: "Engine") -> None:
+    """Add any missing columns to existing tables (SQLite, additive only).
+
+    Uses ``PRAGMA table_info`` to detect existing columns and issues
+    ``ALTER TABLE ... ADD COLUMN`` only for the ones that are missing. Safe to
+    run on every startup.
+    """
+    from sqlalchemy import text
+
+    with engine.begin() as conn:
+        for table, column, ddl in _ADDED_COLUMNS:
+            rows = conn.execute(text(f'PRAGMA table_info("{table}")')).fetchall()
+            existing_cols = {r[1] for r in rows}  # r[1] = column name
+            if not rows:
+                continue  # table doesn't exist yet (create_all handles new DBs)
+            if column not in existing_cols:
+                conn.execute(
+                    text(f'ALTER TABLE "{table}" ADD COLUMN {column} {ddl}')
+                )
 
 
 def run_migrations(settings: "Settings") -> None:

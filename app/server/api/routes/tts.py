@@ -147,13 +147,76 @@ def list_voices(settings: Settings = Depends(get_settings)) -> list[VoiceInfo]:
     Returns preset voices (from ``voice_catalog.py``) followed by any custom
     voices found in ``storage/voice_gallery/catalog.json``.
 
+    For security, ``demo_audio_path`` is rewritten to a safe API URL
+    (``/tts/voices/{id}/demo``) rather than a real filesystem path — the UI
+    must fetch demos through the guarded route, never a raw path.
+
     Returns:
         List of ``VoiceInfo`` objects.
     """
     logger.debug("[tts:routes] GET /api/tts/voices — data_dir=%s", settings.data_dir)
     voices = get_all_voices(settings.data_dir)
-    logger.info("[tts:routes] returning %d voice(s)", len(voices))
-    return voices
+
+    # Rewrite demo path → safe API URL so we never leak filesystem paths and
+    # demos are only reachable through the path-checked /demo route.
+    safe_voices: list[VoiceInfo] = []
+    for v in voices:
+        if v.demo_audio_path:
+            v = v.model_copy(update={"demo_audio_path": f"/tts/voices/{v.id}/demo"})
+        safe_voices.append(v)
+
+    logger.info("[tts:routes] returning %d voice(s)", len(safe_voices))
+    return safe_voices
+
+
+@router.get("/voices/{voice_id}/demo")
+def get_voice_demo(
+    voice_id: str,
+    settings: Settings = Depends(get_settings),
+):
+    """Serve the demo audio file for a voice (path-traversal safe).
+
+    The demo file is resolved strictly inside
+    ``{data_dir}/voice_gallery/{voice_id}/`` via :func:`safe_file_or_404`, so
+    a malicious ``voice_id`` (e.g. ``../../cookies/bilibili``) is blocked with
+    403 and can never read files outside the voice-gallery directory.
+
+    Args:
+        voice_id: The voice identifier (preset or custom).
+        settings: Loaded application settings.
+
+    Returns:
+        ``FileResponse`` streaming the demo MP3.
+
+    Raises:
+        HTTPException 403: On path traversal attempts.
+        HTTPException 404: If the voice or its demo file does not exist.
+    """
+    from fastapi.responses import FileResponse
+
+    from server.api.safe_files import safe_file_or_404
+
+    gallery_base = Path(settings.data_dir) / _VOICE_GALLERY_SUBDIR
+
+    # Resolve the catalog entry to find the demo filename (custom voices).
+    catalog = _load_catalog(settings.data_dir)
+    entry = _find_in_catalog(catalog, voice_id)
+
+    demo_rel: Optional[str] = None
+    if entry is not None:
+        raw_demo = entry.get("demo_audio_path") or entry.get("demo_file")
+        if raw_demo:
+            # Stored path may be absolute or relative; we only trust the
+            # filename portion and re-anchor it under the voice's own folder.
+            demo_rel = Path(raw_demo).name
+
+    if demo_rel is None:
+        # Fall back to a conventional demo filename inside the voice folder.
+        demo_rel = "demo.mp3"
+
+    # safe_file_or_404 guarantees the final path stays inside gallery_base.
+    demo_path = safe_file_or_404(gallery_base, voice_id, demo_rel)
+    return FileResponse(path=str(demo_path), media_type="audio/mpeg")
 
 
 @router.post("/synthesize", response_model=SynthesizeResponse)

@@ -10,7 +10,6 @@ Usage:
 """
 
 import os
-import warnings
 from pathlib import Path
 from typing import Any, Literal, Optional
 
@@ -44,12 +43,6 @@ class GeminiSettings(BaseModel):
                 "Get one (free) at: https://aistudio.google.com/app/apikey\n"
                 "Then add to your .env file:\n"
                 "    AIFLOW_GEMINI_API_KEY=AIzaSy...\n"
-            )
-        if not key.startswith("AIza"):
-            warnings.warn(
-                "AIFLOW_GEMINI_API_KEY does not start with 'AIza' — "
-                "this may not be a valid Google API key. Continuing anyway.",
-                stacklevel=2,
             )
         return self
 

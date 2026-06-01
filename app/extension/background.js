@@ -57,6 +57,12 @@ const state = {
 chrome.runtime.onInstalled.addListener(init);
 chrome.runtime.onStartup.addListener(init);
 
+// MV3 service workers can wake up without firing onInstalled/onStartup
+// (e.g. after an idle unload, an alarm, or a manual reload). Kick off init()
+// at top level too so discovery/connection always starts. init() is
+// idempotent — connectAgent() guards against duplicate sockets.
+init().catch((e) => console.error('[AIFlow] init failed:', e));
+
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'reconnect') {
     connectAgent(state, dispatchMessage).catch((e) =>
@@ -66,7 +72,13 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'keepAlive') keepAlive();
 });
 
+let _initStarted = false;
+
 async function init() {
+  // Guard against duplicate init() runs (top-level call + onInstalled/onStartup).
+  if (_initStarted) return;
+  _initStarted = true;
+
   const data = await chrome.storage.local.get(['flowKey', 'flowCapturedAt', 'metrics', 'callbackSecret']);
   if (data.flowKey)        state.flow.token      = data.flowKey;
   if (data.flowCapturedAt) state.flow.capturedAt = data.flowCapturedAt;

@@ -89,6 +89,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     app.state.video_poller = video_poller
     logger.info("VideoPoller started")
 
+    # 7. Auto-discover content adapters into the shared REGISTRY so API routes
+    #    (POST /api/projects, /api/content/parse) can resolve adapters by type.
+    from server.content.registry import REGISTRY
+
+    REGISTRY.auto_discover("server.content.adapters")
+    logger.info(f"Content adapters discovered: {REGISTRY.list_types()}")
+
     yield  # Server is running
 
     # Shutdown: stop VideoPoller first, then cancel background tasks
@@ -114,13 +121,14 @@ def create_app() -> FastAPI:
 
     # Register routers
     from server.api.routes.content import router as content_router
+    from server.api.routes.export import router as export_router
     from server.api.routes.ext_callback import router as ext_callback_router
     from server.api.routes.ext_discovery import router as ext_discovery_router
-    from server.api.routes.export import router as export_router
     from server.api.routes.health import router as health_router
     from server.api.routes.jobs import router as jobs_router
     from server.api.routes.projects import router as projects_router
     from server.api.routes.scenes import router as scenes_router
+    from server.api.routes.skills import router as skills_router
     from server.api.routes.tts import router as tts_router
     from server.api.routes.ws import router as ws_router
 
@@ -131,6 +139,7 @@ def create_app() -> FastAPI:
     app.include_router(export_router)
     app.include_router(projects_router)
     app.include_router(scenes_router)
+    app.include_router(skills_router)
     app.include_router(content_router)
     app.include_router(jobs_router)
     app.include_router(ws_router)

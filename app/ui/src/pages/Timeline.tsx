@@ -8,7 +8,19 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import {
+  CaretUp,
+  CaretDown,
+  X,
+  Plus,
+  ArrowLeft,
+  ArrowRight,
+  WarningCircle,
+  CheckCircle,
+  Sparkle,
+} from "@phosphor-icons/react";
 import { apiClient } from "../api/client";
+import { btnPrimary, btnGhost, input as inputCls, card } from "../components/ui";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,7 +44,13 @@ interface ProjectDetail {
 
 type GenerationStatus = "idle" | "running" | "success" | "failed";
 
-// ─── Scene row component ──────────────────────────────────────────────────────
+const STATUS_STYLES: Record<string, string> = {
+  approved: "bg-emerald-500/15 text-emerald-300",
+  generating: "bg-amber-500/15 text-amber-300",
+  rejected: "bg-rose-500/15 text-rose-300",
+};
+
+// ─── Scene row ────────────────────────────────────────────────────────────────
 
 interface SceneRowProps {
   scene: SceneData;
@@ -45,6 +63,9 @@ interface SceneRowProps {
   onRemove: (id: string) => void;
 }
 
+const iconBtn =
+  "rounded-lg p-1.5 text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60";
+
 function SceneRow({
   scene,
   index,
@@ -56,65 +77,57 @@ function SceneRow({
   onRemove,
 }: SceneRowProps) {
   return (
-    <div className="border border-gray-200 rounded-lg p-4 bg-white space-y-3">
+    <div className={`${card} space-y-3 p-4`}>
       {/* Header row */}
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
           Cảnh {index + 1}
         </span>
 
-        {/* Status badge */}
         <span
-          className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-            scene.status === "approved"
-              ? "bg-green-100 text-green-700"
-              : scene.status === "generating"
-              ? "bg-yellow-100 text-yellow-700"
-              : scene.status === "rejected"
-              ? "bg-red-100 text-red-700"
-              : "bg-gray-100 text-gray-500"
+          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+            STATUS_STYLES[scene.status] ?? "bg-white/[0.06] text-zinc-400"
           }`}
         >
           {scene.status}
         </span>
 
-        {/* Reorder + remove controls */}
-        <div className="flex items-center gap-1 ml-auto">
+        <div className="ml-auto flex items-center gap-0.5">
           <button
             type="button"
             onClick={() => onMoveUp(scene.scene_id)}
             disabled={disabled || index === 0}
             aria-label={`Di chuyển cảnh ${index + 1} lên`}
-            className="p-1 rounded text-gray-400 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className={iconBtn}
           >
-            ▲
+            <CaretUp size={16} weight="bold" />
           </button>
           <button
             type="button"
             onClick={() => onMoveDown(scene.scene_id)}
             disabled={disabled || index === total - 1}
             aria-label={`Di chuyển cảnh ${index + 1} xuống`}
-            className="p-1 rounded text-gray-400 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className={iconBtn}
           >
-            ▼
+            <CaretDown size={16} weight="bold" />
           </button>
           <button
             type="button"
             onClick={() => onRemove(scene.scene_id)}
             disabled={disabled || total <= 1}
             aria-label={`Xóa cảnh ${index + 1}`}
-            className="p-1 rounded text-red-300 hover:text-red-600 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-400 ml-1"
+            className={`${iconBtn} hover:bg-rose-500/10 hover:text-rose-400`}
           >
-            ✕
+            <X size={16} weight="bold" />
           </button>
         </div>
       </div>
 
       {/* Visual prompt */}
-      <div>
+      <div className="space-y-1.5">
         <label
           htmlFor={`prompt-${scene.scene_id}`}
-          className="block text-xs font-medium text-gray-600 mb-1"
+          className="block text-xs font-medium text-zinc-400"
         >
           Prompt hình ảnh
         </label>
@@ -124,15 +137,15 @@ function SceneRow({
           onChange={(e) => onChange(scene.scene_id, "visual_prompt", e.target.value)}
           disabled={disabled}
           rows={2}
-          className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-y disabled:bg-gray-50 disabled:text-gray-400"
+          className={`${inputCls} resize-y`}
         />
       </div>
 
       {/* Narration */}
-      <div>
+      <div className="space-y-1.5">
         <label
           htmlFor={`narration-${scene.scene_id}`}
-          className="block text-xs font-medium text-gray-600 mb-1"
+          className="block text-xs font-medium text-zinc-400"
         >
           Lời thuyết minh (TTS)
         </label>
@@ -142,7 +155,7 @@ function SceneRow({
           onChange={(e) => onChange(scene.scene_id, "narration", e.target.value)}
           disabled={disabled}
           rows={2}
-          className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-y disabled:bg-gray-50 disabled:text-gray-400"
+          className={`${inputCls} resize-y`}
         />
       </div>
 
@@ -150,7 +163,7 @@ function SceneRow({
       <div className="flex items-center gap-3">
         <label
           htmlFor={`duration-${scene.scene_id}`}
-          className="text-xs font-medium text-gray-600 whitespace-nowrap"
+          className="whitespace-nowrap text-xs font-medium text-zinc-400"
         >
           Thời lượng (giây)
         </label>
@@ -165,9 +178,9 @@ function SceneRow({
             onChange(scene.scene_id, "duration_sec", parseFloat(e.target.value) || 8)
           }
           disabled={disabled}
-          className="w-24 border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-50 disabled:text-gray-400"
+          className={`${inputCls} w-24`}
         />
-        <span className="text-xs text-gray-400">3 – 30 s</span>
+        <span className="text-xs text-zinc-500">3 – 30 s</span>
       </div>
     </div>
   );
@@ -187,6 +200,8 @@ export default function Timeline() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [genStatus, setGenStatus] = useState<GenerationStatus>("idle");
   const [genProgress, setGenProgress] = useState(0);
+  const [jobId, setJobId] = useState<number | null>(null);
+  const [dryRun, setDryRun] = useState(false);
 
   const sseRef = useRef<EventSource | null>(null);
 
@@ -197,11 +212,41 @@ export default function Timeline() {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await apiClient.get<ProjectDetail>(`/projects/${projectId}`);
-      setProject(data);
-      // Sort scenes by order
-      const sorted = [...(data.scenes ?? [])].sort((a, b) => a.order - b.order);
-      setScenes(sorted);
+      const { data } = await apiClient.get<{
+        short_id: string;
+        name: string;
+        status: string;
+        skill: string;
+        scenes: Array<{
+          id: number;
+          order: number;
+          duration: number;
+          status: string;
+          location_hint: string;
+          prompt?: string;
+          narration?: string;
+        }>;
+      }>(`/projects/${projectId}`);
+
+      setProject({
+        short_id: data.short_id,
+        title: data.name,
+        status: data.status,
+        skill: data.skill,
+        scenes: [],
+      });
+
+      const mapped: SceneData[] = (data.scenes ?? []).map((s) => ({
+        scene_id: String(s.id),
+        order: s.order,
+        duration_sec: s.duration,
+        narration: s.narration ?? "",
+        visual_prompt: s.prompt ?? "",
+        status: s.status,
+        location_hint: s.location_hint,
+      }));
+      mapped.sort((a, b) => a.order - b.order);
+      setScenes(mapped);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Không tải được dự án.");
     } finally {
@@ -213,25 +258,19 @@ export default function Timeline() {
     void loadProject();
   }, [loadProject]);
 
-  // ─── SSE live updates ──────────────────────────────────────────────────────
+  // ─── SSE live updates (job progress) ───────────────────────────────────────
 
   useEffect(() => {
-    if (!projectId) return;
+    if (jobId === null) return;
 
-    const es = new EventSource(
-      `/api/events?topics=jobs,scenes,project&project_id=${projectId}`
-    );
+    const es = new EventSource(`/api/jobs/${jobId}/stream`);
     sseRef.current = es;
 
-    es.addEventListener("job.update", (e: MessageEvent) => {
+    es.addEventListener("job.status", (e: MessageEvent) => {
       try {
-        const payload = JSON.parse(e.data as string) as {
-          status: string;
-          progress: number;
-        };
+        const payload = JSON.parse(e.data as string) as { status: string };
         if (payload.status === "running") {
           setGenStatus("running");
-          setGenProgress(payload.progress ?? 0);
         } else if (payload.status === "success") {
           setGenStatus("success");
           setGenProgress(1);
@@ -243,34 +282,28 @@ export default function Timeline() {
       }
     });
 
-    es.addEventListener("scene.update", (e: MessageEvent) => {
-      try {
-        const updated = JSON.parse(e.data as string) as SceneData;
-        setScenes((prev) =>
-          prev.map((s) => (s.scene_id === updated.scene_id ? { ...s, ...updated } : s))
-        );
-      } catch {
-        // ignore
-      }
-    });
-
-    es.addEventListener("project.status", (e: MessageEvent) => {
+    es.addEventListener("job.done", (e: MessageEvent) => {
       try {
         const payload = JSON.parse(e.data as string) as { status: string };
-        if (payload.status === "done") {
+        if (payload.status === "success") {
           setGenStatus("success");
           setGenProgress(1);
+          void loadProject();
+        } else {
+          setGenStatus("failed");
         }
       } catch {
         // ignore
       }
+      es.close();
+      sseRef.current = null;
     });
 
     return () => {
       es.close();
       sseRef.current = null;
     };
-  }, [projectId]);
+  }, [jobId, loadProject]);
 
   // ─── Scene mutations ───────────────────────────────────────────────────────
 
@@ -306,9 +339,7 @@ export default function Timeline() {
 
   function handleRemove(id: string) {
     setScenes((prev) =>
-      prev
-        .filter((s) => s.scene_id !== id)
-        .map((s, i) => ({ ...s, order: i }))
+      prev.filter((s) => s.scene_id !== id).map((s, i) => ({ ...s, order: i }))
     );
   }
 
@@ -332,15 +363,13 @@ export default function Timeline() {
     setSaving(true);
     setSaveError(null);
     try {
-      // PATCH each scene that has a real ID (not local_*)
       const patches = scenes
         .filter((s) => !s.scene_id.startsWith("local_"))
         .map((s) =>
           apiClient.patch(`/scenes/${s.scene_id}`, {
-            order: s.order,
-            duration_sec: s.duration_sec,
+            duration: s.duration_sec,
             narration: s.narration,
-            visual_prompt: s.visual_prompt,
+            prompt: s.visual_prompt,
           })
         );
       await Promise.all(patches);
@@ -359,10 +388,12 @@ export default function Timeline() {
     setGenProgress(0);
     setSaveError(null);
     try {
-      // Save first
       await handleSave();
-      // Then kick off generation
-      await apiClient.post(`/projects/${projectId}/generate`);
+      const { data } = await apiClient.post<{ job_id: number; status: string }>(
+        `/projects/${projectId}/generate`,
+        { dry_run: dryRun }
+      );
+      setJobId(data.job_id);
     } catch (err: unknown) {
       setGenStatus("failed");
       setSaveError(
@@ -378,7 +409,7 @@ export default function Timeline() {
 
   if (loading) {
     return (
-      <div className="p-8 text-gray-500" aria-live="polite">
+      <div className="px-6 py-10 text-sm text-zinc-500" aria-live="polite">
         Đang tải dự án…
       </div>
     );
@@ -386,39 +417,57 @@ export default function Timeline() {
 
   if (error) {
     return (
-      <div className="p-8">
-        <p role="alert" className="text-red-600 mb-4">
+      <div className="mx-auto max-w-3xl px-6 py-10">
+        <p
+          role="alert"
+          className="mb-4 flex items-center gap-2 text-sm text-rose-300"
+        >
+          <WarningCircle size={18} weight="fill" className="text-rose-400" />
           {error}
         </p>
-        <Link to="/" className="text-blue-600 hover:underline text-sm">
-          ← Về trang chủ
+        <Link to="/" className={btnGhost}>
+          <ArrowLeft size={16} />
+          Về trang chủ
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <Link to="/" className="text-sm text-blue-600 hover:underline">
-            ← Quay lại
+        <div className="min-w-0">
+          <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-emerald-400 hover:text-emerald-300">
+            <ArrowLeft size={16} />
+            Quay lại
           </Link>
-          <h1 className="text-2xl font-bold mt-1">{project?.title ?? projectId}</h1>
-          <p className="text-xs text-gray-400 mt-0.5">
-            {scenes.length} cảnh ·{" "}
-            {totalDuration.toFixed(1)} giây tổng
+          <h1 className="mt-1 truncate text-2xl font-semibold tracking-tight text-zinc-50">
+            {project?.title ?? projectId}
+          </h1>
+          <p className="mt-0.5 text-xs text-zinc-500">
+            {scenes.length} cảnh · {totalDuration.toFixed(1)} giây tổng
           </p>
         </div>
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex shrink-0 items-center gap-2">
+          <label className="mr-1 inline-flex cursor-pointer select-none items-center gap-1.5 text-xs text-zinc-400">
+            <input
+              type="checkbox"
+              checked={dryRun}
+              onChange={(e) => setDryRun(e.target.checked)}
+              disabled={isGenerating}
+              className="h-3.5 w-3.5 rounded border-white/20 bg-transparent accent-emerald-500"
+            />
+            <span title="Tạo video placeholder cục bộ, không gọi Veo3, không tốn credit">
+              Chạy thử
+            </span>
+          </label>
           <button
             type="button"
             onClick={() => void handleSave()}
             disabled={saving || isGenerating}
-            className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className={btnGhost}
           >
             {saving ? "Đang lưu…" : "Lưu"}
           </button>
@@ -426,8 +475,9 @@ export default function Timeline() {
             type="button"
             onClick={() => void handleGenerate()}
             disabled={isGenerating || scenes.length === 0}
-            className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className={btnPrimary}
           >
+            <Sparkle size={16} weight="fill" />
             {isGenerating ? "Đang tạo…" : "Tạo video"}
           </button>
         </div>
@@ -436,17 +486,15 @@ export default function Timeline() {
       {/* Progress bar */}
       {(isGenerating || genStatus === "success") && (
         <div className="mb-6" aria-live="polite" aria-label="Tiến trình tạo video">
-          <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+          <div className="mb-1.5 flex items-center justify-between text-xs text-zinc-400">
             <span>
-              {genStatus === "success" ? "Tạo video hoàn tất!" : "Đang tạo video…"}
+              {genStatus === "success" ? "Tạo video hoàn tất" : "Đang tạo video…"}
             </span>
             <span>{Math.round(genProgress * 100)}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
             <div
-              className={`h-2 rounded-full transition-all duration-500 ${
-                genStatus === "success" ? "bg-green-500" : "bg-blue-500"
-              }`}
+              className="h-full rounded-full bg-emerald-500 transition-all duration-500"
               style={{ width: `${Math.round(genProgress * 100)}%` }}
               role="progressbar"
               aria-valuenow={Math.round(genProgress * 100)}
@@ -459,9 +507,10 @@ export default function Timeline() {
               <button
                 type="button"
                 onClick={() => navigate(`/export/${projectId ?? ""}`)}
-                className="text-sm text-blue-600 hover:underline"
+                className="inline-flex items-center gap-1.5 text-sm text-emerald-400 hover:text-emerald-300"
               >
-                Tới trang Xuất →
+                Tới trang Xuất
+                <ArrowRight size={16} />
               </button>
             </div>
           )}
@@ -470,14 +519,22 @@ export default function Timeline() {
 
       {/* Generation failed */}
       {genStatus === "failed" && (
-        <div role="alert" className="mb-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div
+          role="alert"
+          className="mb-4 flex items-start gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200"
+        >
+          <WarningCircle size={18} weight="fill" className="mt-0.5 shrink-0 text-rose-400" />
           Tạo video thất bại. Kiểm tra log server và thử lại.
         </div>
       )}
 
       {/* Save error */}
       {saveError && (
-        <div role="alert" className="mb-4 rounded border border-orange-300 bg-orange-50 px-4 py-3 text-sm text-orange-700">
+        <div
+          role="alert"
+          className="mb-4 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200"
+        >
+          <WarningCircle size={18} weight="fill" className="mt-0.5 shrink-0 text-amber-400" />
           {saveError}
         </div>
       )}
@@ -504,19 +561,18 @@ export default function Timeline() {
         type="button"
         onClick={handleAddScene}
         disabled={isGenerating}
-        className="mt-4 w-full border-2 border-dashed border-gray-300 rounded-lg py-3 text-sm text-gray-400 hover:border-blue-400 hover:text-blue-500 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 py-3 text-sm text-zinc-500 transition-colors hover:border-emerald-500/40 hover:text-emerald-400 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60"
       >
-        + Thêm cảnh
+        <Plus size={16} weight="bold" />
+        Thêm cảnh
       </button>
 
       {/* Bottom export link */}
       {project?.status === "done" && (
         <div className="mt-6 text-center">
-          <Link
-            to={`/export/${projectId ?? ""}`}
-            className="inline-block px-6 py-2 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-          >
-            Xem trang Xuất →
+          <Link to={`/export/${projectId ?? ""}`} className={btnPrimary}>
+            <CheckCircle size={16} weight="fill" />
+            Xem trang Xuất
           </Link>
         </div>
       )}

@@ -40,11 +40,20 @@ class Scene(SQLModel, table=True):
     order: int  # 0-based position in the scene list
     duration: float = 8.0  # seconds; Veo3 fixed at 8s, may be adjusted by audio
 
+    # Generation content (populated by the ContentAdapter via /api/projects create)
+    prompt: str = Field(default="")          # Veo3 visual prompt for this scene
+    narration: str = Field(default="")       # TTS narration text (may be empty)
+
     # Status state machine: draft → queued → generating → quality_check → approved/rejected
     status: str = Field(default="draft")
 
     # REVIEW-02 #6 — constrained Literal, stored as VARCHAR in SQLite
     location_hint: str = Field(default="unspecified")
+
+    # Pipeline outputs (populated during generation)
+    video_path: Optional[str] = Field(default=None)       # downloaded clip mp4
+    last_frame_path: Optional[str] = Field(default=None)  # Layer 3 chain frame
+    audio_path: Optional[str] = Field(default=None)       # synthesised narration mp3
 
     created_at: datetime = Field(default_factory=_utcnow)
     updated_at: datetime = Field(default_factory=_utcnow)

@@ -119,8 +119,11 @@ def test_missing_api_key_raises_config_error(tmp_path, monkeypatch):
 
     from server.config import load_settings, ConfigError
 
+    # Point at a non-existent env file so the ambient project .env (which may
+    # contain a real key on the developer's machine) does not leak into the test.
+    missing_env = tmp_path / "nonexistent.env"
     with pytest.raises(ConfigError) as exc_info:
-        load_settings()
+        load_settings(env_file=missing_env)
 
     error_msg = str(exc_info.value)
     assert "AIFLOW_GEMINI_API_KEY" in error_msg
@@ -133,8 +136,9 @@ def test_empty_api_key_raises_config_error(tmp_path, monkeypatch):
 
     from server.config import load_settings, ConfigError
 
+    missing_env = tmp_path / "nonexistent.env"
     with pytest.raises(ConfigError):
-        load_settings()
+        load_settings(env_file=missing_env)
 
 
 def test_config_error_message_is_helpful(tmp_path, monkeypatch):
@@ -144,8 +148,9 @@ def test_config_error_message_is_helpful(tmp_path, monkeypatch):
 
     from server.config import load_settings, ConfigError
 
+    missing_env = tmp_path / "nonexistent.env"
     with pytest.raises(ConfigError) as exc_info:
-        load_settings()
+        load_settings(env_file=missing_env)
 
     error_msg = str(exc_info.value)
     # Should guide the user to get a key

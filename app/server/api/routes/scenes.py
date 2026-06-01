@@ -75,6 +75,8 @@ class ScenePatchRequest(BaseModel):
     duration: Optional[float] = None
     status: Optional[str] = None
     location_hint: Optional[str] = None
+    prompt: Optional[str] = None
+    narration: Optional[str] = None
 
 
 class ScenePatchResponse(BaseModel):
@@ -84,6 +86,8 @@ class ScenePatchResponse(BaseModel):
     duration: float
     status: str
     location_hint: str
+    prompt: str = ""
+    narration: str = ""
     updated_at: datetime
 
 
@@ -201,6 +205,12 @@ def patch_scene(
     if body.location_hint is not None:
         scene.location_hint = body.location_hint
 
+    if body.prompt is not None:
+        scene.prompt = body.prompt
+
+    if body.narration is not None:
+        scene.narration = body.narration
+
     scene.updated_at = datetime.now(timezone.utc)
     session.add(scene)
     session.commit()
@@ -212,6 +222,8 @@ def patch_scene(
         duration=scene.duration,
         status=scene.status,
         location_hint=scene.location_hint,
+        prompt=getattr(scene, "prompt", "") or "",
+        narration=getattr(scene, "narration", "") or "",
         updated_at=scene.updated_at,
     )
 

@@ -132,3 +132,18 @@ export async function getHealth(): Promise<HealthResponse> {
   const { data } = await apiClient.get<HealthResponse>("/health");
   return data;
 }
+
+/** Skill metadata — mirrors server/api/routes/skills.py SkillInfo */
+export interface SkillInfo {
+  id: string;
+  name: string;
+  adapter_type: string;
+  supported_adapters: string[];
+  description: string | null;
+}
+
+/** GET /api/skills — list all available skills (data-only packs) */
+export async function getSkills(): Promise<SkillInfo[]> {
+  const { data } = await apiClient.get<SkillInfo[]>("/skills");
+  return data;
+}

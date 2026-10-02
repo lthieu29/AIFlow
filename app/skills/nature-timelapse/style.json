@@ -1,0 +1,19 @@
+{
+  "art_style": "time-lapse landscape photography, documentary nature grade",
+  "lighting": "transition from blue hour to golden hour to night; fixed-camera natural light progression",
+  "color_palette": "blue-hour indigo, sunrise amber, daylight cyan, sunset orange, twilight magenta — full progression",
+  "camera_rules": "absolutely locked-off; absolutely no camera motion; wide or extreme wide shot framing only",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "any camera motion",
+    "people in frame",
+    "real identifiable persons",
+    "drone propeller artefacts",
+    "cars or vehicles in frame",
+    "cartoon style"
+  ],
+  "aspect_ratio": "21:9"
+}

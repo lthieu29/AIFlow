@@ -1,0 +1,344 @@
+[
+  {
+    "module": "github.com/MakeNowJust/heredoc",
+    "version": "v1.0.0",
+    "archive_bytes": 5490,
+    "archive_files": 8,
+    "h1": "h1:cXCdzVdstXyiTqTvfqk9SDHpKNjxuom+DOlyEeQ4pzQ=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/atotto/clipboard",
+    "version": "v0.1.4",
+    "archive_bytes": 8606,
+    "archive_files": 13,
+    "h1": "h1:EH0zSVneZPSuFR11BlR9YppQTVDbh5+16AmcJi4g1z4=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/aymanbagabas/go-osc52/v2",
+    "version": "v2.0.1",
+    "archive_bytes": 7855,
+    "archive_files": 9,
+    "h1": "h1:HwpRHbFMcZLEVr42D4p7XBqjyuxQH5SMiErDT4WkJ2k=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/aymanbagabas/go-udiff",
+    "version": "v0.3.1",
+    "archive_bytes": 44969,
+    "archive_files": 33,
+    "h1": "h1:LV+qyBQ2pqe0u42ZsUEtPiCaUoqgA9gYRDs3vj1nolY=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/charmbracelet/bubbles",
+    "version": "v1.0.0",
+    "archive_bytes": 109639,
+    "archive_files": 74,
+    "h1": "h1:12J8/ak/uCZEMQ6KU7pcfwceyjLlWsDLAxB5fXonfvc=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/charmbracelet/bubbletea",
+    "version": "v1.3.10",
+    "archive_bytes": 78208,
+    "archive_files": 54,
+    "h1": "h1:otUDHWMMzQSB0Pkc87rm691KZ3SWa4KUlvF9nRvCICw=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/charmbracelet/colorprofile",
+    "version": "v0.4.1",
+    "archive_bytes": 21631,
+    "archive_files": 27,
+    "h1": "h1:a1lO03qTrSIRaK8c3JRxJDZOvhvIeSco3ej+ngLk1kk=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/charmbracelet/lipgloss",
+    "version": "v1.1.0",
+    "archive_bytes": 118462,
+    "archive_files": 90,
+    "h1": "h1:vYXsiLHVkK7fp74RkV7b2kq9+zDLoEU4MZoFqR/noCY=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/charmbracelet/x/ansi",
+    "version": "v0.11.8",
+    "archive_bytes": 172952,
+    "archive_files": 112,
+    "h1": "h1:JMFwp0CgDC2+jcOB162HH5k7I3FVbgFSMMYg7dSPBQQ=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/charmbracelet/x/cellbuf",
+    "version": "v0.0.15",
+    "archive_bytes": 42692,
+    "archive_files": 22,
+    "h1": "h1:ur3pZy0o6z/R7EylET877CBxaiE1Sp1GMxoFPAIztPI=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/charmbracelet/x/term",
+    "version": "v0.2.2",
+    "archive_bytes": 8201,
+    "archive_files": 13,
+    "h1": "h1:xVRT/S2ZcKdhhOuSP4t5cLi5o+JxklsoEObBSgfgZRk=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/clipperhouse/displaywidth",
+    "version": "v0.11.0",
+    "archive_bytes": 79386,
+    "archive_files": 23,
+    "h1": "h1:lBc6kY44VFw+TDx4I8opi/EtL9m20WSEFgwIwO+UVM8=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/clipperhouse/uax29/v2",
+    "version": "v2.7.0",
+    "archive_bytes": 319061,
+    "archive_files": 68,
+    "h1": "h1:+gs4oBZ2gPfVrKPthwbMzWZDaAFPGYK72F0NJv2v7Vk=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/davecgh/go-spew",
+    "version": "v1.1.1",
+    "archive_bytes": 60320,
+    "archive_files": 24,
+    "h1": "h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/erikgeiser/coninput",
+    "version": "v0.0.0-20211004153227-1c3628e74d0f",
+    "archive_bytes": 11748,
+    "archive_files": 11,
+    "h1": "h1:Y/CXytFA4m6baUTXGLOoWe4PQhGxaX0KpnayAqC48p4=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/gofrs/flock",
+    "version": "v0.13.0",
+    "archive_bytes": 23680,
+    "archive_files": 21,
+    "h1": "h1:95JolYOvGMqeH31+FC7D2+uULf6mG61mEZ/A8dRYMzw=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/lucasb-eyer/go-colorful",
+    "version": "v1.4.0",
+    "archive_bytes": 976519,
+    "archive_files": 45,
+    "h1": "h1:UtrWVfLdarDgc44HcS7pYloGHJUjHV/4FwW4TvVgFr4=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/mattn/go-isatty",
+    "version": "v0.0.20",
+    "archive_bytes": 8936,
+    "archive_files": 17,
+    "h1": "h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/mattn/go-localereader",
+    "version": "v0.0.1",
+    "archive_bytes": 3031,
+    "archive_files": 6,
+    "h1": "h1:ygSAOl7ZXTx4RdPYinUpg6W99U8jWvWi9Ye2JC/oIi4=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/mattn/go-runewidth",
+    "version": "v0.0.24",
+    "archive_bytes": 26948,
+    "archive_files": 20,
+    "h1": "h1:cpokDiIn0MGnhdHwuWnJBITySJ20QyNGnY2kR/ay2DU=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/muesli/ansi",
+    "version": "v0.0.0-20230316100256-276c6243b2f6",
+    "archive_bytes": 10404,
+    "archive_files": 17,
+    "h1": "h1:ZK8zHtRHOkbHy6Mmr5D264iyp3TiX5OmNcI5cIARiQI=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/muesli/cancelreader",
+    "version": "v0.2.2",
+    "archive_bytes": 17969,
+    "archive_files": 24,
+    "h1": "h1:3I4Kt4BQjOR54NavqnDogx/MIoWBFa0StPA8ELUXHmA=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/muesli/termenv",
+    "version": "v0.16.0",
+    "archive_bytes": 433551,
+    "archive_files": 48,
+    "h1": "h1:S5AlUN9dENB57rsbnkPyfdGuWIlkmzJjbFf0Tf5FWUc=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/pmezard/go-difflib",
+    "version": "v1.0.0",
+    "archive_bytes": 12433,
+    "archive_files": 5,
+    "h1": "h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/rivo/uniseg",
+    "version": "v0.4.7",
+    "archive_bytes": 481951,
+    "archive_files": 36,
+    "h1": "h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/stretchr/testify",
+    "version": "v1.11.1",
+    "archive_bytes": 134860,
+    "archive_files": 63,
+    "h1": "h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/voocel/agentcore",
+    "version": "v1.8.3",
+    "archive_bytes": 289254,
+    "archive_files": 91,
+    "h1": "h1:nTUVWlxRc+8FAO1S5xAtpjjOSiswnJooMsRKO/imSlU=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/voocel/litellm",
+    "version": "v1.8.10",
+    "archive_bytes": 251990,
+    "archive_files": 144,
+    "h1": "h1:D81X9D6yhm+Tnz1T+UXd/5HQKW5Z0xDwYBhHHdwqVnw=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/xo/terminfo",
+    "version": "v0.0.0-20220910002029-abceb7e1c41e",
+    "archive_bytes": 42016,
+    "archive_files": 19,
+    "h1": "h1:JVG44RsyaB9T2KIHavMF/ppJZNG9ZpyihvCd0w101no=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "golang.org/x/exp",
+    "version": "v0.0.0-20231006140011-7918f672742d",
+    "archive_bytes": 462987,
+    "archive_files": 406,
+    "h1": "h1:jtJma62tbqLibJ5sFQz8bKtEM8rJBtfilJ2qTU199MI=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "golang.org/x/image",
+    "version": "v0.45.0",
+    "archive_bytes": 5434137,
+    "archive_files": 282,
+    "h1": "h1:FMb1nTbH5H9vF55SriQHgFw5GnNL9Jg6L25BwXKzhB0=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "golang.org/x/mod",
+    "version": "v0.40.0",
+    "archive_bytes": 180463,
+    "archive_files": 133,
+    "h1": "h1:hUv+3cXcdRHz08UmSiOob7sadHig73uo5bkXxQ/tvUs=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "golang.org/x/sys",
+    "version": "v0.0.0-20210809222454-d867a43fc93e",
+    "archive_bytes": 1648378,
+    "archive_files": 479,
+    "h1": "h1:WUoyKPm6nCo1BnNUvPGnFG3T5DUVem42yDJZZ4CNxMA=",
+    "go_sum_has_archive_record": false,
+    "h1_match_sumdb": true
+  },
+  {
+    "module": "golang.org/x/sys",
+    "version": "v0.6.0",
+    "archive_bytes": 1892073,
+    "archive_files": 520,
+    "h1": "h1:MVltZSvRTcU2ljQOhs94SXPftV6DCNnZViHeQps87pQ=",
+    "go_sum_has_archive_record": false,
+    "h1_match_sumdb": true
+  },
+  {
+    "module": "golang.org/x/sys",
+    "version": "v0.47.0",
+    "archive_bytes": 2022425,
+    "archive_files": 549,
+    "h1": "h1:o7XGOvZQCADBQQ4Y7VNq2dRWQR7JmOUW8Kxx4ZsNgWs=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "golang.org/x/text",
+    "version": "v0.41.0",
+    "archive_bytes": 7336337,
+    "archive_files": 488,
+    "h1": "h1:vz/seA0lnX87Othu2f/0L24RcgrXD9/YFTSuGjj3rH8=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "gopkg.in/yaml.v3",
+    "version": "v3.0.1",
+    "archive_bytes": 104623,
+    "archive_files": 24,
+    "h1": "h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  },
+  {
+    "module": "github.com/voocel/agentcore",
+    "version": "v1.8.2",
+    "archive_bytes": 288422,
+    "archive_files": 91,
+    "h1": "h1:hLuLvc0EFQNcXdBNTJb+LhlhcwDkkiwKJUAUtf/3xJg=",
+    "go_sum_has_archive_record": true,
+    "h1_match_go_sum": true
+  }
+]

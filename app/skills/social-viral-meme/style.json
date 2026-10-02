@@ -1,0 +1,19 @@
+{
+  "art_style": "internet-meme aesthetic, flat sticker-bright colour, photoreal short-form",
+  "lighting": "bouncy practical light with bright key; flat soft shadows; low DOF backdrop blur",
+  "color_palette": "sticker primaries (lime, magenta, butter yellow, sky blue) on white or muted grey backdrop",
+  "camera_rules": "locked-off medium static; subject centred; reserve top 25% of frame for caption space (do not burn caption)",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "burned-in meme caption",
+    "copyrighted meme templates",
+    "real identifiable persons",
+    "mockery of protected groups",
+    "real branded products",
+    "cartoon style"
+  ],
+  "aspect_ratio": "9:16"
+}

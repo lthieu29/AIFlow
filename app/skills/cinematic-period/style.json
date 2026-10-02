@@ -1,0 +1,19 @@
+{
+  "art_style": "period cinematic drama (1900-1940), anamorphic lens, photoreal narrative film",
+  "lighting": "candle and gas-lamp interiors; tall-window daylight; warm wax key, brass rim, deep amber falloff; visible dust and smoke",
+  "color_palette": "muted amber, sepia, deep emerald, plum, ivory; black wool shadow contrast",
+  "camera_rules": "slow tracking dolly through corridors, locked-off medium two-shot at dining tables, single tilt-up reveals; one move per clip",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "anachronistic props",
+    "modern accessories",
+    "modern slang",
+    "anime style",
+    "cartoon style",
+    "real identifiable persons"
+  ],
+  "aspect_ratio": "21:9"
+}

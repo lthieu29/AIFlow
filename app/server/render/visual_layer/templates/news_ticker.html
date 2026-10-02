@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1080, height=1920">
+  <title>News Ticker</title>
+  <script src="{{__VENDOR_GSAP__}}"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      font-family: 'Inter', 'Segoe UI', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    }
+    #stage {
+      width: 1080px;
+      height: 1920px;
+      position: relative;
+    }
+    /* Ticker bar anchored near the bottom of the frame */
+    #ticker-bar {
+      position: absolute;
+      bottom: 160px;
+      left: 0;
+      right: 0;
+      height: 120px;
+      background: rgba(10, 10, 16, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      opacity: 0;
+    }
+    /* Coloured source label on the left */
+    #source-label {
+      flex-shrink: 0;
+      background: #FF6F00;
+      color: #ffffff;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 0 28px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+      z-index: 2;
+    }
+    /* Thin separator line */
+    #separator {
+      flex-shrink: 0;
+      width: 3px;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.25);
+      margin: 0 4px;
+      z-index: 2;
+    }
+    /* Scrolling headline track */
+    #headline-track {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      height: 100%;
+    }
+    #headline-text {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      white-space: nowrap;
+      font-size: 40px;
+      font-weight: 600;
+      color: #ffffff;
+      letter-spacing: -0.3px;
+      /* Start off-screen to the right */
+      left: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div id="ticker-bar">
+      <div id="source-label">{{SOURCE}}</div>
+      <div id="separator"></div>
+      <div id="headline-track">
+        <div id="headline-text">{{HEADLINE}}</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.body.style.background = 'transparent';
+
+    const tl = gsap.timeline({ paused: true });
+
+    // 1. Fade the ticker bar in (0 → 0.4s)
+    tl.to('#ticker-bar', { opacity: 1, duration: 0.4, ease: 'power2.out' }, 0)
+
+    // 2. Scroll headline from right edge to left edge across the track
+    //    The track is 1080 - source-label width (~220px) ≈ 860px wide.
+    //    We move the text from left:100% (860px) to left:-100% (-860px),
+    //    covering the full width so the headline is fully readable mid-scroll.
+    //    Duration: 4.2s gives a comfortable reading speed.
+      .fromTo('#headline-text',
+        { left: '100%' },
+        { left: '-100%', duration: 4.2, ease: 'none' },
+        0.4)
+
+    // 3. Fade the ticker bar out in the last 0.4s
+      .to('#ticker-bar', { opacity: 0, duration: 0.4, ease: 'power2.in' }, 5.6);
+
+    window.__hf = {
+      duration: 6.0,
+      seek(t) { tl.seek(t); }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+# skills/explainer-tech/voice.yaml
+# TTS voice profile for the explainer-tech skill.
+# Consumed by the TTS service when a project uses this skill and does not
+# override the voice explicitly. Tuned for clear, authoritative tech narration
+# with a measured pace suitable for educational content.
+
+voice_profile:
+  # Primary: VieNeu local preset (Vietnamese male, clear northern accent)
+  primary_backend: vieneu
+  primary_voice: Binh
+
+  # Fallback: edge_tts online (Vietnamese male, clear and professional)
+  fallback_backend: edge_tts
+  fallback_voice: vi-VN-NamMinhNeural
+
+  # Delivery — measured, authoritative, educational tone
+  rate: "+0%"        # neutral pace — clear and easy to follow
+  pitch: "-2%"       # slightly lower for authority
+  volume: "+0%"
+  emotion: natural
+
+  language: vi-VN

@@ -1,0 +1,34 @@
+# skills/ecommerce-tech/manifest.yaml
+# E-commerce tech skill — clean product photography style for tech/gadget videos
+
+name: ecommerce-tech
+version: 1.0.0
+adapter_type: ecommerce_product
+extends: _base
+
+description: >
+  Tech e-commerce style — clean studio product photography, precise lighting,
+  dark or gradient backgrounds, sharp detail shots. Optimised for showcasing
+  gadgets, electronics, and tech accessories in TikTok/Reels 9:16 format.
+
+# Compatibility
+supported_adapters:
+  - ecommerce_product
+  - storyboard_manual
+  - script_direct
+
+# Style
+style_ref: style.json
+prefix_file: prefix.md
+
+# TTS voice
+voice: vi-VN-NamMinhNeural
+
+# Camera — static by default for clean product shots
+camera_lock: true
+safety_level: standard
+
+options:
+  default_aspect_ratio: "9:16"
+  default_fps: 30
+  default_camera: static

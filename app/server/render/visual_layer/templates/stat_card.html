@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1080, height=1920">
+  <title>Stat Card</title>
+  <script src="{{__VENDOR_GSAP__}}"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      font-family: 'Inter', 'Segoe UI', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    }
+    #stage {
+      width: 1080px;
+      height: 1920px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 80px 60px;
+    }
+    #card {
+      position: relative;
+      background: rgba(255, 255, 255, 0.10);
+      border: 2px solid rgba(255, 255, 255, 0.18);
+      border-radius: 40px;
+      padding: 80px 80px 88px;
+      width: 900px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      opacity: 0;
+      transform: scale(0.82);
+    }
+    #accent-top {
+      width: 72px;
+      height: 6px;
+      background: #FF6F00;
+      border-radius: 3px;
+      margin-bottom: 52px;
+      transform: scaleX(0);
+      transform-origin: center center;
+    }
+    #stat-value {
+      font-size: 160px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -6px;
+      color: #ffffff;
+      opacity: 0;
+      transform: translateY(32px);
+      /* prevent layout shift during count-up */
+      min-width: 1px;
+      word-break: break-all;
+    }
+    #stat-label {
+      font-size: 44px;
+      font-weight: 500;
+      line-height: 1.3;
+      letter-spacing: 0.5px;
+      color: rgba(255, 255, 255, 0.72);
+      margin-top: 32px;
+      opacity: 0;
+      transform: translateY(20px);
+      max-width: 760px;
+    }
+    #accent-bottom {
+      width: 40px;
+      height: 4px;
+      background: rgba(255, 111, 0, 0.55);
+      border-radius: 2px;
+      margin-top: 48px;
+      opacity: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div id="card">
+      <div id="accent-top"></div>
+      <div id="stat-value">{{STAT_VALUE}}</div>
+      <div id="stat-label">{{STAT_LABEL}}</div>
+      <div id="accent-bottom"></div>
+    </div>
+  </div>
+
+  <script>
+    document.body.style.background = 'transparent';
+
+    // ── Count-up helper ──────────────────────────────────────────────────────
+    // Parses the raw STAT_VALUE text to extract a numeric portion for
+    // count-up animation. Non-numeric values animate as plain text (no count).
+    const rawValue = document.getElementById('stat-value').textContent.trim();
+
+    // Match optional prefix (e.g. "$"), numeric part (int or float), optional
+    // suffix (e.g. "%", "K", "+", "x", " triệu", …).
+    const numMatch = rawValue.match(/^([^0-9-]*)(-?[\d,]+(?:\.\d+)?)(.*)$/);
+
+    let prefix = '';
+    let suffix = '';
+    let targetNum = null;
+    let isFloat = false;
+
+    if (numMatch) {
+      prefix = numMatch[1];
+      // Remove thousands separators before parsing
+      const numStr = numMatch[2].replace(/,/g, '');
+      targetNum = parseFloat(numStr);
+      isFloat = numStr.includes('.');
+      suffix = numMatch[3];
+    }
+
+    // Proxy object used by GSAP to drive the count-up tween
+    const counter = { value: 0 };
+
+    function formatNum(n) {
+      if (isFloat) {
+        // Preserve same decimal places as original
+        const decimals = (numMatch[2].split('.')[1] || '').length;
+        return n.toFixed(decimals);
+      }
+      return Math.round(n).toString();
+    }
+
+    function updateDisplay(n) {
+      document.getElementById('stat-value').textContent =
+        prefix + formatNum(n) + suffix;
+    }
+
+    // ── GSAP timeline ────────────────────────────────────────────────────────
+    const tl = gsap.timeline({ paused: true });
+
+    // 1. Card scales in and fades in (0 → 0.45s)
+    tl.to('#card', {
+      opacity: 1,
+      scale: 1,
+      duration: 0.45,
+      ease: 'back.out(1.4)',
+    }, 0)
+
+    // 2. Accent bar scales in from center (0.3 → 0.65s)
+      .to('#accent-top', {
+        scaleX: 1,
+        duration: 0.35,
+        ease: 'power2.out',
+      }, 0.3)
+
+    // 3. Stat value slides up and fades in (0.5 → 1.0s)
+      .to('#stat-value', {
+        opacity: 1,
+        y: 0,
+        duration: 0.5,
+        ease: 'power3.out',
+      }, 0.5);
+
+    // 4. Count-up animation (0.55 → 2.55s, 2s duration)
+    if (targetNum !== null && isFinite(targetNum)) {
+      tl.to(counter, {
+        value: targetNum,
+        duration: 2.0,
+        ease: 'power2.out',
+        onUpdate() { updateDisplay(counter.value); },
+        onComplete() { updateDisplay(targetNum); },
+      }, 0.55);
+    }
+
+    // 5. Label slides up and fades in (0.85 → 1.45s)
+    tl.to('#stat-label', {
+      opacity: 1,
+      y: 0,
+      duration: 0.6,
+      ease: 'power2.out',
+    }, 0.85)
+
+    // 6. Bottom accent fades in (1.2 → 1.6s)
+      .to('#accent-bottom', {
+        opacity: 1,
+        duration: 0.4,
+        ease: 'power1.out',
+      }, 1.2)
+
+    // 7. Hold, then fade out everything (at ~3.2s → 4.0s)
+      .to(['#card'], {
+        opacity: 0,
+        scale: 0.94,
+        duration: 0.55,
+        ease: 'power2.in',
+      }, 3.2);
+
+    window.__hf = {
+      duration: 4.0,
+      seek(t) { tl.seek(t); },
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "art_style": "cute domestic pet comedy, photoreal short-form, cheerful TikTok grade",
+  "lighting": "soft warm window key + practical lamp fill; slight halation; gentle bounce shadow",
+  "color_palette": "warm cream, butter yellow, sage, soft teal accents; pet's natural colours preserved",
+  "camera_rules": "light handheld breathing or locked-off close-up; tilt-down from human level to pet level; close-up of pet, medium of human prop",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "animal distress",
+    "shock collars",
+    "epilepsy strobe",
+    "real identifiable persons",
+    "real branded gear",
+    "cartoon style"
+  ],
+  "aspect_ratio": "9:16"
+}

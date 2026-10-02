@@ -1,0 +1,19 @@
+{
+  "art_style": "first-person POV sports, helmet-mount or chest-mount lens character, photoreal short-form",
+  "lighting": "naturalistic outdoor daylight key, sun-flash highlights, no stylised grade",
+  "color_palette": "natural sky cyan, forest green, snow white, ocean teal; warm sun-flash accent",
+  "camera_rules": "locked POV with rig sway only; bob with running, lean with cornering, drop with descent; extreme wide shot framing locked by lens",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "third-person cuts",
+    "drone shots",
+    "real branded gear",
+    "sponsor logos",
+    "real identifiable persons",
+    "cartoon style"
+  ],
+  "aspect_ratio": "16:9"
+}

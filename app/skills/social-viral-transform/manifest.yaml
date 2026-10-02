@@ -1,0 +1,27 @@
+name: social-viral-transform
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  Viral transformation reveal. Before/after style with mirror cut on
+  match-on-action; saturated grade, punchy beat drop. Optimised for
+  TikTok / Reels 9:16 transformation hooks.
+
+supported_adapters:
+  - narrative_script
+  - script_direct
+  - photo_slideshow
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-HoaiMyNeural
+
+camera_lock: false
+safety_level: standard
+
+options:
+  default_aspect_ratio: "9:16"
+  default_fps: 30
+  default_camera: handheld
+  category: social-viral

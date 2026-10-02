@@ -1,0 +1,63 @@
+"""Scene model — 1 scene = 1 Veo3 clip (≤ clip_duration, default 8s).
+
+The max clip duration is configurable via AIFLOW_FLOW_CLIP_DURATION.
+When Veo3 supports longer clips, update that setting — no code changes needed.
+
+Indexes (per spec 02):
+    ix_scene_project_id — list scenes per project
+    ix_scene_status     — filter by generation status
+"""
+
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Literal, Optional
+
+from sqlalchemy import Index
+from sqlmodel import Field, SQLModel
+
+# REVIEW-02 #6 — location_hint MUST be a Literal enum, NOT a free string.
+LocationHint = Literal["indoor", "outdoor", "transition", "unspecified"]
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+class Scene(SQLModel, table=True):
+    """One scene in a project — maps to one Veo3 clip (≤ clip_duration).
+
+    The max duration per clip is governed by AIFLOW_FLOW_CLIP_DURATION (default
+    8s). location_hint uses a Literal type (REVIEW-02 #6) to constrain values
+    to: "indoor" | "outdoor" | "transition" | "unspecified".
+    The scene chain logic in Layer 3 uses this to detect location changes
+    and reset the start-frame chain accordingly.
+    """
+
+    __table_args__ = (
+        Index("ix_scene_project_id", "project_id"),
+        Index("ix_scene_status", "status"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    project_id: int = Field(foreign_key="project.id")
+    order: int  # 0-based position in the scene list
+    duration: float = 8.0  # seconds; default matches Veo3 clip_duration (configurable)
+
+    # Generation content (populated by the ContentAdapter via /api/projects create)
+    prompt: str = Field(default="")          # Veo3 visual prompt for this scene
+    narration: str = Field(default="")       # TTS narration text (may be empty)
+
+    # Status state machine: draft → queued → generating → quality_check → approved/rejected
+    status: str = Field(default="draft")
+
+    # REVIEW-02 #6 — constrained Literal, stored as VARCHAR in SQLite
+    location_hint: str = Field(default="unspecified")
+
+    # Pipeline outputs (populated during generation)
+    video_path: Optional[str] = Field(default=None)       # downloaded clip mp4
+    last_frame_path: Optional[str] = Field(default=None)  # Layer 3 chain frame
+    audio_path: Optional[str] = Field(default=None)       # synthesised narration mp3
+
+    created_at: datetime = Field(default_factory=_utcnow)
+    updated_at: datetime = Field(default_factory=_utcnow)

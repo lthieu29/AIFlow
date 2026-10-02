@@ -1,0 +1,27 @@
+name: social-viral-pet-comedy
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  Pet comedy social viral. Cute domestic animal reactions in real-time,
+  bright cheerful palette, sound-cued punchline. Optimised for TikTok /
+  Reels 9:16 viral pet videos.
+
+supported_adapters:
+  - narrative_script
+  - script_direct
+  - photo_slideshow
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-HoaiMyNeural
+
+camera_lock: false
+safety_level: standard
+
+options:
+  default_aspect_ratio: "9:16"
+  default_fps: 30
+  default_camera: handheld
+  category: social-viral

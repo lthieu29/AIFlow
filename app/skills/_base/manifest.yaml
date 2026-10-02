@@ -1,0 +1,25 @@
+# skills/_base/manifest.yaml
+# Base skill — shared rules inherited by all skills that declare `extends: _base`
+#
+# This is NOT a standalone skill. It defines defaults and safety rules that
+# child skills inherit. Skills override individual fields as needed.
+
+name: _base
+version: 1.0.0
+adapter_type: ""          # Base has no specific adapter — child skills set this
+style_ref: style.json
+camera_lock: true
+safety_level: standard
+
+# Camera lock rules (see prefix.md for prompt-level enforcement)
+# camera_lock: true means all scenes default to static camera unless the
+# adapter explicitly sets camera="dynamic" for a specific scene.
+
+# Safety level: standard — avoids NSFW, real persons, copyright characters.
+# Child skills may tighten to "strict" but should not relax below "standard".
+
+options:
+  default_aspect_ratio: "9:16"
+  default_fps: 30
+  default_camera: static
+  continuity_chain_reset_on_location_change: true

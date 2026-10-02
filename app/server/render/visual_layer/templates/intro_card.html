@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1080, height=1920">
+  <title>Intro Card</title>
+  <script src="{{__VENDOR_GSAP__}}"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      font-family: 'Inter', 'Segoe UI', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    }
+    #stage {
+      width: 1080px;
+      height: 1920px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 80px 60px;
+      background: linear-gradient(
+        180deg,
+        rgba(8, 8, 12, 0.88) 0%,
+        rgba(12, 12, 20, 0.72) 60%,
+        rgba(8, 8, 12, 0.88) 100%
+      );
+    }
+    #brand {
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.55);
+      opacity: 0;
+      margin-bottom: 56px;
+    }
+    #title {
+      font-size: 96px;
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      color: #ffffff;
+      opacity: 0;
+      transform: translateY(48px);
+      max-width: 960px;
+      word-break: break-word;
+    }
+    #accent {
+      width: 80px;
+      height: 5px;
+      background: #FF6F00;
+      border-radius: 3px;
+      margin: 40px auto 0;
+      transform: scaleX(0);
+      transform-origin: left center;
+    }
+    #subtitle {
+      font-size: 40px;
+      font-weight: 400;
+      line-height: 1.4;
+      color: rgba(255, 255, 255, 0.70);
+      opacity: 0;
+      transform: translateY(24px);
+      margin-top: 36px;
+      max-width: 880px;
+    }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div id="brand">{{BRAND}}</div>
+    <div id="title">{{TITLE}}</div>
+    <div id="accent"></div>
+    <div id="subtitle">{{SUBTITLE}}</div>
+  </div>
+
+  <script>
+    document.body.style.background = 'transparent';
+
+    const tl = gsap.timeline({ paused: true });
+
+    // Fade in brand first
+    tl.to('#brand', { opacity: 1, duration: 0.6, ease: 'power2.out' }, 0.1)
+    // Title slides up and fades in
+      .to('#title', { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }, 0.4)
+    // Accent bar scales in from left
+      .to('#accent', { scaleX: 1, duration: 0.5, ease: 'power2.out' }, '-=0.2')
+    // Subtitle slides up and fades in
+      .to('#subtitle', { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, '-=0.3')
+    // Hold for ~2.5s then fade everything out
+      .to(['#brand', '#title', '#accent', '#subtitle'], {
+        opacity: 0,
+        duration: 0.5,
+        ease: 'power2.in',
+        stagger: 0.05,
+      }, '+=2.2');
+
+    window.__hf = {
+      duration: tl.duration(),
+      seek(t) { tl.seek(t); }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+name: dialogue-podcast-clip
+version: 1.0.0
+adapter_type: podcast_caption
+extends: _base
+
+description: >
+  Podcast highlight clip style. Two-shot podcast booth feel, large
+  caption negative space, audio-reactive subtle animation. Optimised
+  for short podcast highlight clips.
+
+supported_adapters:
+  - podcast_caption
+  - script_direct
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-HoaiMyNeural
+
+camera_lock: true
+safety_level: standard
+
+options:
+  default_aspect_ratio: "9:16"
+  default_fps: 30
+  default_camera: static
+  category: dialogue-driven

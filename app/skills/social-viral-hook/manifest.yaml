@@ -1,0 +1,28 @@
+name: social-viral-hook
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  Social-media viral hook style. 3-second hook + payoff format with
+  vibrant colours, fast cut energy, ASMR-grade audio reveal. Optimised
+  for TikTok / Reels / Shorts in 9:16.
+
+supported_adapters:
+  - narrative_script
+  - script_direct
+  - blog_article
+  - news_bulletin
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-HoaiMyNeural
+
+camera_lock: false
+safety_level: standard
+
+options:
+  default_aspect_ratio: "9:16"
+  default_fps: 30
+  default_camera: handheld
+  category: social-viral

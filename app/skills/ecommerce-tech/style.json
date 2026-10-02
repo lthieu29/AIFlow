@@ -1,0 +1,21 @@
+{
+  "art_style": "clean studio tech product photography, photoreal precision-engineering grade",
+  "lighting": "cool-white key light with rim lighting for sharp edge definition; soft fill to eliminate harsh shadows; controlled specular highlights",
+  "color_palette": "dark charcoal or graphite gradient backdrop; silver and white highlights; accent color matching the featured product",
+  "camera_rules": "locked-off static frame; allowed slow 360-degree turntable rotation, slow Ken Burns push-in on detail, soft parallax drift, single rack focus from silhouette to feature; macro shot framing for ports and buttons, wide for full silhouette; one move per clip",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "harsh shadows",
+    "overexposed",
+    "fingerprints",
+    "dust",
+    "scratches",
+    "real brand markings",
+    "real identifiable persons",
+    "cartoon style"
+  ],
+  "aspect_ratio": "9:16"
+}

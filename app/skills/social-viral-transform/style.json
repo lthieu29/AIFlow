@@ -1,0 +1,19 @@
+{
+  "art_style": "viral transformation reveal, photoreal short-form, saturated TikTok grade",
+  "lighting": "bright daylight key with bounce fill; same lighting block before and after; optional small accent on the after frame",
+  "color_palette": "saturated primaries plus one accent that brightens after the cut; backdrop unchanged",
+  "camera_rules": "locked-off medium hero before, single whip-pan or match-on-action cut, locked-off medium hero after; mirror composition; one cut per clip pair",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "fake photoshop swap",
+    "epilepsy strobe",
+    "medical before/after of a body",
+    "real identifiable persons",
+    "real brand markings",
+    "cartoon style"
+  ],
+  "aspect_ratio": "9:16"
+}

@@ -1,0 +1,19 @@
+{
+  "art_style": "travel vlog cinematography, photoreal travel-magazine grade, naturalistic location",
+  "lighting": "golden-hour key on streets and markets, blue-hour silhouette of skylines, soft warm window light through alleys",
+  "color_palette": "warm sandstone, sun-amber, sky cyan, market terracotta and saffron; single warm accent on the traveller",
+  "camera_rules": "light handheld breathing on walking shots; locked-off wide of named landmarks; rack focus from foreground street to skyline; medium close-up for local detail",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "real hotel branding",
+    "real restaurant branding",
+    "real identifiable persons",
+    "drone over cultural restricted sites",
+    "exoticised stereotypes",
+    "cartoon style"
+  ],
+  "aspect_ratio": "16:9"
+}

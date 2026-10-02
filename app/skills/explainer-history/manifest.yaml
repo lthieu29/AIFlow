@@ -1,0 +1,27 @@
+name: explainer-history
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  History documentary explainer style. Archive sepia tones, period
+  cutaways, museum exhibit aesthetic, scholarly authoritative narrative.
+
+supported_adapters:
+  - narrative_script
+  - blog_article
+  - document_summary
+  - script_direct
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-NamMinhNeural
+
+camera_lock: false
+safety_level: standard
+
+options:
+  default_aspect_ratio: "16:9"
+  default_fps: 24
+  default_camera: dolly
+  category: educational

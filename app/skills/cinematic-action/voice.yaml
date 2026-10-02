@@ -1,0 +1,28 @@
+# skills/cinematic-action/voice.yaml
+# TTS voice profile for the cinematic-action skill.
+# Consumed by the TTS service when a project uses this skill and does not
+# override the voice explicitly. Tuned for a deep, authoritative delivery
+# suited to action narration and high-stakes storytelling.
+
+voice_profile:
+  # Primary: VieNeu local preset (Vietnamese male, action narration)
+  primary_backend: vieneu
+  primary_voice: Binh
+  primary_emotion: natural
+
+  # Fallback: edge_tts online (Vietnamese male, clear and strong)
+  fallback_backend: edge_tts
+  fallback_voice: vi-VN-NamMinhNeural
+
+  # Delivery — measured pace, strong presence, action-narrator tone
+  rate: "+0%"        # neutral pace — let the content drive urgency
+  pitch: "-4%"       # slightly lower for gravitas
+  volume: "+2%"
+  emotion: natural
+
+  language: vi-VN
+
+  # Optional secondary voices for character dialogue (Phase 6+).
+  character_voices:
+    hero: vi-VN-NamMinhNeural
+    antagonist: vi-VN-NamMinhNeural

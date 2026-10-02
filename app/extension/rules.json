@@ -1,0 +1,53 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://labs.google/"
+        },
+        {
+          "header": "Origin",
+          "operation": "set",
+          "value": "https://labs.google"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "aisandbox-pa.googleapis.com",
+      "resourceTypes": ["xmlhttprequest"]
+    }
+  },
+  {
+    "id": 2,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        { "header": "Access-Control-Allow-Origin", "operation": "set", "value": "*" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "lh3.googleusercontent.com",
+      "resourceTypes": ["xmlhttprequest", "image"]
+    }
+  },
+  {
+    "id": 3,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        { "header": "Access-Control-Allow-Origin", "operation": "set", "value": "*" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "*.douyinpic.com",
+      "resourceTypes": ["xmlhttprequest"]
+    }
+  }
+]

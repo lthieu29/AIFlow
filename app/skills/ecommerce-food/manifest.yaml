@@ -1,0 +1,33 @@
+# skills/ecommerce-food/manifest.yaml
+# E-commerce food skill — appetising food photography style for TikTok/Reels product videos
+
+name: ecommerce-food
+version: 1.0.0
+adapter_type: ecommerce_product
+extends: _base
+
+description: >
+  Food & beverage e-commerce style — appetising close-up photography,
+  warm natural light, rich colour grading. Optimised for TikTok/Reels 9:16 format.
+
+# Compatibility
+supported_adapters:
+  - ecommerce_product
+  - storyboard_manual
+  - script_direct
+
+# Style
+style_ref: style.json
+prefix_file: prefix.md
+
+# TTS voice
+voice: vi-VN-HoaiMyNeural
+
+# Camera — static by default (inherited from _base, explicit here for clarity)
+camera_lock: true
+safety_level: standard
+
+options:
+  default_aspect_ratio: "9:16"
+  default_fps: 30
+  default_camera: static

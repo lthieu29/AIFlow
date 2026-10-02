@@ -1,0 +1,19 @@
+{
+  "art_style": "cold cinematic thriller, anamorphic lens, photoreal narrative",
+  "lighting": "hard top-key light + single named practical (fluorescent, sodium-vapour, monitor glow); deep shadow falloff; anamorphic flare on highlights",
+  "color_palette": "deep navy, graphite, charcoal; cold cyan highlights; one warm sodium accent on the practical light",
+  "camera_rules": "slow tracking dolly behind protagonist, locked-off extreme close-up on hands, or rack focus from screen to doorway watcher; one move per clip",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "daylight scenes",
+    "warm cheerful palette",
+    "anime style",
+    "cartoon style",
+    "real identifiable persons",
+    "explicit violence"
+  ],
+  "aspect_ratio": "21:9"
+}

@@ -1,0 +1,19 @@
+{
+  "art_style": "editorial long-form interview, prestige documentary grade, photoreal narrative",
+  "lighting": "soft window key from one side, paper-bounce fill, warm practical lamp in background; named source per shot",
+  "color_palette": "warm cream, oat, muted teal, soft graphite shadow contrast",
+  "camera_rules": "two-camera feel; locked-off medium close-up plus locked wide; very slow push-in once per block on a key answer; medium and medium close-up shot framing",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "real branded backdrop",
+    "sponsor products visible",
+    "teleprompter visible",
+    "hot-mic interruption sfx",
+    "real identifiable persons",
+    "cartoon style"
+  ],
+  "aspect_ratio": "16:9"
+}

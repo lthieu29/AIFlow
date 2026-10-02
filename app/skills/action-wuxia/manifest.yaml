@@ -1,0 +1,28 @@
+name: action-wuxia
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  Wuxia / xianxia action style. Chinese martial arts choreography, swirling
+  silk robes, ink-wash mountain backdrop, slow-motion sword arcs.
+  Optimised for fantasy martial novel adaptation.
+
+supported_adapters:
+  - narrative_script
+  - storyboard_manual
+  - script_direct
+  - epub_novel
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-NamMinhNeural
+
+camera_lock: false
+safety_level: standard
+
+options:
+  default_aspect_ratio: "21:9"
+  default_fps: 24
+  default_camera: tracking
+  category: action

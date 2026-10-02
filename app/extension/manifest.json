@@ -1,0 +1,70 @@
+{
+  "manifest_version": 3,
+  "name": "AIFlow Bridge",
+  "version": "0.1.0",
+  "description": "Bridge between AIFlow agent and authenticated browser sessions (Google Flow + Bilibili + Douyin).",
+
+  "permissions": [
+    "storage",
+    "alarms",
+    "tabs",
+    "webRequest",
+    "scripting",
+    "declarativeNetRequest",
+    "cookies"
+  ],
+
+  "host_permissions": [
+    "https://aisandbox-pa.googleapis.com/*",
+    "https://labs.google/*",
+    "https://www.bilibili.com/*",
+    "https://api.bilibili.com/*",
+    "https://*.douyin.com/*",
+    "https://*.tiktok.com/*",
+    "http://127.0.0.1:8101/*",
+    "http://localhost:8101/*"
+  ],
+
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+
+  "action": {
+    "default_title": "AIFlow Bridge",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16":  "icons/icon16.png",
+      "48":  "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "https://labs.google/fx/tools/flow*",
+        "https://labs.google/fx/*/tools/flow*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["injected.js"],
+      "matches": ["https://labs.google/*"]
+    }
+  ],
+
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "aiflow_rules",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  }
+}

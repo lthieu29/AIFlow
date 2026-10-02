@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1080, height=1920">
+  <title>Chapter Title</title>
+  <script src="{{__VENDOR_GSAP__}}"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      font-family: 'Inter', 'Segoe UI', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    }
+    #stage {
+      width: 1080px;
+      height: 1920px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 80px 80px;
+      background: rgba(6, 6, 10, 0.82);
+    }
+    #chapter-num {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      color: #FF6F00;
+      opacity: 0;
+      transform: scale(0.85);
+      margin-bottom: 28px;
+    }
+    #line-top {
+      width: 0px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.25);
+      margin-bottom: 40px;
+    }
+    #chapter-title {
+      font-size: 88px;
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -2px;
+      color: #ffffff;
+      opacity: 0;
+      transform: scale(0.90);
+      max-width: 920px;
+      word-break: break-word;
+    }
+    #line-bottom {
+      width: 0px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.25);
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div id="chapter-num">{{CHAPTER_NUM}}</div>
+    <div id="line-top"></div>
+    <div id="chapter-title">{{CHAPTER_TITLE}}</div>
+    <div id="line-bottom"></div>
+  </div>
+
+  <script>
+    document.body.style.background = 'transparent';
+
+    const tl = gsap.timeline({ paused: true });
+
+    // Chapter number fades in + scales up
+    tl.to('#chapter-num', { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.7)' }, 0.1)
+    // Horizontal lines expand
+      .to('#line-top',    { width: 200, duration: 0.4, ease: 'power2.out' }, 0.3)
+      .to('#line-bottom', { width: 200, duration: 0.4, ease: 'power2.out' }, 0.3)
+    // Chapter title fades in + scales up
+      .to('#chapter-title', { opacity: 1, scale: 1, duration: 0.65, ease: 'back.out(1.4)' }, 0.45)
+    // Hold for ~1.5s then fade out
+      .to(['#chapter-num', '#line-top', '#chapter-title', '#line-bottom'], {
+        opacity: 0,
+        scale: 0.95,
+        duration: 0.45,
+        ease: 'power2.in',
+        stagger: 0.04,
+      }, '+=1.5');
+
+    window.__hf = {
+      duration: tl.duration(),
+      seek(t) { tl.seek(t); }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+name: social-viral-meme
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  Internet-meme social viral. Sticker-flat colour, big bold caption layout
+  vibes (without burning text), one-shot punchline, cheap-shot relatable
+  comedy. Optimised for TikTok / Reels 9:16 meme remixes.
+
+supported_adapters:
+  - narrative_script
+  - script_direct
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-HoaiMyNeural
+
+camera_lock: true
+safety_level: standard
+
+options:
+  default_aspect_ratio: "9:16"
+  default_fps: 30
+  default_camera: static
+  category: social-viral

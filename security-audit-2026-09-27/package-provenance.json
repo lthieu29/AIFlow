@@ -1,0 +1,518 @@
+[
+  {
+    "module": "github.com/MakeNowJust/heredoc",
+    "version": "v1.0.0",
+    "proxy_info": {
+      "Version": "v1.0.0",
+      "Time": "2019-08-23T03:24:15Z"
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/atotto/clipboard",
+    "version": "v0.1.4",
+    "proxy_info": {
+      "Version": "v0.1.4",
+      "Time": "2021-02-24T14:02:39Z"
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/aymanbagabas/go-osc52/v2",
+    "version": "v2.0.1",
+    "proxy_info": {
+      "Version": "v2.0.1",
+      "Time": "2023-03-06T14:54:10Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/aymanbagabas/go-osc52",
+        "Ref": "refs/tags/v2.0.1",
+        "Hash": "ce73587a0f72cf077e55f163e71ea1b5496a133c"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/aymanbagabas/go-udiff",
+    "version": "v0.3.1",
+    "proxy_info": {
+      "Version": "v0.3.1",
+      "Time": "2025-06-05T20:16:44Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/aymanbagabas/go-udiff",
+        "Hash": "12b2bd1e7a5e19b34d634a99b8037508b869c7c9",
+        "Ref": "refs/tags/v0.3.1"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/charmbracelet/bubbles",
+    "version": "v1.0.0",
+    "proxy_info": {
+      "Version": "v1.0.0",
+      "Time": "2026-02-09T11:18:24Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/charmbracelet/bubbles",
+        "Hash": "4824effc3f91c9517c776d8200ef99a1207136e0",
+        "Ref": "refs/tags/v1.0.0"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/charmbracelet/bubbletea",
+    "version": "v1.3.10",
+    "proxy_info": {
+      "Version": "v1.3.10",
+      "Time": "2025-09-17T20:11:15Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/charmbracelet/bubbletea",
+        "Hash": "9edf69c677c7353eca5fae6d3ea3986af39717b7",
+        "Ref": "refs/tags/v1.3.10"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/charmbracelet/colorprofile",
+    "version": "v0.4.1",
+    "proxy_info": {
+      "Version": "v0.4.1",
+      "Time": "2025-12-11T19:41:31Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/charmbracelet/colorprofile",
+        "Hash": "7aec26c3a2d64416e9e5fd62594150f5a17254cb",
+        "Ref": "refs/tags/v0.4.1"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/charmbracelet/lipgloss",
+    "version": "v1.1.0",
+    "proxy_info": {
+      "Version": "v1.1.0",
+      "Time": "2025-03-12T18:56:50Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/charmbracelet/lipgloss",
+        "Hash": "f0e45475a64ee60d712b81145172d3739db36a93",
+        "Ref": "refs/tags/v1.1.0"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/charmbracelet/x/ansi",
+    "version": "v0.11.8",
+    "proxy_info": {
+      "Version": "v0.11.8",
+      "Time": "2026-08-11T15:17:04Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/charmbracelet/x",
+        "Subdir": "ansi",
+        "Hash": "00c6608f106b9c6cd8a1a77156f7901f41265e64",
+        "Ref": "refs/tags/ansi/v0.11.8"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/charmbracelet/x/cellbuf",
+    "version": "v0.0.15",
+    "proxy_info": {
+      "Version": "v0.0.15",
+      "Time": "2026-02-03T06:58:41Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/charmbracelet/x",
+        "Subdir": "cellbuf",
+        "Hash": "a1c614051099a0a065aaf1c8fa98f6110e492cbe",
+        "Ref": "refs/tags/cellbuf/v0.0.15"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/charmbracelet/x/term",
+    "version": "v0.2.2",
+    "proxy_info": {
+      "Version": "v0.2.2",
+      "Time": "2025-10-31T17:24:06Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/charmbracelet/x",
+        "Subdir": "term",
+        "Hash": "4542a189d0fbeb156bb1df8730d253f2ef443c00",
+        "Ref": "refs/heads/main"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/clipperhouse/displaywidth",
+    "version": "v0.11.0",
+    "proxy_info": {
+      "Version": "v0.11.0",
+      "Time": "2026-02-17T03:29:37Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/clipperhouse/displaywidth",
+        "Hash": "b6da6e784d7796398607efa9883b4d9f6e7be509",
+        "Ref": "refs/tags/v0.11.0"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/clipperhouse/uax29/v2",
+    "version": "v2.7.0",
+    "proxy_info": {
+      "Version": "v2.7.0",
+      "Time": "2026-02-16T15:57:44Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/clipperhouse/uax29",
+        "Hash": "b03477d1fbba89df95a6b55da0a222b2e2228610",
+        "Ref": "refs/tags/v2.7.0"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/davecgh/go-spew",
+    "version": "v1.1.1",
+    "proxy_info": {
+      "Version": "v1.1.1",
+      "Time": "2018-02-21T23:26:28Z"
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/erikgeiser/coninput",
+    "version": "v0.0.0-20211004153227-1c3628e74d0f",
+    "proxy_info": {
+      "Version": "v0.0.0-20211004153227-1c3628e74d0f",
+      "Time": "2021-10-04T15:32:27Z"
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/gofrs/flock",
+    "version": "v0.13.0",
+    "proxy_info": {
+      "Version": "v0.13.0",
+      "Time": "2025-10-09T22:24:42Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/gofrs/flock",
+        "Hash": "bfec60bb026171031050af631b6dec974f14e9fa",
+        "Ref": "refs/tags/v0.13.0"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/lucasb-eyer/go-colorful",
+    "version": "v1.4.0",
+    "proxy_info": {
+      "Version": "v1.4.0",
+      "Time": "2026-03-28T13:15:33Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/lucasb-eyer/go-colorful",
+        "Hash": "960803eeca7760b91ead14a54fabac75e3cfa5d8",
+        "Ref": "refs/tags/v1.4.0"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/mattn/go-isatty",
+    "version": "v0.0.20",
+    "proxy_info": {
+      "Version": "v0.0.20",
+      "Time": "2023-10-17T07:28:21Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/mattn/go-isatty",
+        "Ref": "refs/tags/v0.0.20",
+        "Hash": "a7c02353c47bc4ec6b30dc9628154ae4fe760c11"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/mattn/go-localereader",
+    "version": "v0.0.1",
+    "proxy_info": {
+      "Version": "v0.0.1",
+      "Time": "2022-06-17T18:06:34Z"
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/mattn/go-runewidth",
+    "version": "v0.0.24",
+    "proxy_info": {
+      "Version": "v0.0.24",
+      "Time": "2026-05-29T14:00:49Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/mattn/go-runewidth",
+        "Hash": "0383c20520084afbe27423b6a24301c9e59c4a4b",
+        "Ref": "refs/tags/v0.0.24"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/muesli/ansi",
+    "version": "v0.0.0-20230316100256-276c6243b2f6",
+    "proxy_info": {
+      "Version": "v0.0.0-20230316100256-276c6243b2f6",
+      "Time": "2023-03-16T10:02:56Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/muesli/ansi",
+        "Hash": "276c6243b2f6df61db727937762b1a3f9cc12486"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/muesli/cancelreader",
+    "version": "v0.2.2",
+    "proxy_info": {
+      "Version": "v0.2.2",
+      "Time": "2022-06-22T06:35:03Z"
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/muesli/termenv",
+    "version": "v0.16.0",
+    "proxy_info": {
+      "Version": "v0.16.0",
+      "Time": "2025-02-21T13:58:54Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/muesli/termenv",
+        "Hash": "2e6fa35162bb1c735367736319813b2dc01a77a4",
+        "Ref": "refs/tags/v0.16.0"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/pmezard/go-difflib",
+    "version": "v1.0.0",
+    "proxy_info": {
+      "Version": "v1.0.0",
+      "Time": "2016-01-10T10:55:54Z"
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/rivo/uniseg",
+    "version": "v0.4.7",
+    "proxy_info": {
+      "Version": "v0.4.7",
+      "Time": "2024-02-08T13:16:15Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/rivo/uniseg",
+        "Ref": "refs/tags/v0.4.7",
+        "Hash": "03509a98a092b522b2ff0de13e53513d18b3b837"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/stretchr/testify",
+    "version": "v1.11.1",
+    "proxy_info": {
+      "Version": "v1.11.1",
+      "Time": "2025-08-27T10:46:31Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/stretchr/testify",
+        "Hash": "2a57335dc9cd6833daa820bc94d9b40c26a7917d",
+        "Ref": "refs/tags/v1.11.1"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/voocel/agentcore",
+    "version": "v1.8.3",
+    "proxy_info": {
+      "Version": "v1.8.3",
+      "Time": "2026-09-02T03:51:09Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/voocel/agentcore",
+        "Hash": "d3a0f8112ae4764bf5b548e712074404791326b2",
+        "Ref": "refs/tags/v1.8.3"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/voocel/litellm",
+    "version": "v1.8.10",
+    "proxy_info": {
+      "Version": "v1.8.10",
+      "Time": "2026-08-16T10:42:17Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/voocel/litellm",
+        "Hash": "1d09e38ef9b756ab710c296350e551f6e178406d",
+        "Ref": "refs/tags/v1.8.10"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/xo/terminfo",
+    "version": "v0.0.0-20220910002029-abceb7e1c41e",
+    "proxy_info": {
+      "Version": "v0.0.0-20220910002029-abceb7e1c41e",
+      "Time": "2022-09-10T00:20:29Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/xo/terminfo",
+        "Hash": "abceb7e1c41eed2857facd9bbdaaa5ff8137d901"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "golang.org/x/exp",
+    "version": "v0.0.0-20231006140011-7918f672742d",
+    "proxy_info": {
+      "Version": "v0.0.0-20231006140011-7918f672742d",
+      "Time": "2023-10-06T14:00:11Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://go.googlesource.com/exp",
+        "Hash": "7918f672742dd40ff5cf8d3c316a9315410c2d3c"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "golang.org/x/image",
+    "version": "v0.45.0",
+    "proxy_info": {
+      "Version": "v0.45.0",
+      "Time": "2026-08-11T17:56:44Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://go.googlesource.com/image",
+        "Hash": "3ebddc7c54bd879f8d84d11db82892726f5192fd",
+        "Ref": "refs/tags/v0.45.0"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "golang.org/x/mod",
+    "version": "v0.40.0",
+    "proxy_info": {
+      "Version": "v0.40.0",
+      "Time": "2026-08-13T19:09:22Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://go.googlesource.com/mod",
+        "Hash": "d3398d06de5fa5c71083d3d1c26f2cda73508e0f",
+        "Ref": "refs/tags/v0.40.0"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "golang.org/x/sys",
+    "version": "v0.0.0-20210809222454-d867a43fc93e",
+    "proxy_info": {
+      "Version": "v0.0.0-20210809222454-d867a43fc93e",
+      "Time": "2021-08-09T22:24:54Z"
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "golang.org/x/sys",
+    "version": "v0.6.0",
+    "proxy_info": {
+      "Version": "v0.6.0",
+      "Time": "2023-03-04T03:20:52Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://go.googlesource.com/sys",
+        "Ref": "refs/tags/v0.6.0",
+        "Hash": "c7a1bf9a0b0aa7c0c0e35a435924dd68e64d1653"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "golang.org/x/sys",
+    "version": "v0.47.0",
+    "proxy_info": {
+      "Version": "v0.47.0",
+      "Time": "2026-06-30T17:07:31Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://go.googlesource.com/sys",
+        "Hash": "9e7e939dcafac07e8ab4cffa6e5fc74908413f00",
+        "Ref": "refs/tags/v0.47.0"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "golang.org/x/text",
+    "version": "v0.41.0",
+    "proxy_info": {
+      "Version": "v0.41.0",
+      "Time": "2026-08-11T15:22:47Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://go.googlesource.com/text",
+        "Hash": "acdba6655fd45cdb5ab73c9d6a8981333bd65a39",
+        "Ref": "refs/tags/v0.41.0"
+      }
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "gopkg.in/yaml.v3",
+    "version": "v3.0.1",
+    "proxy_info": {
+      "Version": "v3.0.1",
+      "Time": "2022-05-27T08:35:30Z"
+    },
+    "checksum_records_match": true
+  },
+  {
+    "module": "github.com/voocel/agentcore",
+    "version": "v1.8.2",
+    "proxy_info": {
+      "Version": "v1.8.2",
+      "Time": "2026-08-17T05:06:40Z",
+      "Origin": {
+        "VCS": "git",
+        "URL": "https://github.com/voocel/agentcore",
+        "Hash": "da0769695afdd3efb656d1b4b2610edf9fa942fa",
+        "Ref": "refs/tags/v1.8.2"
+      }
+    },
+    "checksum_records_match": true
+  }
+]

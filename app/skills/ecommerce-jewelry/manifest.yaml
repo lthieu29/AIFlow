@@ -1,0 +1,27 @@
+name: ecommerce-jewelry
+version: 1.0.0
+adapter_type: ecommerce_product
+extends: _base
+
+description: >
+  Jewellery e-commerce style. Sparkling macro hero of rings, necklaces,
+  earrings, watches against velvet or matte stone. Optimised for TikTok /
+  Reels 9:16 product reveal.
+
+supported_adapters:
+  - ecommerce_product
+  - storyboard_manual
+  - script_direct
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-HoaiMyNeural
+
+camera_lock: true
+safety_level: standard
+
+options:
+  default_aspect_ratio: "9:16"
+  default_fps: 30
+  default_camera: static
+  category: commercial

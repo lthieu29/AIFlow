@@ -1,0 +1,19 @@
+{
+  "art_style": "high-end beauty product photography, glossy macro hero shots, magazine-grade",
+  "lighting": "soft butterfly key from a large overhead diffuser, gentle gold rim light, no harsh shadows",
+  "color_palette": "warm rose-gold and champagne highlights against a soft cream or blush background, glass and metal reflections retained",
+  "camera_rules": "locked-off static frame for hero shots; slow orbit or rack focus only when revealing a second surface; macro shot size on droppers, swatches, and labels",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "harsh shadows",
+    "overexposed highlights",
+    "fingerprints on glass",
+    "dusty packaging",
+    "real identifiable persons",
+    "cartoon style"
+  ],
+  "aspect_ratio": "9:16"
+}

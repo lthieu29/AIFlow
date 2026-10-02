@@ -1,0 +1,8 @@
+# Install only on Colab. PyTorch comes from the selected Colab GPU runtime.
+kokoro==0.9.4
+soundfile==0.13.1
+fastapi==0.115.12
+uvicorn==0.34.2
+huggingface-hub>=0.30,<1.0
+python-multipart>=0.0.12
+faster-whisper==1.1.1

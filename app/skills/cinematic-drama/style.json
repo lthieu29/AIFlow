@@ -1,0 +1,19 @@
+{
+  "art_style": "prestige cinematic drama, naturalistic motivated lighting, photoreal narrative film",
+  "lighting": "soft window key + practical lamp fill + blue-hour glow; named source per shot; subtle film grain and halation",
+  "color_palette": "muted earth tones (dust, oat, deep green) with a single warm accent on the lead's wardrobe",
+  "camera_rules": "slow dolly-in on emotional beats, single rack focus between characters, locked-off medium two-shot at table; one move per clip",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "melodramatic camera moves",
+    "glossy CG lighting",
+    "anime style",
+    "cartoon style",
+    "real identifiable persons",
+    "explicit violence"
+  ],
+  "aspect_ratio": "16:9"
+}

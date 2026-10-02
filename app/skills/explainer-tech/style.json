@@ -1,0 +1,21 @@
+{
+  "art_style": "clean modern tech explainer, photoreal product renders + clean interface mockups",
+  "lighting": "bright even studio lighting with cool-white key from above-front, soft diffused fill, no harsh shadows",
+  "color_palette": "cool blues and whites with electric accent colours; dark navy backdrops for contrast; minimal palette",
+  "camera_rules": "locked-off static frame; slow Ken Burns push-in on UI elements; rack focus from device body to screen content; medium for presenter, tight close-up for detail, wide for context; one move per clip",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "harsh shadows",
+    "overexposed",
+    "real brand markings",
+    "copyrighted interface elements",
+    "real identifiable persons",
+    "vintage aesthetic",
+    "cluttered background",
+    "screen glare or rolling-shutter lines"
+  ],
+  "aspect_ratio": "9:16"
+}

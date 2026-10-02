@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>AIFlow Bridge</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <span class="header-title">AIFlow Bridge</span>
+    <span class="header-version" id="ext-version">v0.1.0</span>
+  </header>
+
+  <!-- Agent connection status -->
+  <div class="section">
+    <span class="section-label">Agent</span>
+    <span class="section-value" id="agent-status">○ Connecting...</span>
+  </div>
+
+  <!-- Hint shown when agent not running or token missing -->
+  <div class="hint" id="hint-row" style="display:none"></div>
+
+  <!-- Module A: Google Flow -->
+  <div class="module-header">Module A — Google Flow</div>
+
+  <div class="section">
+    <span class="section-label">Token</span>
+    <span class="section-value" id="token-row">none</span>
+  </div>
+
+  <div class="section" id="account-section" style="display:none">
+    <span class="section-label">Account</span>
+    <span class="section-value" id="account-row"></span>
+  </div>
+
+  <div class="section">
+    <span class="section-label">Requests</span>
+    <span class="section-value" id="stats-row">0 · ✓ 0 · ✗ 0</span>
+  </div>
+
+  <div class="section" id="error-section" style="display:none">
+    <span class="section-label">Error</span>
+    <span class="section-value error-value" id="error-row"></span>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button id="btn-flow-tab">Open Flow tab</button>
+    <button id="btn-refresh">Refresh token</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

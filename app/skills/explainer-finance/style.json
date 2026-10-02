@@ -1,0 +1,19 @@
+{
+  "art_style": "newsroom-grade finance explainer, photoreal narrative news look, data-visualisation cutaways",
+  "lighting": "bright cool key from above-front; soft paper-bounce fill; glowing ticker-board backdrop; subtle rim on shoulders",
+  "color_palette": "deep navy and charcoal backdrop; warm amber accent on the presenter; cool cyan and lime on chart elements",
+  "camera_rules": "locked-off medium close-up on presenter; single slow push-in on chart at the key data beat; extreme close-up cutaways on numbers; one move per clip",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "real ticker symbols",
+    "real brokerage branding",
+    "specific buy or sell advice",
+    "real identifiable persons",
+    "cartoon style",
+    "real news network branding"
+  ],
+  "aspect_ratio": "9:16"
+}

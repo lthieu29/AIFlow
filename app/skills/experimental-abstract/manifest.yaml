@@ -1,0 +1,27 @@
+name: experimental-abstract
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  Abstract motion-design experimental style. Synthwave colour fields,
+  liquid metal, neon ink diffusion, chrome geometry. Optimised for
+  music-video / lyric-video / experimental short content.
+
+supported_adapters:
+  - narrative_script
+  - script_direct
+  - lyric_video
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-HoaiMyNeural
+
+camera_lock: false
+safety_level: standard
+
+options:
+  default_aspect_ratio: "1:1"
+  default_fps: 30
+  default_camera: orbit
+  category: experimental

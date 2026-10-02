@@ -1,0 +1,202 @@
+[
+  {
+    "archive": "golang.org_x_sys@v0.0.0-20210809222454-d867a43fc93e.zip",
+    "file": "golang.org/x/sys@v0.0.0-20210809222454-d867a43fc93e/cpu/syscall_aix_ppc64_gc.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.0.0-20210809222454-d867a43fc93e.zip",
+    "file": "golang.org/x/sys@v0.0.0-20210809222454-d867a43fc93e/plan9/mksyscall.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.0.0-20210809222454-d867a43fc93e.zip",
+    "file": "golang.org/x/sys@v0.0.0-20210809222454-d867a43fc93e/unix/mksyscall_aix_ppc64.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.0.0-20210809222454-d867a43fc93e.zip",
+    "file": "golang.org/x/sys@v0.0.0-20210809222454-d867a43fc93e/unix/mksyscall_solaris.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.0.0-20210809222454-d867a43fc93e.zip",
+    "file": "golang.org/x/sys@v0.0.0-20210809222454-d867a43fc93e/unix/syscall_darwin_libSystem.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.0.0-20210809222454-d867a43fc93e.zip",
+    "file": "golang.org/x/sys@v0.0.0-20210809222454-d867a43fc93e/unix/zsyscall_aix_ppc64_gc.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.0.0-20210809222454-d867a43fc93e.zip",
+    "file": "golang.org/x/sys@v0.0.0-20210809222454-d867a43fc93e/unix/zsyscall_illumos_amd64.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.0.0-20210809222454-d867a43fc93e.zip",
+    "file": "golang.org/x/sys@v0.0.0-20210809222454-d867a43fc93e/unix/zsyscall_solaris_amd64.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.0.0-20210809222454-d867a43fc93e.zip",
+    "file": "golang.org/x/sys@v0.0.0-20210809222454-d867a43fc93e/windows/dll_windows.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.47.0.zip",
+    "file": "golang.org/x/sys@v0.47.0/cpu/cpu_openbsd_arm64.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.47.0.zip",
+    "file": "golang.org/x/sys@v0.47.0/cpu/runtime_auxv_go121.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.47.0.zip",
+    "file": "golang.org/x/sys@v0.47.0/cpu/syscall_aix_ppc64_gc.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.47.0.zip",
+    "file": "golang.org/x/sys@v0.47.0/cpu/syscall_darwin_arm64_gc.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.47.0.zip",
+    "file": "golang.org/x/sys@v0.47.0/cpu/syscall_darwin_x86_gc.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.47.0.zip",
+    "file": "golang.org/x/sys@v0.47.0/plan9/mksyscall.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.47.0.zip",
+    "file": "golang.org/x/sys@v0.47.0/unix/auxv.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.47.0.zip",
+    "file": "golang.org/x/sys@v0.47.0/unix/mksyscall_aix_ppc64.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.47.0.zip",
+    "file": "golang.org/x/sys@v0.47.0/unix/mksyscall_solaris.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.47.0.zip",
+    "file": "golang.org/x/sys@v0.47.0/unix/syscall_darwin_libSystem.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.47.0.zip",
+    "file": "golang.org/x/sys@v0.47.0/unix/syscall_linux.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.47.0.zip",
+    "file": "golang.org/x/sys@v0.47.0/unix/syscall_openbsd_libc.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.47.0.zip",
+    "file": "golang.org/x/sys@v0.47.0/unix/vgetrandom_linux.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.47.0.zip",
+    "file": "golang.org/x/sys@v0.47.0/unix/zsyscall_aix_ppc64_gc.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.47.0.zip",
+    "file": "golang.org/x/sys@v0.47.0/unix/zsyscall_illumos_amd64.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.47.0.zip",
+    "file": "golang.org/x/sys@v0.47.0/unix/zsyscall_solaris_amd64.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.47.0.zip",
+    "file": "golang.org/x/sys@v0.47.0/windows/dll_windows.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.47.0.zip",
+    "file": "golang.org/x/sys@v0.47.0/windows/testdata/ev-signed-file.exe",
+    "kind": "native_or_script"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.6.0.zip",
+    "file": "golang.org/x/sys@v0.6.0/cpu/cpu_openbsd_arm64.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.6.0.zip",
+    "file": "golang.org/x/sys@v0.6.0/cpu/runtime_auxv_go121.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.6.0.zip",
+    "file": "golang.org/x/sys@v0.6.0/cpu/syscall_aix_ppc64_gc.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.6.0.zip",
+    "file": "golang.org/x/sys@v0.6.0/plan9/mksyscall.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.6.0.zip",
+    "file": "golang.org/x/sys@v0.6.0/unix/mksyscall_aix_ppc64.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.6.0.zip",
+    "file": "golang.org/x/sys@v0.6.0/unix/mksyscall_solaris.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.6.0.zip",
+    "file": "golang.org/x/sys@v0.6.0/unix/syscall_darwin_libSystem.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.6.0.zip",
+    "file": "golang.org/x/sys@v0.6.0/unix/syscall_openbsd_libc.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.6.0.zip",
+    "file": "golang.org/x/sys@v0.6.0/unix/zsyscall_aix_ppc64_gc.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.6.0.zip",
+    "file": "golang.org/x/sys@v0.6.0/unix/zsyscall_illumos_amd64.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.6.0.zip",
+    "file": "golang.org/x/sys@v0.6.0/unix/zsyscall_solaris_amd64.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.6.0.zip",
+    "file": "golang.org/x/sys@v0.6.0/windows/dll_windows.go",
+    "kind": "go:linkname"
+  },
+  {
+    "archive": "golang.org_x_sys@v0.6.0.zip",
+    "file": "golang.org/x/sys@v0.6.0/windows/testdata/ev-signed-file.exe",
+    "kind": "native_or_script"
+  }
+]

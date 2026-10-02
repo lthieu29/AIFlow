@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>AIFlow — Tạo icon từ SVG</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background:#0f172a; color:#e2e8f0; margin:0; padding:32px; }
+    h1 { font-size:18px; margin:0 0 4px; }
+    p  { font-size:13px; color:#94a3b8; margin:0 0 24px; }
+    .row { display:flex; flex-wrap:wrap; gap:24px; align-items:flex-end; }
+    .cell { background:#1e293b; border:1px solid #334155; border-radius:12px; padding:16px; text-align:center; }
+    canvas { image-rendering:pixelated; background:#0b1220; border-radius:8px; }
+    a.dl { display:inline-block; margin-top:10px; font-size:12px; color:#60a5fa; text-decoration:none; }
+    a.dl:hover { text-decoration:underline; }
+    button { margin-top:24px; background:#3b82f6; color:#fff; border:0; border-radius:8px;
+             padding:10px 18px; font-size:14px; cursor:pointer; }
+    code { background:#334155; padding:1px 5px; border-radius:4px; font-size:12px; }
+  </style>
+</head>
+<body>
+  <h1>AIFlow — Tạo icon từ SVG</h1>
+  <p>
+    Trang này vẽ <code>icon.svg</code> lên canvas và xuất PNG. Bấm tải từng kích thước,
+    lưu vào <code>extension/icons/</code> (16/48/128) và <code>ui/public/</code> (favicon).
+    Hoặc dùng nhanh hơn: <code>python scripts/make_icons.py</code>.
+  </p>
+
+  <div class="row" id="cells"></div>
+
+  <button id="dlAll">Tải tất cả</button>
+
+  <!-- Nguồn SVG (đồng bộ với icon.svg) -->
+  <script id="svgSource" type="image/svg+xml">
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#1E3A8A"/>
+    </linearGradient>
+    <linearGradient id="play" x1="44" y1="36" x2="96" y2="92" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#DBEAFE"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#bg)"/>
+  <path d="M52 40 L52 88 L92 64 Z" fill="url(#play)"/>
+  <g stroke="#93C5FD" stroke-width="6" stroke-linecap="round" opacity="0.9">
+    <path d="M28 52 H40"/>
+    <path d="M24 64 H40"/>
+    <path d="M28 76 H40"/>
+  </g>
+</svg>
+  </script>
+
+  <script>
+    const SIZES = [
+      { px: 16,  name: "icon16.png" },
+      { px: 32,  name: "favicon-32.png" },
+      { px: 48,  name: "icon48.png" },
+      { px: 128, name: "icon128.png" },
+      { px: 180, name: "apple-touch-icon.png" },
+    ];
+    const svgText = document.getElementById("svgSource").textContent.trim();
+    const svgBlob = new Blob([svgText], { type: "image/svg+xml" });
+    const svgUrl  = URL.createObjectURL(svgBlob);
+
+    const cells = document.getElementById("cells");
+    const canvases = {};
+
+    function renderAll() {
+      const img = new Image();
+      img.onload = () => {
+        SIZES.forEach(({ px, name }) => {
+          const c = document.createElement("canvas");
+          c.width = c.height = px;
+          const ctx = c.getContext("2d");
+          ctx.clearRect(0, 0, px, px);
+          ctx.drawImage(img, 0, 0, px, px);
+
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.appendChild(c);
+          const label = document.createElement("div");
+          label.style.cssText = "font-size:11px;color:#94a3b8;margin-top:8px";
+          label.textContent = `${px}×${px}`;
+          cell.appendChild(label);
+          const a = document.createElement("a");
+          a.className = "dl";
+          a.textContent = `⬇ ${name}`;
+          a.href = c.toDataURL("image/png");
+          a.download = name;
+          cell.appendChild(a);
+          cells.appendChild(cell);
+
+          canvases[name] = c;
+        });
+      };
+      img.src = svgUrl;
+    }
+
+    document.getElementById("dlAll").addEventListener("click", () => {
+      Object.entries(canvases).forEach(([name, c]) => {
+        const a = document.createElement("a");
+        a.href = c.toDataURL("image/png");
+        a.download = name;
+        a.click();
+      });
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>

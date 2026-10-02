@@ -1,0 +1,40 @@
+# skills/kdrama-romance/manifest.yaml
+# K-Drama Romance skill — cinematic Korean drama style for EPUB novel adaptation
+
+name: kdrama-romance
+version: 1.0.0
+adapter_type: epub_novel
+extends: _base
+
+description: >
+  Cinematic Korean drama romance style — soft cinematic lighting, emotional
+  close-ups, pastel color grading, slow-motion moments. Optimised for
+  EPUB novel adaptation into multi-episode drama format.
+
+# Compatibility — EPUB novel adapter only
+supported_adapters:
+  - epub_novel
+
+# Style
+style_ref: style.json
+prefix_file: prefix.md
+
+# TTS voice — Vietnamese female for drama narration
+voice: vi-VN-HoaiMyNeural
+
+# Camera — dynamic for drama (overrides _base static default)
+camera_lock: false
+safety_level: standard
+
+options:
+  default_aspect_ratio: "9:16"
+  default_fps: 24
+  default_camera: dynamic
+  # EPUB-specific options
+  epub_quality_gates: true          # Enable EG1/EG2/EG3 checkpoints
+  epub_character_gate: true         # EG1 — pause after character extraction
+  epub_plot_gate: true              # EG2 — pause after chapter-to-scene mapping
+  epub_style_gate: true             # EG3 — pause after skill application
+  max_characters_per_episode: 8     # Limit character roster per episode
+  episode_intro_duration: 5.0       # Seconds for episode intro card
+  episode_outro_duration: 3.0       # Seconds for episode outro card

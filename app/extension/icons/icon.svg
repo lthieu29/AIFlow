@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AIFlow Bridge — master icon (vector source).
+  A rounded-square badge with a stylised "flow" play-mark:
+  a play triangle morphing into a motion stream (video generation + flow).
+  Convert to PNG with: extension/icons/convert_icons.html  (browser, no deps)
+  or: python scripts/make_icons.py  (Pillow).
+-->
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#1E3A8A"/>
+    </linearGradient>
+    <linearGradient id="play" x1="44" y1="36" x2="96" y2="92" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#DBEAFE"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Badge background -->
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#bg)"/>
+
+  <!-- Play / generate triangle -->
+  <path d="M52 40 L52 88 L92 64 Z" fill="url(#play)"/>
+
+  <!-- Flow streams (motion lines) behind/around the play mark -->
+  <g stroke="#93C5FD" stroke-width="6" stroke-linecap="round" opacity="0.9">
+    <path d="M28 52 H40"/>
+    <path d="M24 64 H40"/>
+    <path d="M28 76 H40"/>
+  </g>
+</svg>

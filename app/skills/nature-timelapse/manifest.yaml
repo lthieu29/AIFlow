@@ -1,0 +1,27 @@
+name: nature-timelapse
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  Time-lapse landscape style. Locked-off fixed camera; natural light
+  progression across hours; sky and shadow movement. Optimised for
+  21:9 documentary nature time-lapse.
+
+supported_adapters:
+  - narrative_script
+  - script_direct
+  - photo_slideshow
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-HoaiMyNeural
+
+camera_lock: true
+safety_level: standard
+
+options:
+  default_aspect_ratio: "21:9"
+  default_fps: 24
+  default_camera: static
+  category: nature

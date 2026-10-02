@@ -1,0 +1,10 @@
+voice_profile:
+  primary_backend: vieneu
+  primary_voice: NamMinh
+  fallback_backend: edge_tts
+  fallback_voice: vi-VN-NamMinhNeural
+  rate: "-4%"
+  pitch: "-3%"
+  volume: "+0%"
+  emotion: brooding
+  language: vi-VN

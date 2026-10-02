@@ -1,0 +1,19 @@
+{
+  "art_style": "wellness lifestyle, photoreal sunrise narrative, calming aesthetic",
+  "lighting": "soft sunrise key through sheer curtains; matcha green or candle warm fill; misted window haze",
+  "color_palette": "cream, oat, sage, dusty rose, soft butter yellow; cool teal shadow contrast",
+  "camera_rules": "slow dolly across a still life of a cup or mat; locked-off medium close-up on a meditative pose; tilt-down to feet on a mat; one move per clip",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "real branded apparel",
+    "weight-loss before/after framing",
+    "extreme contortion poses",
+    "real identifiable persons",
+    "preachy diet advice",
+    "cartoon style"
+  ],
+  "aspect_ratio": "9:16"
+}

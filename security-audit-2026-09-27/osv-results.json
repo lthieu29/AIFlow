@@ -1,0 +1,558 @@
+[
+  {
+    "query": {
+      "package": {
+        "name": "github.com/MakeNowJust/heredoc",
+        "ecosystem": "Go"
+      },
+      "version": "v1.0.0"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/atotto/clipboard",
+        "ecosystem": "Go"
+      },
+      "version": "v0.1.4"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/aymanbagabas/go-osc52/v2",
+        "ecosystem": "Go"
+      },
+      "version": "v2.0.1"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/aymanbagabas/go-udiff",
+        "ecosystem": "Go"
+      },
+      "version": "v0.3.1"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/charmbracelet/bubbles",
+        "ecosystem": "Go"
+      },
+      "version": "v1.0.0"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/charmbracelet/bubbletea",
+        "ecosystem": "Go"
+      },
+      "version": "v1.3.10"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/charmbracelet/colorprofile",
+        "ecosystem": "Go"
+      },
+      "version": "v0.4.1"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/charmbracelet/lipgloss",
+        "ecosystem": "Go"
+      },
+      "version": "v1.1.0"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/charmbracelet/x/ansi",
+        "ecosystem": "Go"
+      },
+      "version": "v0.11.8"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/charmbracelet/x/cellbuf",
+        "ecosystem": "Go"
+      },
+      "version": "v0.0.15"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/charmbracelet/x/term",
+        "ecosystem": "Go"
+      },
+      "version": "v0.2.2"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/clipperhouse/displaywidth",
+        "ecosystem": "Go"
+      },
+      "version": "v0.11.0"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/clipperhouse/uax29/v2",
+        "ecosystem": "Go"
+      },
+      "version": "v2.7.0"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/davecgh/go-spew",
+        "ecosystem": "Go"
+      },
+      "version": "v1.1.1"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/erikgeiser/coninput",
+        "ecosystem": "Go"
+      },
+      "version": "v0.0.0-20211004153227-1c3628e74d0f"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/gofrs/flock",
+        "ecosystem": "Go"
+      },
+      "version": "v0.13.0"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/lucasb-eyer/go-colorful",
+        "ecosystem": "Go"
+      },
+      "version": "v1.4.0"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/mattn/go-isatty",
+        "ecosystem": "Go"
+      },
+      "version": "v0.0.20"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/mattn/go-localereader",
+        "ecosystem": "Go"
+      },
+      "version": "v0.0.1"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/mattn/go-runewidth",
+        "ecosystem": "Go"
+      },
+      "version": "v0.0.24"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/muesli/ansi",
+        "ecosystem": "Go"
+      },
+      "version": "v0.0.0-20230316100256-276c6243b2f6"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/muesli/cancelreader",
+        "ecosystem": "Go"
+      },
+      "version": "v0.2.2"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/muesli/termenv",
+        "ecosystem": "Go"
+      },
+      "version": "v0.16.0"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/pmezard/go-difflib",
+        "ecosystem": "Go"
+      },
+      "version": "v1.0.0"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/rivo/uniseg",
+        "ecosystem": "Go"
+      },
+      "version": "v0.4.7"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/stretchr/testify",
+        "ecosystem": "Go"
+      },
+      "version": "v1.11.1"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/voocel/agentcore",
+        "ecosystem": "Go"
+      },
+      "version": "v1.8.3"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/voocel/litellm",
+        "ecosystem": "Go"
+      },
+      "version": "v1.8.10"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/xo/terminfo",
+        "ecosystem": "Go"
+      },
+      "version": "v0.0.0-20220910002029-abceb7e1c41e"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "golang.org/x/exp",
+        "ecosystem": "Go"
+      },
+      "version": "v0.0.0-20231006140011-7918f672742d"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "golang.org/x/image",
+        "ecosystem": "Go"
+      },
+      "version": "v0.45.0"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "golang.org/x/mod",
+        "ecosystem": "Go"
+      },
+      "version": "v0.40.0"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "golang.org/x/sys",
+        "ecosystem": "Go"
+      },
+      "version": "v0.0.0-20210809222454-d867a43fc93e"
+    },
+    "vulns": [
+      {
+        "id": "GHSA-p782-xgp4-8hr8",
+        "modified": "2026-09-10T03:49:55.203258Z"
+      },
+      {
+        "id": "GO-2022-0493",
+        "modified": "2026-02-04T03:42:54.589715Z"
+      },
+      {
+        "id": "GO-2026-5024",
+        "modified": "2026-06-09T18:59:22.740765Z"
+      }
+    ]
+  },
+  {
+    "query": {
+      "package": {
+        "name": "golang.org/x/sys",
+        "ecosystem": "Go"
+      },
+      "version": "v0.6.0"
+    },
+    "vulns": [
+      {
+        "id": "GO-2026-5024",
+        "modified": "2026-06-09T18:59:22.740765Z"
+      }
+    ]
+  },
+  {
+    "query": {
+      "package": {
+        "name": "golang.org/x/sys",
+        "ecosystem": "Go"
+      },
+      "version": "v0.47.0"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "golang.org/x/text",
+        "ecosystem": "Go"
+      },
+      "version": "v0.41.0"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "gopkg.in/yaml.v3",
+        "ecosystem": "Go"
+      },
+      "version": "v3.0.1"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "github.com/voocel/agentcore",
+        "ecosystem": "Go"
+      },
+      "version": "v1.8.2"
+    }
+  },
+  {
+    "query": {
+      "package": {
+        "name": "stdlib",
+        "ecosystem": "Go"
+      },
+      "version": "1.25.5"
+    },
+    "vulns": [
+      {
+        "id": "GO-2026-4337",
+        "modified": "2026-09-22T10:41:48.776562Z"
+      },
+      {
+        "id": "GO-2026-4340",
+        "modified": "2026-08-07T10:42:58.273913Z"
+      },
+      {
+        "id": "GO-2026-4341",
+        "modified": "2026-09-11T10:41:41.706958Z"
+      },
+      {
+        "id": "GO-2026-4342",
+        "modified": "2026-08-08T10:26:51.881576Z"
+      },
+      {
+        "id": "GO-2026-4601",
+        "modified": "2026-09-18T10:41:38.371213Z"
+      },
+      {
+        "id": "GO-2026-4602",
+        "modified": "2026-05-15T10:59:23.640277Z"
+      },
+      {
+        "id": "GO-2026-4603",
+        "modified": "2026-05-15T10:59:23.946663Z"
+      },
+      {
+        "id": "GO-2026-4864",
+        "modified": "2026-09-22T10:41:47.965946Z"
+      },
+      {
+        "id": "GO-2026-4865",
+        "modified": "2026-07-10T10:44:23.724783Z"
+      },
+      {
+        "id": "GO-2026-4869",
+        "modified": "2026-05-15T10:59:23.054049Z"
+      },
+      {
+        "id": "GO-2026-4870",
+        "modified": "2026-09-22T10:41:47.864389Z"
+      },
+      {
+        "id": "GO-2026-4918",
+        "modified": "2026-09-16T10:41:36.686823Z"
+      },
+      {
+        "id": "GO-2026-4946",
+        "modified": "2026-09-22T10:41:48.567066Z"
+      },
+      {
+        "id": "GO-2026-4947",
+        "modified": "2026-09-22T10:41:48.367776Z"
+      },
+      {
+        "id": "GO-2026-4970",
+        "modified": "2026-09-16T10:41:36.578014Z"
+      },
+      {
+        "id": "GO-2026-4971",
+        "modified": "2026-08-26T10:42:13.474920Z"
+      },
+      {
+        "id": "GO-2026-4976",
+        "modified": "2026-08-31T10:25:58.969613Z"
+      },
+      {
+        "id": "GO-2026-4977",
+        "modified": "2026-09-24T10:41:42.457153Z"
+      },
+      {
+        "id": "GO-2026-4980",
+        "modified": "2026-08-31T10:25:58.429372Z"
+      },
+      {
+        "id": "GO-2026-4981",
+        "modified": "2026-09-24T10:41:42.046519Z"
+      },
+      {
+        "id": "GO-2026-4982",
+        "modified": "2026-08-31T10:25:58.456781Z"
+      },
+      {
+        "id": "GO-2026-4986",
+        "modified": "2026-09-24T10:41:42.580314Z"
+      },
+      {
+        "id": "GO-2026-5026",
+        "modified": "2026-09-24T10:41:42.407718Z"
+      },
+      {
+        "id": "GO-2026-5037",
+        "modified": "2026-09-17T10:41:36.463498Z"
+      },
+      {
+        "id": "GO-2026-5038",
+        "modified": "2026-09-25T10:41:53.078712Z"
+      },
+      {
+        "id": "GO-2026-5039",
+        "modified": "2026-08-31T10:25:58.939163Z"
+      },
+      {
+        "id": "GO-2026-5856",
+        "modified": "2026-07-31T10:44:49.202644Z"
+      },
+      {
+        "id": "GO-2026-5972",
+        "modified": "2026-09-25T10:41:53.018978Z"
+      },
+      {
+        "id": "GO-2026-6088",
+        "modified": "2026-09-25T10:41:53.159573Z"
+      },
+      {
+        "id": "GO-2026-6089",
+        "modified": "2026-09-24T10:41:42.471715Z"
+      },
+      {
+        "id": "GO-2026-6090",
+        "modified": "2026-09-25T10:41:52.830720Z"
+      },
+      {
+        "id": "GO-2026-6091",
+        "modified": "2026-09-25T10:41:52.899286Z"
+      },
+      {
+        "id": "GO-2026-6218",
+        "modified": "2026-09-25T10:41:53.117158Z"
+      }
+    ]
+  },
+  {
+    "query": {
+      "package": {
+        "name": "stdlib",
+        "ecosystem": "Go"
+      },
+      "version": "1.26.4"
+    },
+    "vulns": [
+      {
+        "id": "GO-2026-4970",
+        "modified": "2026-09-16T10:41:36.578014Z"
+      },
+      {
+        "id": "GO-2026-5026",
+        "modified": "2026-09-24T10:41:42.407718Z"
+      },
+      {
+        "id": "GO-2026-5856",
+        "modified": "2026-07-31T10:44:49.202644Z"
+      },
+      {
+        "id": "GO-2026-5942",
+        "modified": "2026-08-17T12:25:32.471119Z"
+      },
+      {
+        "id": "GO-2026-5972",
+        "modified": "2026-09-25T10:41:53.018978Z"
+      },
+      {
+        "id": "GO-2026-6088",
+        "modified": "2026-09-25T10:41:53.159573Z"
+      },
+      {
+        "id": "GO-2026-6089",
+        "modified": "2026-09-24T10:41:42.471715Z"
+      },
+      {
+        "id": "GO-2026-6090",
+        "modified": "2026-09-25T10:41:52.830720Z"
+      },
+      {
+        "id": "GO-2026-6091",
+        "modified": "2026-09-25T10:41:52.899286Z"
+      },
+      {
+        "id": "GO-2026-6218",
+        "modified": "2026-09-25T10:41:53.117158Z"
+      }
+    ]
+  }
+]

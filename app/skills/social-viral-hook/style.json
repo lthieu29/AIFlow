@@ -1,0 +1,19 @@
+{
+  "art_style": "bright social-first photography, vibrant TikTok grade, photoreal short-form",
+  "lighting": "punchy daylight key with bounce fill; optional neon accent; soft shadowless fill",
+  "color_palette": "saturated primaries (red, yellow, electric blue) with one accent neon; high contrast",
+  "camera_rules": "light handheld breathing; single whip-pan to land payoff; medium close-up to extreme close-up shot framing",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "epilepsy strobe",
+    "real brand markings",
+    "real identifiable persons",
+    "misleading clickbait copy",
+    "cartoon style",
+    "muted desaturated palette"
+  ],
+  "aspect_ratio": "9:16"
+}

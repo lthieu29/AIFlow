@@ -1,0 +1,19 @@
+{
+  "art_style": "history documentary explainer, museum-grade photoreal narrative, archive-tinted",
+  "lighting": "soft gallery key on artefacts; candle-and-window blend on re-enactments; sepia archive grain on cutaways",
+  "color_palette": "warm parchment, sepia, faded gold, deep walnut; low-key shadow contrast",
+  "camera_rules": "slow dolly across display cases; locked-off medium of re-enactment; rack focus from parchment to scholar's hand; one move per clip",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "anachronistic props",
+    "modern slang",
+    "nationalist propaganda framing",
+    "real identifiable persons",
+    "TikTok fast cuts",
+    "cartoon style"
+  ],
+  "aspect_ratio": "16:9"
+}

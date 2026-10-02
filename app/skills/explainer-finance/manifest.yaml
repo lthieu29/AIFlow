@@ -1,0 +1,28 @@
+name: explainer-finance
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  Finance explainer style. Newsroom/desk lighting, ticker-board palette,
+  data-visualisation cutaways, professional authoritative tone. Optimised
+  for short explainer narratives in finance / investing / macro.
+
+supported_adapters:
+  - narrative_script
+  - blog_article
+  - document_summary
+  - script_direct
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-NamMinhNeural
+
+camera_lock: true
+safety_level: standard
+
+options:
+  default_aspect_ratio: "9:16"
+  default_fps: 30
+  default_camera: static
+  category: educational

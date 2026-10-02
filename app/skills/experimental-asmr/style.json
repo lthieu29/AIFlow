@@ -1,0 +1,19 @@
+{
+  "art_style": "ASMR sensory experimental, photoreal macro, intimate tactile aesthetic",
+  "lighting": "warm soft tungsten key with halation on wet surfaces; gentle paper-bounce fill; low contrast",
+  "color_palette": "warm cream, butter yellow, soft amber, deep walnut shadow contrast; specular highlights kept gentle",
+  "camera_rules": "locked-off extreme close-up on the trigger surface; very slow dolly-in toward source; single rack focus; one move per clip",
+  "negative_prompts": [
+    "watermark",
+    "logo",
+    "text overlay",
+    "subtitle",
+    "real branded packaging",
+    "loud transients",
+    "epilepsy strobe",
+    "real identifiable persons",
+    "music bed under triggers",
+    "cartoon style"
+  ],
+  "aspect_ratio": "1:1"
+}

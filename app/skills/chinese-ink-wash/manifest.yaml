@@ -1,0 +1,29 @@
+name: chinese-ink-wash
+version: 1.0.0
+adapter_type: narrative_script
+extends: _base
+
+description: >
+  Chinese ink-wash painting style. Sumi-e brush stroke aesthetic in
+  motion, misted mountain ridges, scholar / poet / boatman archetypes,
+  classical guzheng audio. Optimised for classical Chinese narrative
+  excerpts and EPUB historical novels.
+
+supported_adapters:
+  - narrative_script
+  - storyboard_manual
+  - script_direct
+  - epub_novel
+
+style_ref: style.json
+prefix_file: prefix.md
+voice: vi-VN-NamMinhNeural
+
+camera_lock: false
+safety_level: standard
+
+options:
+  default_aspect_ratio: "21:9"
+  default_fps: 24
+  default_camera: dolly
+  category: chinese-native

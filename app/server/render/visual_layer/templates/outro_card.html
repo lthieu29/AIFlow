@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1080, height=1920">
+  <title>Outro Card</title>
+  <script src="{{__VENDOR_GSAP__}}"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      font-family: 'Inter', 'Segoe UI', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    }
+    #stage {
+      width: 1080px;
+      height: 1920px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 80px 60px;
+      background: linear-gradient(
+        180deg,
+        rgba(6, 6, 10, 0.90) 0%,
+        rgba(10, 10, 18, 0.80) 50%,
+        rgba(6, 6, 10, 0.90) 100%
+      );
+      opacity: 0;
+    }
+    #brand {
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: 7px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.50);
+      margin-bottom: 64px;
+    }
+    #title {
+      font-size: 80px;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      color: #ffffff;
+      max-width: 920px;
+      word-break: break-word;
+    }
+    #divider {
+      width: 60px;
+      height: 4px;
+      background: #FF6F00;
+      border-radius: 2px;
+      margin: 44px auto;
+    }
+    #cta {
+      font-size: 44px;
+      font-weight: 700;
+      color: #FF6F00;
+      letter-spacing: 0.5px;
+      max-width: 880px;
+    }
+    #cta-sub {
+      font-size: 28px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.55);
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div id="brand">{{BRAND}}</div>
+    <div id="title">{{TITLE}}</div>
+    <div id="divider"></div>
+    <div id="cta">{{CTA}}</div>
+    <div id="cta-sub">👇 Link trong bio</div>
+  </div>
+
+  <script>
+    document.body.style.background = 'transparent';
+
+    const tl = gsap.timeline({ paused: true });
+
+    // Fade in the whole stage
+    tl.to('#stage', { opacity: 1, duration: 0.7, ease: 'power2.out' }, 0)
+    // Hold for ~2.5s
+      .to({}, { duration: 2.5 })
+    // Fade out
+      .to('#stage', { opacity: 0, duration: 0.6, ease: 'power2.in' });
+
+    window.__hf = {
+      duration: tl.duration(),
+      seek(t) { tl.seek(t); }
+    };
+  </script>
+</body>
+</html>

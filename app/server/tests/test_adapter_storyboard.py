@@ -459,13 +459,17 @@ class TestAdapt:
         assert result.scenes[0].narration == "NARRATION_MARKER_ABC"
 
     @pytest.mark.asyncio
-    async def test_duration_preserved(self):
+    async def test_unsupported_duration_reports_clip_limit_without_silent_clamp(self):
+        from server.content.base import AdapterError
+
         adapter = self._adapter()
         raw = _make_storyboard_json(scenes=[
             {"order": 0, "prompt": "P.", "duration": 12.0}
         ])
-        result = await adapter.adapt(_make_input(raw_content=raw))
-        assert result.scenes[0].duration == pytest.approx(12.0)
+        with pytest.raises(AdapterError) as failure:
+            await adapter.adapt(_make_input(raw_content=raw))
+        assert failure.value.code == "ADAPTER_INVALID_INPUT"
+        assert any("duration" in message and "8" in message for message in failure.value.details["errors"])
 
     @pytest.mark.asyncio
     async def test_default_duration_is_8(self):
@@ -473,6 +477,43 @@ class TestAdapt:
         raw = _make_storyboard_json(scenes=[{"order": 0, "prompt": "P."}])
         result = await adapter.adapt(_make_input(raw_content=raw))
         assert result.scenes[0].duration == pytest.approx(8.0)
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("duration", [4.0, 8.0])
+    async def test_short_narration_preserves_authored_duration_within_clip_limit(self, duration):
+        raw = _make_storyboard_json(scenes=[{
+            "order": 0, "prompt": "Boat on a stream.", "duration": duration,
+            "narration": "The little boat begins its journey.",
+        }])
+        result = await self._adapter().adapt(_make_input(raw_content=raw))
+        assert len(result.scenes) == 1
+        assert result.scenes[0].duration == pytest.approx(duration)
+
+    @pytest.mark.asyncio
+    async def test_default_duration_with_short_narration_stays_8(self):
+        raw = _make_storyboard_json(scenes=[{
+            "order": 0, "prompt": "Boat on a stream.", "narration": "The boat begins.",
+        }])
+        result = await self._adapter().adapt(_make_input(raw_content=raw))
+        assert result.scenes[0].duration == pytest.approx(8.0)
+
+    @pytest.mark.asyncio
+    async def test_narration_exceeding_authored_duration_requires_explicit_correction(self):
+        from server.content.base import AdapterError
+
+        narration = " ".join(f"word{i}" for i in range(50))
+        raw = _make_storyboard_json(scenes=[{
+            "order": 0, "prompt": "Boat on a stream.", "duration": 8.0,
+            "narration": narration, "location_hint": "outdoor",
+        }, {"order": 1, "prompt": "Final shot.", "duration": 4.0, "narration": "The end."}])
+        with pytest.raises(AdapterError) as failure:
+            await self._adapter().adapt(_make_input(raw_content=raw))
+        assert failure.value.code == "ADAPTER_INVALID_INPUT"
+        messages = failure.value.details["errors"]
+        assert len(messages) == 1
+        assert "scenes → 0 → narration" in messages[0]
+        assert "20.0" in messages[0]
+        assert "word0" not in messages[0]
 
     @pytest.mark.asyncio
     async def test_location_hint_preserved(self):
@@ -704,7 +745,7 @@ class TestJsonToVideo:
                 {
                     "order": 2,
                     "prompt": "Aerial view of a coffee plantation at sunrise.",
-                    "duration": 10.0,
+                    "duration": 8.0,
                     "narration": "Từ những hạt cà phê chọn lọc kỹ càng.",
                     "location_hint": "outdoor_nature",
                 },
@@ -740,9 +781,10 @@ class TestJsonToVideo:
         assert result.scenes[0].location_hint == "indoor_cafe"
         assert result.scenes[0].start_image == start_img
         assert result.scenes[1].start_image is None
-        assert result.scenes[2].duration == pytest.approx(10.0)
+        assert [scene.duration for scene in result.scenes] == [scene["duration"] for scene in storyboard_data["scenes"]]
+        assert result.scenes[2].narration == storyboard_data["scenes"][2]["narration"]
 
         # Verify cost estimate
         cost = result.estimate_cost()
         assert cost["veo3_clips"] == 3
-        assert cost["total_video_duration_sec"] == pytest.approx(26.0)
+        assert cost["total_video_duration_sec"] == pytest.approx(sum(scene.duration for scene in result.scenes))

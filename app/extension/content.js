@@ -1,6 +1,6 @@
 /**
  * AIFlow Bridge — content.js
- * Content script injected into labs.google/fx/tools/flow*.
+ * Content script injected into flow.google.com and legacy labs.google Flow pages.
  *
  * Lifted from flowboard/extension/content.js.
  * Bridges chrome.runtime.sendMessage({type:"GET_CAPTCHA"}) ↔ MAIN world events.

@@ -18,6 +18,7 @@ The whole module is skipped when Playwright (Python package) or Chromium
 from __future__ import annotations
 
 import asyncio
+import os
 import sys
 from pathlib import Path
 
@@ -52,6 +53,13 @@ from server.render.visual_layer.template_registry import (  # noqa: E402
 )
 
 NEW_TEMPLATES = ["quote_card", "stat_card", "news_ticker", "lyric_line"]
+
+
+@pytest.fixture(autouse=True)
+def local_browser_cache(monkeypatch):
+    cache = Path(__file__).resolve().parents[2] / "vendor" / "playwright"
+    if cache.is_dir() and not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
+        monkeypatch.setenv("PLAYWRIGHT_BROWSERS_PATH", str(cache))
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -141,3 +149,30 @@ def test_template_render_and_hf_contract(
     """**R5.4 / R5.9** — Each new template renders, exposes a valid
     ``window.__hf`` contract, and ``seek(t)`` drives the GSAP timeline."""
     asyncio.run(_render_and_assert(template_name, tmp_path))
+
+
+def test_runtime_renderer_encodes_with_local_browser_without_env(tmp_path, monkeypatch):
+    from server.production.media import ffmpeg, probe
+    from server.render.visual_layer.playwright_renderer import PlaywrightRenderer, RenderRequest
+
+    monkeypatch.delenv("PLAYWRIGHT_BROWSERS_PATH", raising=False)
+    template = tmp_path / "runtime.html"
+    template.write_text('''<html><body style="margin:0;background:transparent">
+<div id="box" style="width:80px;height:80px;background:red"></div>
+<script src="{{__VENDOR_GSAP__}}"></script><script>
+const tl=gsap.timeline({paused:true}).to('#box',{x:120,duration:1});
+window.__hf={duration:1,seek(t){tl.seek(t);}};
+</script></body></html>''', encoding="utf-8")
+    output = tmp_path / "runtime.webm"
+    result = asyncio.run(asyncio.wait_for(PlaywrightRenderer().render(RenderRequest(
+        template_path=template, template_vars={}, duration_sec=1,
+        output_path=output, width=320, height=180, fps=4,
+    )), timeout=20))
+    assert "PLAYWRIGHT_BROWSERS_PATH" not in os.environ
+    assert result.frame_count == 4
+    info = probe(output)
+    assert info["duration"] == pytest.approx(1, abs=.05)
+    stream = next(item for item in info["streams"] if item["codec_type"] == "video")
+    assert (stream["width"], stream["height"], stream["codec_name"]) == (320, 180, "vp9")
+    assert stream["tags"]["alpha_mode"] == "1"
+    ffmpeg(["-i", str(output), "-f", "null", "-"])

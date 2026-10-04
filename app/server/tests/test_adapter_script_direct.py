@@ -34,7 +34,7 @@ from server.content.registry import AdapterRegistry
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
 _MIN_DUR = 3.0
-_MAX_DUR = 30.0
+_MAX_DUR = 8.0
 _DEFAULT_DUR = 8.0
 
 
@@ -163,7 +163,7 @@ def test_property3_missing_required_field_indexed(
     bad_value=st.one_of(
         st.just(0.0),
         st.floats(min_value=-100.0, max_value=2.99, allow_nan=False, allow_infinity=False),
-        st.floats(min_value=30.01, max_value=100.0, allow_nan=False, allow_infinity=False),
+        st.floats(min_value=_MAX_DUR + 0.01, max_value=100.0, allow_nan=False, allow_infinity=False),
     ),
 )
 @settings(max_examples=120, suppress_health_check=[HealthCheck.too_slow])
@@ -426,19 +426,19 @@ def test_default_duration_when_missing() -> None:
 
 
 def test_duration_boundary_values_accepted() -> None:
-    """**R1.6** — durations exactly at the boundary [3, 30] are accepted."""
+    """Explicit durations at the supported [3, 8] boundaries are preserved."""
     scene_list = _run(
         _adapter().adapt(
             _make_input(
                 {
                     "scenes": [
                         {"narration": "A", "visual_prompt": "B", "duration_sec": 3.0},
-                        {"narration": "C", "visual_prompt": "D", "duration_sec": 30.0},
+                        {"narration": "C", "visual_prompt": "D", "duration_sec": _MAX_DUR},
                     ]
                 }
             )
         )
     )
     assert scene_list.scenes[0].duration == 3.0
-    assert scene_list.scenes[1].duration == 30.0
+    assert scene_list.scenes[1].duration == _MAX_DUR
     assert [s.order for s in scene_list.scenes] == [0, 1]

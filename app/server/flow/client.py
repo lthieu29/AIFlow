@@ -104,7 +104,7 @@ class FlowClient:
         except asyncio.TimeoutError:
             raise TimeoutError(
                 f"No Bearer token captured within {timeout}s. "
-                "Make sure the extension is connected and you are logged in to labs.google."
+                "Make sure the extension is connected and has captured a Google Flow Bearer token."
             )
         assert self._token is not None
         return self._token
@@ -127,6 +127,38 @@ class FlowClient:
             )
 
     # ── Bidirectional request/response ────────────────────────────────────────
+
+    async def get_flow_project(self) -> dict[str, Any]:
+        """Read the remote project UUID from an open Google Flow project tab."""
+        return await self._send("get_flow_project", {}, timeout=10.0)
+
+    async def open_flow_project(self, url: str) -> dict[str, Any]:
+        """Select an existing Flow project through the extension, without generation."""
+        return await self._send("open_flow_project", {"url": url}, timeout=30.0)
+
+    async def flow_rpc_request(
+        self, rpc_id: str, request: list, project_id: str,
+        captcha_action: Optional[str] = None, timeout: float = 120.0, preflight_only: bool = False,
+    ) -> dict[str, Any]:
+        """Run a current Flow RPC in the signed-in page; page credentials never leave it."""
+        return await self._send("flow_rpc_request", {
+            "rpcId": rpc_id, "request": request, "projectId": project_id, "captchaAction": captcha_action,
+            "preflightOnly": preflight_only,
+        }, timeout=timeout)
+
+    async def flow_ui_request(
+        self, project_id: str, prompt: str = "", aspect: str = "16:9", preflight_only: bool = False,
+        reference: Optional[dict[str, str]] = None,
+        allow_silent_video: bool = False,
+        reference_mode: str = "ingredients",
+    ) -> dict[str, Any]:
+        """Operate the normal Flow composer; no captcha or auth values leave the page."""
+        return await self._send("flow_ui_request", {
+            "projectId": project_id, "prompt": prompt, "aspect": aspect, "preflightOnly": preflight_only,
+            "allow_silent_video": allow_silent_video,
+            "reference_mode": reference_mode,
+            **({"reference": reference} if reference else {}),
+        }, timeout=10.0 if preflight_only else 180.0 if reference else 120.0)
 
     async def _send(
         self,

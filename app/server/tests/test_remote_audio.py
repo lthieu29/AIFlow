@@ -36,6 +36,13 @@ def test_worker_url_rejects_non_root_or_private(url):
         remote.validate_url(url)
 
 
+@pytest.mark.parametrize("url", ["https://x.trycloudflare.com:bad", "https://x.trycloudflare.com:99999", "https://["])
+def test_malformed_worker_url_is_a_user_error(url):
+    with pytest.raises(remote.AudioUnavailable) as caught:
+        remote.validate_url(url)
+    assert caught.value.state == "invalid_url"
+
+
 def test_token_never_persisted_and_generation_changes(tmp_path):
     c = remote.AudioConnection()
     c.save({"url": "https://example.trycloudflare.com", "health": {}, "voices": []}, "private-token", tmp_path)
@@ -96,6 +103,24 @@ def test_cancelled_queue_never_attaches_audio(isolated_queue):
         assert db.get(Scene, scene_id).audio_path is None
 
 
+def test_series_audio_snapshot_freezes_speed_and_model_revision(isolated_queue):
+    import json
+    q, _ = isolated_queue
+    with Session(q.engine) as db:
+        project = Project(title="Series", short_id="series", production_brief=json.dumps({
+            "series": {"voice": "af_heart", "language": "en", "speed": 0.8, "model_revision": "other-model"},
+        }))
+        db.add(project)
+        db.flush()
+        db.add(Scene(project_id=project.id, order=0, narration="Hello"))
+        db.commit()
+        task = queue.enqueue(db, q.settings, project=project, speed=1.5)
+        assert task.speed == 0.8
+        assert json.loads(task.snapshot_json)[0]["locked_model"] == "other-model"
+        assert task.status == "waiting_resource"
+        assert task.segments_json == "[]"
+
+
 def test_cancellation_wins_before_finish_claim(isolated_queue):
     q, _ = isolated_queue
     with Session(q.engine) as db:
@@ -112,6 +137,95 @@ def test_cancellation_wins_before_finish_claim(isolated_queue):
         q.finish(db, task, [])
         assert task.status == "cancel_requested"
         assert not (q.settings.data_dir / "audio" / "tasks" / f"{task_id}.wav").exists()
+
+
+def test_cancel_with_lost_worker_session_finishes_locally_and_unblocks_queue(isolated_queue):
+    q, _ = isolated_queue
+    with Session(q.engine) as db:
+        first = queue.enqueue(db, q.settings, text="First")
+        first.status, first.active_key = "cancel_requested", "a" * 64
+        db.add(first)
+        db.commit()
+        first_id = first.id
+        second = queue.enqueue(db, q.settings, text="Second")
+        second.status = "queued"
+        db.add(second)
+        db.commit()
+        second_id = second.id
+    q.tick()
+    with Session(q.engine) as db:
+        cancelled = db.get(AudioTask, first_id)
+        assert cancelled.status == "cancelled"
+        assert "Colab" in cancelled.error
+    q.tick()
+    with Session(q.engine) as db:
+        assert db.get(AudioTask, second_id).status == "waiting_resource"
+
+
+@pytest.mark.parametrize("failure", [remote.AudioUnavailable("offline"), RuntimeError("bad reply")])
+def test_cancellation_wins_when_inflight_request_fails(isolated_queue, monkeypatch, failure):
+    q, connection = isolated_queue
+    connection.token, connection.url = "t" * 32, "https://test.trycloudflare.com"
+    with Session(q.engine) as db:
+        task = queue.enqueue(db, q.settings, text="Test")
+        task_id = task.id
+
+    def failing_request(*args, **kwargs):
+        with Session(q.engine) as other:
+            task = other.get(AudioTask, task_id)
+            task.status = "cancel_requested"
+            other.add(task)
+            other.commit()
+        raise failure
+
+    monkeypatch.setattr(queue, "request", failing_request)
+    q.tick()
+    with Session(q.engine) as db:
+        assert db.get(AudioTask, task_id).status == "cancel_requested"
+
+
+@pytest.mark.parametrize("results", [None, [], [None], "invalid"])
+async def test_invalid_batch_manifest_cannot_enqueue_new_audio(isolated_queue, monkeypatch, results):
+    import json
+    import zipfile
+
+    from fastapi import HTTPException, UploadFile
+
+    from server.api.routes import audio
+    q, _ = isolated_queue
+    monkeypatch.setattr(audio, "get_engine", lambda _: q.engine)
+    monkeypatch.setattr(audio, "load_settings", lambda: q.settings)
+    with Session(q.engine) as db:
+        task = AudioTask(title="Batch test", snapshot_json="[]", segments_json=json.dumps([{"key": "a" * 64}]), status="waiting_resource")
+        db.add(task)
+        db.commit()
+        task_id = task.id
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("manifest.json", json.dumps({"results": results}))
+    buffer.seek(0)
+    with pytest.raises(HTTPException) as caught:
+        await audio.import_batch(task_id, UploadFile(file=buffer, filename="results.zip"))
+    assert caught.value.status_code == 422
+    with Session(q.engine) as db:
+        assert db.get(AudioTask, task_id).status == "waiting_resource"
+
+
+async def test_batch_import_requires_exported_model_and_segments(isolated_queue, monkeypatch):
+    from fastapi import HTTPException, UploadFile
+
+    from server.api.routes import audio
+    q, _ = isolated_queue
+    monkeypatch.setattr(audio, "get_engine", lambda _: q.engine)
+    monkeypatch.setattr(audio, "load_settings", lambda: q.settings)
+    with Session(q.engine) as db:
+        task = AudioTask(title="Batch test", snapshot_json="[]", status="waiting_resource")
+        db.add(task)
+        db.commit()
+        task_id = task.id
+    with pytest.raises(HTTPException) as caught:
+        await audio.import_batch(task_id, UploadFile(file=io.BytesIO(b"not a zip")))
+    assert caught.value.status_code == 409
 
 
 def test_queue_restart_waits_and_stale_content_blocks(isolated_queue):

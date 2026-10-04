@@ -18,7 +18,7 @@ from server.db.models.script_approval import ScriptApproval
 from server.db.models.script_revision import ScriptRevision
 from server.text.approval import CHECKLIST
 from server.text.openrouter import OpenRouter, TextProviderError, free_structured_model
-from server.text.quality import inspect_script
+from server.text.quality import inspect_script, words
 from server.text.schemas import Brief, Review, Script, strict_schema
 from server.text.workflow import assert_project_approved, build_prompt
 
@@ -144,6 +144,51 @@ def test_full_manual_approval_and_project_roundtrip(client):
         db.commit()
         with pytest.raises(HTTPException, match="409"):
             assert_project_approved(db, first.json()["id"])
+
+
+def test_direct_manual_short_clip_roundtrip_without_inference(client):
+    content = script_data()
+    content["scenes"] = content["scenes"][:1]
+    content["scenes"][0]["narration"] = "Chiếc đồng hồ giữ lại một bí mật."
+    payload = {"request_id": rid(), "content": content, "language": "vi"}
+    first = client.post("/api/scripts/manual", json=payload)
+    assert first.status_code == 201, first.text
+    draft = first.json()
+    assert draft["stage"] == "manual" and not draft["approved"]
+    assert client.post("/api/scripts/manual", json=payload).json()["id"] == draft["id"]
+    detail = client.get(f"/api/scripts/{draft['id']}").json()
+    assert detail["brief"]["language"] == "vi" and detail["brief"]["target_seconds"] == 8
+    assert detail["quality"]["ready"] and detail["quality"]["words"] == 8
+    assert approve(client, draft["id"]).status_code == 200
+    project = client.post(f"/api/scripts/{draft['id']}/project", json={})
+    assert project.status_code == 200, project.text
+    with Session(client.test_engine) as db:
+        assert len(db.exec(select(ScriptRevision)).all()) == 2
+        assert db.get(Project, project.json()["id"]).language == "vi"
+        scene = db.exec(select(Scene)).one()
+        assert scene.narration == content["scenes"][0]["narration"]
+        assert scene.prompt == content["scenes"][0]["visual_prompt"]
+        assert_project_approved(db, project.json()["id"])
+    payload["language"] = "en"
+    assert client.post("/api/scripts/manual", json=payload).status_code == 409
+    payload["language"] = "vi"
+    payload["content"]["title"] = "Different"
+    assert client.post("/api/scripts/manual", json=payload).status_code == 409
+
+
+def test_direct_manual_invalid_content_creates_no_checkpoints(client):
+    content = script_data()
+    content["scenes"][0]["visual_prompt"] = ""
+    assert client.post("/api/scripts/manual", json={"request_id": rid(), "content": content}).status_code == 422
+    content = script_data()
+    content["scenes"] *= 12
+    assert client.post("/api/scripts/manual", json={"request_id": rid(), "content": content}).status_code == 422
+    assert client.get("/api/scripts").json() == []
+
+
+def test_word_counter_handles_vietnamese_and_apostrophes():
+    assert words("Chiếc đồng hồ giữ lại một bí mật.") == ["Chiếc", "đồng", "hồ", "giữ", "lại", "một", "bí", "mật"]
+    assert words("Don't re-use scene_2.") == ["Don't", "re-use", "scene", "2"]
 
 
 def test_checklist_and_warnings_are_required(client):

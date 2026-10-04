@@ -450,7 +450,7 @@ class TestEpubGateDbRecords:
 
         gate = create_epub_character_gate(session, project_id=project.id, timeout_hours=12)
         assert gate.expired_at is not None
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = datetime.now(timezone.utc)
         assert gate.expired_at > now
 
     @pytest.mark.asyncio

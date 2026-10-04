@@ -9,6 +9,7 @@ from urllib.parse import urlsplit
 from fastapi import APIRouter, Depends, File, Header, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field, SecretStr
+from sqlalchemy import update
 from sqlmodel import Session, select
 
 from server.audio.queue import enqueue, inputs_current, now, prepare
@@ -105,6 +106,10 @@ def list_tasks():
 def create_task(body: TaskInput):
     settings = load_settings()
     with Session(get_engine(settings)) as session:
+        if body.project_id:
+            # Claim the write transaction before checking ownership so two
+            # concurrent requests cannot both clear and replace scene audio.
+            session.execute(update(Project).where(Project.id == body.project_id).values(updated_at=Project.updated_at))
         project = session.get(Project, body.project_id) if body.project_id else None
         if body.project_id and not project:
             raise HTTPException(404, "Dự án không tồn tại.")
@@ -113,6 +118,12 @@ def create_task(body: TaskInput):
         if project:
             if project.status == "generating":
                 raise HTTPException(409, "Dự án đang chạy; hãy xử lý tác vụ hiện tại.")
+            existing = session.exec(select(AudioTask).where(
+                AudioTask.project_id == project.id,
+                AudioTask.status.notin_(["succeeded", "cancelled"]),
+            )).first()
+            if existing:
+                raise HTTPException(409, f"Dự án đang có tác vụ audio #{existing.id}. Tiếp tục hoặc hủy và chờ xác nhận đã hủy trước khi tạo tác vụ mới.")
             series = json.loads(project.production_brief).get("series", {})
             if series.get("voice") and (body.voice != series["voice"] or body.language != series["language"]):
                 raise HTTPException(409, "Tập này đã khóa giọng theo series. Tạo tập mới với phiên bản series mới để đổi.")
@@ -227,17 +238,22 @@ async def import_batch(task_id: int, file: UploadFile = File(...)):
         if task.status in ("running", "cancel_requested", "cancelled", "succeeded") or not inputs_current(session, task):
             raise HTTPException(409, "Tác vụ không còn chấp nhận kết quả batch.")
         expected = {s["key"] for s in json.loads(task.segments_json)}
+        if not expected:
+            raise HTTPException(409, "Xuất batch JSON trước khi nhập kết quả để khóa model và các đoạn audio.")
         try:
             with zipfile.ZipFile(io.BytesIO(raw)) as archive:
                 if sum(i.file_size for i in archive.infolist()) > 256 * 1024 * 1024:
                     raise ValueError("ZIP giải nén quá lớn")
                 manifest = json.loads(archive.read("manifest.json"))
-                for job in manifest["results"]:
+                results = manifest["results"]
+                if not isinstance(results, list) or not results or any(not isinstance(job, dict) for job in results):
+                    raise ValueError("Manifest không có kết quả audio")
+                for job in results:
                     key = job["job_id"]
                     if key not in expected or job["status"] != "succeeded":
                         raise ValueError("Kết quả không thuộc tác vụ")
                     store_audio(settings.data_dir, key, archive.read(f"{key}.wav"), job["checksum"])
-        except (ValueError, KeyError, zipfile.BadZipFile, AudioUnavailable) as exc:
+        except (ValueError, KeyError, TypeError, AttributeError, zipfile.BadZipFile, AudioUnavailable) as exc:
             raise HTTPException(422, "ZIP/manifest/checksum không hợp lệ.") from exc
         task.status, task.error = "queued", ""
         session.add(task)

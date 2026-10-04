@@ -91,26 +91,44 @@ export async function discoverAgent() {
  * @param {function} dispatch - message handler
  */
 export async function connectAgent(state, dispatch) {
+  if (state.ws && [WebSocket.OPEN, WebSocket.CONNECTING].includes(state.ws.readyState)) return;
+  if (state._connectPromise) return state._connectPromise;
+
+  state._connectPromise = connectSocket(state, dispatch);
+  try {
+    await state._connectPromise;
+  } finally {
+    state._connectPromise = null;
+  }
+}
+
+async function connectSocket(state, dispatch) {
   if (!dynamicConfig) await discoverAgent();
 
   const wsUrl = dynamicConfig.ws_url || `ws://127.0.0.1:${dynamicConfig.ws_port || 9223}`;
-  state.ws = new WebSocket(wsUrl);
+  const ws = new WebSocket(wsUrl);
+  state.ws = ws;
 
-  state.ws.onopen = () => {
+  ws.onopen = () => {
+    if (state.ws !== ws) return;
     state.connected = true;
-    popupState.status = state.flow?.token ? 'connected' : 'token_missing';
+    popupState.status = state.flow?.token || state.flow?.rpcReady ? 'connected' : 'token_missing';
     console.log('[AIFlow] WS connected to agent');
   };
 
-  state.ws.onmessage = (e) => {
+  ws.onmessage = (e) => {
+    if (state.ws !== ws) return;
     try {
-      dispatch(JSON.parse(e.data));
+      Promise.resolve(dispatch(JSON.parse(e.data))).catch((err) => {
+        console.error('[AIFlow] WS message dispatch failed:', err);
+      });
     } catch (err) {
       console.error('[AIFlow] WS message parse error:', err);
     }
   };
 
-  state.ws.onclose = () => {
+  ws.onclose = () => {
+    if (state.ws !== ws) return;
     state.connected = false;
     popupState.status = 'connecting';
     // Re-discover before reconnect — agent may have restarted on a different port
@@ -118,7 +136,7 @@ export async function connectAgent(state, dispatch) {
     scheduleReconnect(state, dispatch);
   };
 
-  state.ws.onerror = (e) => {
+  ws.onerror = (e) => {
     console.error('[AIFlow] WS error:', e);
   };
 }
@@ -138,7 +156,7 @@ export function sendWs(state, msg) {
 }
 
 export async function postCallback(state, payload) {
-  return fetch(CALLBACK_URL, {
+  const response = await fetch(CALLBACK_URL, {
     method:  'POST',
     headers: {
       'Content-Type':      'application/json',
@@ -146,6 +164,8 @@ export async function postCallback(state, payload) {
     },
     body: JSON.stringify(payload),
   });
+  if (!response.ok) throw new Error(`CALLBACK_HTTP_${response.status}`);
+  return response;
 }
 
 /**
@@ -166,8 +186,8 @@ export function sendToAgent(state, msg) {
 // ─── Token capture notification ──────────────────────────────
 
 export function onTokenCaptured(state) {
-  if (popupState.status === 'token_missing') {
-    popupState.status = 'connected';
+  if (state.connected) {
+    popupState.status = state.flow?.token || state.flow?.rpcReady ? 'connected' : 'token_missing';
   }
 }
 

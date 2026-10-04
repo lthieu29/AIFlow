@@ -5,7 +5,7 @@ Chỉ cài worker này trong Colab/GPU runtime từ xa. Backend AIFlow trên Win
 ## Chạy theo phiên
 
 1. Mở AIFlow `/connections`, tải notebook và `aiflow-audio-worker.zip`.
-2. Mở Colab, Upload notebook, chọn GPU.
+2. Mở Colab, Upload notebook, chọn GPU T4 và Runtime Version `2026.07` (Python 3.12). Kokoro 0.9.4 không hỗ trợ Python 3.13 của runtime mặc định; notebook kiểm tra phiên bản trước khi upload/cài thư viện.
 3. Chạy các cell upload bundle, mount Drive, cài dependency và nạp model.
 4. Nếu sử dụng API phù hợp điều khoản Colab, chạy cell API/tunnel và lấy URL + token.
 5. Dán vào AIFlow, Kiểm tra kết nối, chọn tác vụ, Lưu và tiếp tục.
@@ -33,10 +33,11 @@ Token chỉ tồn tại theo phiên; notebook không chứa token sẵn. Không 
 ## Phiên bản và giới hạn
 
 - Kokoro package 0.9.4; model HF được khóa theo commit SHA ở lần tải đầu, lưu `kokoro-revision.txt` trên Drive. Giữ file này khi chạy lại.
-- Chỉ tiếng Anh, bốn giọng có sẵn; không STT, không clone giọng, không tự đổi model.
+- TTS tiếng Anh với bốn giọng có sẵn; STT en/vi bật bằng cell riêng. Không clone giọng hoặc tự đổi model.
+- `faster-whisper==1.1.1` dùng `av==18.0.0`; PyAV 19 đã bỏ tham số `metadata_errors`, làm hỏng bước đọc audio của phiên bản faster-whisper này.
 - Một GPU job chạy mỗi lần; queue remote tối đa 16.
 - File WAV PCM16/24kHz và manifest lưu dưới `MyDrive/AIFlow/audio-worker/jobs`.
 - Dừng giữa chừng không có checkpoint bên trong một đoạn; lần tiếp theo tạo lại đoạn chưa hoàn tất.
-- Chưa benchmark hoặc xác nhận runtime/driver Colab thực tế. Các phiên bản cài đặt có thể cần điều chỉnh sau khi người dùng chạy notebook.
+- Đã chạy thử ngày 2026-10-03 trên Colab T4, runtime 2026.07/Python 3.12: mount Drive, nạp Kokoro, sinh WAV qua batch và nhập về AIFlow thành công; STT nhận lại đúng câu tiếng Anh sau khi khóa PyAV 18. Đây là smoke test một đoạn, chưa phải benchmark tải dài.
 
-Nguồn: [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M), [Colab FAQ](https://research.google.com/colaboratory/faq.html), [Quick Tunnels](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/do-more-with-tunnels/trycloudflare/).
+Nguồn: [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M), [Colab runtime versions](https://research.google.com/colaboratory/runtime-version-faq.html), [PyAV changelog](https://pyav.basswood.io/docs/stable/development/changelog.html), [Quick Tunnels](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/do-more-with-tunnels/trycloudflare/).

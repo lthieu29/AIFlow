@@ -67,7 +67,11 @@ async def _handle_connection(
             msg_type = msg.get("type", "")
             logger.debug(f"WS: received message type={msg_type!r}")
 
-            if msg_type == "extension_ready":
+            if msg.get("id") and any(key in msg for key in ("status", "data", "error", "result")):
+                # Extension falls back to WS when the HTTP callback fails.
+                flow_client.resolve_callback(msg)
+
+            elif msg_type == "extension_ready":
                 version = msg.get("version", "unknown")
                 modules = msg.get("modules", [])
                 logger.info(f"WS: extension_ready version={version} modules={modules}")
@@ -90,10 +94,11 @@ async def _handle_connection(
     except websockets.exceptions.ConnectionClosed as exc:
         logger.info(f"WS: extension disconnected: {exc}")
     finally:
-        flow_client.set_connected(False)
-        flow_client.clear_ws()
-        _extension_ws = None
-        _callback_secret = None
+        if _extension_ws is websocket:
+            flow_client.set_connected(False)
+            flow_client.clear_ws()
+            _extension_ws = None
+            _callback_secret = None
         logger.info("WS: connection cleaned up")
 
 

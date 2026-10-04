@@ -7,8 +7,8 @@ export type EditableScene = {
 };
 type ScriptContent = { title: string; scenes: EditableScene[]; continuity_notes: string };
 
-export default function ScriptSceneEditor({ content, busy, onSave }: {
-  content: ScriptContent; busy: boolean; onSave: (content: ScriptContent) => Promise<boolean>;
+export default function ScriptSceneEditor({ content, busy, onSave, creating = false }: {
+  content: ScriptContent; busy: boolean; onSave: (content: ScriptContent) => Promise<boolean>; creating?: boolean;
 }) {
   const [draft, setDraft] = useState<ScriptContent>(() => structuredClone(content));
   const [error, setError] = useState("");
@@ -29,7 +29,7 @@ export default function ScriptSceneEditor({ content, busy, onSave }: {
     if (invalid >= 0) { setActiveScene(invalid); setError(`Cảnh ${invalid + 1} cần prompt hình ảnh và thời lượng 4–8 giây.`); return; }
     void onSave(draft).then((saved) => { if (!saved) setError("Chưa lưu được; phần chỉnh sửa vẫn ở đây."); });
   }}>
-    <p className="text-sm text-zinc-400">Mỗi lần lưu tạo bản mới và cần duyệt lại. {dirty ? "Có thay đổi chưa lưu; hãy lưu trước khi rời trang." : "Đang sửa bản sao."}</p>
+    <p className="text-sm text-zinc-400">{creating ? "Nhập từng cảnh, lời dẫn và prompt hình ảnh. Lưu để kiểm tra và duyệt trước khi tạo video." : `Mỗi lần lưu tạo bản mới và cần duyệt lại. ${dirty ? "Có thay đổi chưa lưu; hãy lưu trước khi rời trang." : "Đang sửa bản sao."}`}</p>
     {error && <p role="alert" className="text-rose-300">{error}</p>}
     <label className={fieldLabel}>Tên tập<input required maxLength={200} className={`${input} mt-2`} value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} /></label>
     <label className={fieldLabel}>Chọn cảnh để sửa<select className={`${input} mt-2`} value={activeScene} onChange={(e) => setActiveScene(Number(e.target.value))}>
@@ -64,6 +64,6 @@ export default function ScriptSceneEditor({ content, busy, onSave }: {
         { visual_prompt: "", narration: "", duration: 8, location_hint: "unspecified", story_beat: "unspecified", purpose: "" }] });
     }}>Thêm cảnh</button>
     <label className={fieldLabel}>Ghi chú liên tục<textarea maxLength={10000} rows={3} className={`${input} mt-2`} value={draft.continuity_notes} onChange={(e) => setDraft({ ...draft, continuity_notes: e.target.value })} /></label>
-    <button className={btnPrimary} disabled={busy || !dirty}>Lưu bản sửa mới</button>
+    <button className={btnPrimary} disabled={busy || (!creating && !dirty)}>{creating ? "Lưu kịch bản thủ công" : "Lưu bản sửa mới"}</button>
   </form>;
 }

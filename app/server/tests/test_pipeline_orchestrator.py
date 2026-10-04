@@ -124,6 +124,7 @@ def _make_settings() -> MagicMock:
 
 def _make_sdk() -> MagicMock:
     sdk = MagicMock()
+    sdk.resolve_project_id = AsyncMock(return_value="12345678-1234-4234-8234-123456789abc")
     sdk.gen_video = AsyncMock(return_value="operations/test-op-123")
     sdk.check_async = AsyncMock(return_value={
         "data": {
@@ -242,6 +243,8 @@ class TestPipelineOrchestratorEvents:
         assert completed_events[0]["project_id"] == 5
         assert completed_events[0]["total_scenes"] == 2
         assert completed_events[0]["all_passed"] is True
+        orch._sdk.resolve_project_id.assert_awaited_once_with()
+        assert orch._flow_project_id == "12345678-1234-4234-8234-123456789abc"
 
     @pytest.mark.asyncio
     async def test_pipeline_completed_with_partial_failure(self):

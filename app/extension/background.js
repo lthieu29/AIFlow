@@ -16,7 +16,7 @@ import {
   fetchAndPushUserInfo,
   getCachedUserInfo,
   clearCachedUserInfo,
-  captureTokenFromFlowTab,
+  refreshFlowSession,
   openFlowTab,
   getRequestLog,
 } from './modules/flow_proxy.js';
@@ -54,6 +54,8 @@ const state = {
 
 // ─── Startup ─────────────────────────────────────────────────
 
+let _initStarted = false;
+
 chrome.runtime.onInstalled.addListener(init);
 chrome.runtime.onStartup.addListener(init);
 
@@ -71,8 +73,6 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
   if (alarm.name === 'keepAlive') keepAlive();
 });
-
-let _initStarted = false;
 
 async function init() {
   // Guard against duplicate init() runs (top-level call + onInstalled/onStartup).
@@ -129,6 +129,11 @@ async function dispatchMessage(msg) {
       break;
 
     case 'api_request':
+    case 'trpc_request':
+    case 'get_flow_project':
+    case 'open_flow_project':
+    case 'flow_rpc_request':
+    case 'flow_ui_request':
     case 'get_captcha':
     case 'please_resend_userinfo':
     case 'logout':
@@ -142,7 +147,7 @@ async function dispatchMessage(msg) {
 
     default:
       // Check method field (flowboard protocol uses msg.method)
-      if (msg.method === 'api_request' || msg.method === 'trpc_request' || msg.method === 'get_status') {
+      if (['api_request', 'trpc_request', 'get_flow_project', 'open_flow_project', 'flow_rpc_request', 'flow_ui_request', 'get_status'].includes(msg.method)) {
         if (msg.method === 'get_status') {
           sendWs(state, {
             id:     msg.id,
@@ -205,6 +210,7 @@ chrome.runtime.onMessage.addListener((msg, _, reply) => {
       ...ps,
       connected:      state.connected,
       flowKeyPresent: !!state.flow.token,
+      flowRpcReady:   !!state.flow.rpcReady,
       tokenAge:       state.flow.capturedAt ? Date.now() - state.flow.capturedAt : null,
       metrics:        { ...state.metrics },
       userInfo:       getCachedUserInfo(),
@@ -239,8 +245,8 @@ chrome.runtime.onMessage.addListener((msg, _, reply) => {
   }
 
   if (msg.type === 'REFRESH_TOKEN') {
-    captureTokenFromFlowTab()
-      .then(() => reply({ ok: true }))
+    refreshFlowSession(state)
+      .then((result) => reply(result))
       .catch((e) => reply({ error: e.message }));
     return true;
   }

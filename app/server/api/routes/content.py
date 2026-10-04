@@ -8,6 +8,7 @@ Task 5.3 — Phase 5.3
 
 from __future__ import annotations
 
+import json
 from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException
@@ -104,7 +105,14 @@ async def parse_content(body: ContentParseRequest) -> SceneListOut:
         ) from exc
 
     # Build AdapterInput from input_data
-    raw_content = body.input_data.get("raw_content", "")
+    raw_content = body.input_data.get("raw_content")
+    if raw_content is None:
+        for key in ("script", "url", "text", "content"):
+            if body.input_data.get(key):
+                raw_content = body.input_data[key]
+                break
+    if raw_content is None:
+        raw_content = json.dumps(body.input_data)
     if not isinstance(raw_content, str):
         raw_content = str(raw_content)
 

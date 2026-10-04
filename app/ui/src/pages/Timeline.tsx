@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import {
   CaretUp,
   CaretDown,
@@ -47,6 +47,7 @@ interface ProjectDetail {
   title: string;
   status: string;
   skill: string;
+  voice_id: string;
   scenes: SceneData[];
 }
 
@@ -74,6 +75,7 @@ interface SceneRowProps {
   index: number;
   total: number;
   disabled: boolean;
+  voice: string;
   progress?: SceneProgress;
   onChange: (id: string, field: keyof SceneData, value: string | number) => void;
   onMoveUp: (id: string) => void;
@@ -96,6 +98,7 @@ function SceneRow({
   index,
   total,
   disabled,
+  voice,
   progress,
   onChange,
   onMoveUp,
@@ -195,7 +198,7 @@ function SceneRow({
         />
         {/* TTS Preview */}
         {scene.narration.trim() && (
-          <TTSPreview text={scene.narration} disabled={disabled} />
+          <TTSPreview text={scene.narration} voice={voice} disabled={disabled} />
         )}
       </div>
 
@@ -211,7 +214,7 @@ function SceneRow({
           id={`duration-${scene.scene_id}`}
           type="number"
           min={3}
-          max={8}
+          max={30}
           step={0.5}
           value={scene.duration_sec}
           onChange={(e) =>
@@ -220,7 +223,7 @@ function SceneRow({
           disabled={disabled}
           className={`${inputCls} w-24`}
         />
-        <span className="text-xs text-zinc-500">3 – 8 s</span>
+        <span className="text-xs text-zinc-500">3 – 30 s</span>
       </div>
     </div>
   );
@@ -228,7 +231,7 @@ function SceneRow({
 
 // ─── TTS Preview ──────────────────────────────────────────────────────────────
 
-function TTSPreview({ text, disabled }: { text: string; disabled: boolean }) {
+function TTSPreview({ text, voice, disabled }: { text: string; voice: string; disabled: boolean }) {
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -245,7 +248,7 @@ function TTSPreview({ text, disabled }: { text: string; disabled: boolean }) {
     setLoading(true);
     setPreviewError("");
     try {
-      const result = await synthesize(text, "", 1.0);
+      const result = await synthesize(text, voice, 1.0);
       // audio_path from server may be absolute or relative to storage dir
       const audioUrl = `/api/tts/audio/${encodeURIComponent(result.audio_path)}`;
       const audio = new Audio(audioUrl);
@@ -282,21 +285,23 @@ function TTSPreview({ text, disabled }: { text: string; disabled: boolean }) {
 
 // ─── Asset Panel ──────────────────────────────────────────────────────────────
 
-function AssetPanel({ projectId }: { projectId: string }) {
+function AssetPanel({ projectId }: { projectId: number }) {
   const [assets, setAssets] = useState<AssetInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [assetError, setAssetError] = useState("");
   const [showUpload, setShowUpload] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadName, setUploadName] = useState("");
   const [uploadType, setUploadType] = useState<"character" | "product" | "location" | "style">("character");
 
   const fetchAssets = useCallback(async () => {
+    setAssetError("");
     try {
-      const result = await getAssets(Number(projectId));
+      const result = await getAssets(projectId);
       setAssets(result.assets);
-    } catch {
-      // ignore
+    } catch (err: unknown) {
+      setAssetError(err instanceof Error ? err.message : "Không tải được ảnh tham chiếu.");
     } finally {
       setLoading(false);
     }
@@ -312,7 +317,7 @@ function AssetPanel({ projectId }: { projectId: string }) {
 
     setUploading(true);
     try {
-      const newAsset = await uploadAsset(file, Number(projectId), uploadName.trim(), uploadType);
+      const newAsset = await uploadAsset(file, projectId, uploadName.trim(), uploadType);
       setAssets((prev) => [...prev, newAsset]);
       setUploadName("");
       setShowUpload(false);
@@ -329,8 +334,8 @@ function AssetPanel({ projectId }: { projectId: string }) {
     try {
       await deleteAsset(id);
       setAssets((prev) => prev.filter((a) => a.id !== id));
-    } catch {
-      // ignore
+    } catch (err: unknown) {
+      setAssetError(err instanceof Error ? err.message : "Không xóa được ảnh tham chiếu.");
     }
   }
 
@@ -358,6 +363,7 @@ function AssetPanel({ projectId }: { projectId: string }) {
         </button>
       </div>
 
+      {assetError && <p role="alert" className="mt-3 text-sm text-rose-300">{assetError}</p>}
       {/* Upload form */}
       {showUpload && (
         <div className="mt-3 space-y-2 rounded-xl border border-white/10 bg-white/[0.02] p-3">
@@ -444,13 +450,14 @@ function AssetPanel({ projectId }: { projectId: string }) {
 export default function Timeline() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [scenes, setScenes] = useState<SceneData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(location.state?.parseError ?? null);
   const [genStatus, setGenStatus] = useState<GenerationStatus>("idle");
   const [genProgress, setGenProgress] = useState(0);
   const [jobId, setJobId] = useState<number | null>(null);
@@ -473,6 +480,7 @@ export default function Timeline() {
         name: string;
         status: string;
         skill: string;
+        voice_id: string;
         scenes: Array<{
           id: number;
           order: number;
@@ -490,6 +498,7 @@ export default function Timeline() {
         title: data.name,
         status: data.status,
         skill: data.skill,
+        voice_id: data.voice_id,
         scenes: [],
       });
 
@@ -671,22 +680,24 @@ export default function Timeline() {
   // ─── Save scenes ───────────────────────────────────────────────────────────
 
   async function handleSave() {
-    if (!projectId) return;
+    if (!projectId) return false;
     setSaving(true);
     setSaveError(null);
     try {
-      const patches = scenes
-        .filter((s) => !s.scene_id.startsWith("local_"))
-        .map((s) =>
-          apiClient.patch(`/scenes/${s.scene_id}`, {
-            duration: s.duration_sec,
-            narration: s.narration,
-            prompt: s.visual_prompt,
-          })
-        );
-      await Promise.all(patches);
+      await apiClient.put(`/projects/${projectId}/scenes`, {
+        scenes: scenes.map((s) => ({
+          id: s.scene_id.startsWith("local_") ? null : Number(s.scene_id),
+          duration: s.duration_sec,
+          narration: s.narration,
+          prompt: s.visual_prompt,
+          location_hint: s.location_hint,
+        })),
+      });
+      await loadProject();
+      return true;
     } catch (err: unknown) {
       setSaveError(err instanceof Error ? err.message : "Không lưu được các cảnh.");
+      return false;
     } finally {
       setSaving(false);
     }
@@ -702,7 +713,10 @@ export default function Timeline() {
     setPendingGate(null);
     setSaveError(null);
     try {
-      await handleSave();
+      if (!(await handleSave())) {
+        setGenStatus("idle");
+        return;
+      }
       const { data } = await apiClient.post<{ job_id: number; status: string }>(
         `/projects/${projectId}/generate`,
         { dry_run: dryRun }
@@ -718,7 +732,7 @@ export default function Timeline() {
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
-  const isGenerating = genStatus === "running";
+  const isGenerating = genStatus === "running" || project?.status === "generating";
   const totalDuration = scenes.reduce((sum, s) => sum + s.duration_sec, 0);
 
   if (loading) {
@@ -868,6 +882,7 @@ export default function Timeline() {
             index={idx}
             total={scenes.length}
             disabled={isGenerating}
+            voice={project?.voice_id ?? "af_heart"}
             progress={sceneProgress[scene.order]}
             onChange={handleChange}
             onMoveUp={handleMoveUp}
@@ -889,7 +904,7 @@ export default function Timeline() {
       </button>
 
       {/* Asset panel — reference images for character/location/product */}
-      {projectId && <AssetPanel projectId={projectId} />}
+      {project && <AssetPanel projectId={project.id} />}
 
       {/* Bottom export link */}
       {project?.status === "done" && (

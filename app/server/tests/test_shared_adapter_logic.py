@@ -158,9 +158,9 @@ class TestEstimateSceneDuration:
 
     def test_long_text_clamped_to_max(self):
         from server.content.duration_estimator import estimate_scene_duration
-        # 1000 words at 150 wpm = 400 s → clamped to 30.0
+        # 1000 words at 150 wpm = 400 s → clamped to the default 8.0s clip limit
         text = " ".join(["word"] * 1000)
-        assert estimate_scene_duration(text) == pytest.approx(30.0)
+        assert estimate_scene_duration(text) == pytest.approx(8.0)
 
     def test_typical_narration(self):
         from server.content.duration_estimator import estimate_scene_duration
@@ -219,14 +219,14 @@ class TestDistributeDuration:
 
     def test_clamped_to_max(self):
         from server.content.duration_estimator import distribute_duration
-        # 100 s per scene → clamped to 30.0
+        # 100 s per scene → clamped to the default 8.0s clip limit
         result = distribute_duration(500.0, 5)
-        assert all(d == pytest.approx(30.0) for d in result)
+        assert all(d == pytest.approx(8.0) for d in result)
 
     def test_single_scene(self):
         from server.content.duration_estimator import distribute_duration
         result = distribute_duration(15.0, 1)
-        assert result == [pytest.approx(15.0)]
+        assert result == [pytest.approx(8.0)]
 
     def test_raises_for_zero_scenes(self):
         from server.content.duration_estimator import distribute_duration

@@ -390,6 +390,39 @@ def client(app_with_tmp_storage):
 
 
 class TestUploadCustomVoice:
+    def test_uploaded_voice_appears_in_gallery_and_demo_is_playable(self, client, monkeypatch):
+        from server.audio.remote import AudioConnection
+        from server.audio import remote
+        monkeypatch.setattr(remote, "connection", AudioConnection())
+        tc, _ = client
+        package = _make_zip_bytes(metadata=_make_valid_metadata(voice_id="listed-voice"), include_demo=True)
+        assert tc.post("/api/tts/voices/custom", files={"file": ("voice.zip", package)}).status_code == 201
+        listing = tc.get("/api/tts/voices").json()
+        assert len(listing) == 1
+        voice = listing[0]
+        assert voice["id"] == "listed-voice"
+        assert voice["is_custom"] is True
+        assert voice["backend"] == "vieneu"
+        assert tc.get("/api" + voice["demo_audio_path"]).status_code == 200
+        assert tc.delete("/api/tts/voices/custom/listed-voice").status_code == 200
+        assert tc.get("/api/tts/voices").json() == []
+
+    def test_audio_route_does_not_serve_connection_metadata(self, client):
+        tc, tmp_path = client
+        (tmp_path / "audio-connection.json").write_text('{"health":{}}')
+        assert tc.get("/api/tts/audio/audio-connection.json").status_code == 403
+
+    def test_batch_profile_minimal_voice_metadata_is_listed_without_server_error(self, client, monkeypatch):
+        from server.audio.remote import AudioConnection
+        from server.audio import remote
+        connection = AudioConnection()
+        connection.voices = [{"id": "af_heart", "language": "en"}]
+        monkeypatch.setattr(remote, "connection", connection)
+        tc, _ = client
+        response = tc.get("/api/tts/voices")
+        assert response.status_code == 200
+        assert response.json()[0]["backend"] == "remote"
+
     def test_valid_zip_returns_201(self, client):
         tc, tmp_path = client
         metadata = _make_valid_metadata(voice_id="test-upload", display_name="Test Upload")

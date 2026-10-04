@@ -38,9 +38,9 @@ function render(state) {
 
     case 'token_missing':
       statusEl.className   = 'section-value status-token-missing';
-      statusEl.textContent = '🟡 Connected — token missing';
+      statusEl.textContent = '🟡 Connected — check Flow session';
       hintEl.style.display = 'block';
-      hintEl.textContent   = 'Open: labs.google/fx/tools/flow';
+      hintEl.textContent   = 'Open a project at flow.google.com. The current browser session is verified on your first Flow request.';
       break;
 
     case 'agent_not_running':
@@ -60,7 +60,7 @@ function render(state) {
 
   // ── Token ─────────────────────────────────────────────────
   document.getElementById('token-row').textContent =
-    state.flowKeyPresent ? formatTokenAge(state.tokenAge) : 'none';
+    state.flowRpcReady ? 'Flow browser session' : state.flowKeyPresent ? formatTokenAge(state.tokenAge) : 'none';
 
   // ── Account ───────────────────────────────────────────────
   const accountSection = document.getElementById('account-section');

@@ -17,6 +17,8 @@
   "host_permissions": [
     "https://aisandbox-pa.googleapis.com/*",
     "https://labs.google/*",
+    "https://flow.google.com/*",
+    "https://www.googleapis.com/oauth2/v2/userinfo",
     "https://www.bilibili.com/*",
     "https://api.bilibili.com/*",
     "https://*.douyin.com/*",
@@ -43,6 +45,7 @@
   "content_scripts": [
     {
       "matches": [
+        "https://flow.google.com/*",
         "https://labs.google/fx/tools/flow*",
         "https://labs.google/fx/*/tools/flow*"
       ],
@@ -54,7 +57,7 @@
   "web_accessible_resources": [
     {
       "resources": ["injected.js"],
-      "matches": ["https://labs.google/*"]
+      "matches": ["https://labs.google/*", "https://flow.google.com/*"]
     }
   ],
 

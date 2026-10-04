@@ -68,6 +68,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     from server.production.render import reconcile_interrupted
     from server.db.session import get_engine
     reconcile_interrupted(get_engine(settings))
+    from server.production.flow_video import reconcile_interrupted as reconcile_flow_videos
+    reconcile_flow_videos(get_engine(settings))
     audio_runner = asyncio.create_task(audio_queue.run(), name="audio_queue")
     logger.info(f"DB initialized at {settings.data_dir / 'projects.db'}")
 
@@ -193,4 +195,6 @@ if __name__ == "__main__":
         port=settings.port,
         reload=settings.debug,
         log_level=settings.log_level.lower(),
+        # Open SSE responses must not block reload before lifespan shutdown.
+        timeout_graceful_shutdown=10,
     )

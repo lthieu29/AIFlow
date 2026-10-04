@@ -1,6 +1,10 @@
 """Reviewed images/clips + measured narration -> reproducible local delivery bundles."""
 
 import json
+import math
+import sys
+import wave
+from array import array
 import zipfile
 import uuid
 from pathlib import Path
@@ -12,7 +16,7 @@ from server.db.models.job import Job
 from server.db.models.project import Project
 from server.db.models.scene import Scene
 from server.db.models.production import ProductionMedia, ProductionOutput
-from server.production.media import contained, ffmpeg, probe, sha256, srt_timestamp
+from server.production.media import contained, ffmpeg, probe, sha256, srt_timestamp, validate_video_timing
 from server.text.workflow import assert_project_approved
 
 
@@ -32,6 +36,44 @@ def reconcile_interrupted(engine):
         session.commit()
 
 
+def _fit_narration_tail(path: Path, source_duration: float, nominal_duration: float) -> dict:
+    """Fit only a bounded, fully verified near-silent PCM16 WAV tail; keep source bytes."""
+    fit = {"source_duration": source_duration, "used_duration": source_duration,
+           "trimmed_tail_seconds": 0.0, "trim_reason": None,
+           "trim_limit_seconds": 0.10, "trim_peak_dbfs_threshold": -50.0}
+    excess = source_duration - nominal_duration
+    if nominal_duration <= 0 or not 0 < excess <= 0.10 + 1e-9:
+        return fit
+    try:
+        with wave.open(str(path), "rb") as stream:
+            if stream.getcomptype() != "NONE" or stream.getsampwidth() != 2:
+                return fit
+            rate, channels, total_frames = stream.getframerate(), stream.getnchannels(), stream.getnframes()
+            if rate <= 0 or channels <= 0:
+                return fit
+            if abs(total_frames / rate - source_duration) > 1 / rate:
+                return fit
+            cut_frame = int(nominal_duration * rate)
+            removed_frames = total_frames - cut_frame
+            if not 0 < removed_frames / rate <= 0.10:
+                return fit
+            stream.setpos(cut_frame)
+            tail = stream.readframes(removed_frames)
+            if len(tail) != removed_frames * channels * 2:
+                return fit
+    except (OSError, EOFError, wave.Error):
+        return fit
+    samples = array("h", tail)
+    if sys.byteorder != "little":
+        samples.byteswap()
+    peak = max(abs(sample) for sample in samples)
+    if peak > 32768 * 10 ** (-50 / 20):
+        return fit
+    fit.update(used_duration=nominal_duration, trimmed_tail_seconds=round(excess, 9),
+               trim_reason="verified_pcm16_near_silent_tail", trim_tail_peak_pcm16=peak,
+               trim_tail_peak_dbfs=20 * math.log10(peak / 32768) if peak else None)
+    return fit
+
 def snapshot(session: Session, project: Project, root: Path, allow_loop: bool = False) -> dict:
     if project.kind not in ("portrait", "video"):
         raise ValueError("Chọn loại dự án legacy trước khi sản xuất.")
@@ -40,6 +82,8 @@ def snapshot(session: Session, project: Project, root: Path, allow_loop: bool = 
         path = contained(root, item.path)
         if sha256(path) != item.sha256:
             raise ValueError("File tài nguyên đã thay đổi sau khi nhập; nhập lại và duyệt.")
+        if item.mime == "video/mp4":
+            validate_video_timing(path)
         return {"id": item.id, "sha256": item.sha256, "width": item.width, "height": item.height,
                 "mime": item.mime, "duration": item.duration}
     result = {"project_id": project.id, "project_short_id": project.short_id, "title": project.title,
@@ -73,8 +117,9 @@ def snapshot(session: Session, project: Project, root: Path, allow_loop: bool = 
             info = probe(path)
             if not any(s.get("codec_type") == "audio" for s in info["streams"]):
                 raise ValueError("File lời đọc không có audio stream.")
-            audio = {"path": str(path), "sha256": sha256(path), "duration": info["duration"]}
-            duration = max(duration, info["duration"])
+            audio = {"path": str(path), "sha256": sha256(path), "duration": info["duration"],
+                     **_fit_narration_tail(path, info["duration"], duration)}
+            duration = max(duration, audio["used_duration"])
         if visual["mime"] == "video/mp4" and visual["duration"] + 0.05 < duration and not allow_loop:
             raise ValueError(f"Clip cảnh {scene.order + 1} ngắn hơn lời đọc; chọn cho phép loop hoặc nhập clip dài hơn.")
         result["scenes"].append({"id": scene.id, "order": scene.order, "prompt": scene.prompt,
@@ -221,12 +266,21 @@ def package(output: ProductionOutput, root: Path) -> Path:
     manifest = json.loads(output.manifest_json)
     path = folder / "delivery.zip"
     temporary = folder / f"delivery-{uuid.uuid4().hex}.tmp"
-    with zipfile.ZipFile(temporary, "w", zipfile.ZIP_DEFLATED) as archive:
-        for name, info in manifest["files"].items():
-            source = contained(root, str(folder / name))
-            if sha256(source) != info["sha256"]:
-                raise ValueError("Thành phẩm đã thay đổi sau khi render; cần xuất lại.")
-            archive.write(source, name)
-        archive.writestr("manifest.json", json.dumps({**public_manifest(manifest), "review": json.loads(output.review_json)}, ensure_ascii=False, indent=2))
-    temporary.replace(path)
+    try:
+        with zipfile.ZipFile(temporary, "w", zipfile.ZIP_DEFLATED) as archive:
+            for name in manifest["files"]:
+                archive.write(output_file_path(output, name, root), name)
+            archive.writestr("manifest.json", json.dumps({**public_manifest(manifest), "review": json.loads(output.review_json)}, ensure_ascii=False, indent=2))
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
     return path
+
+
+def output_file_path(output: ProductionOutput, name: str, root: Path) -> Path:
+    """Preview, approval and delivery must use the same rendered file bytes."""
+    info = json.loads(output.manifest_json)["files"][name]
+    source = contained(root, str(Path(output.folder) / name))
+    if sha256(source) != info["sha256"]:
+        raise ValueError("Thành phẩm đã thay đổi sau khi render; cần xuất lại.")
+    return source

@@ -36,6 +36,7 @@ export default function ScenePreviewModal({
 }: ScenePreviewModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [data, setData] = useState<SceneListOut | null>(null);
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function ScenePreviewModal({
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setValidationErrors([]);
     setData(null);
 
     parseContent(adapter, inputData)
@@ -54,10 +56,11 @@ export default function ScenePreviewModal({
         if (cancelled) return;
         const detail =
           err && typeof err === "object" && "response" in err
-            ? ((err as { response?: { data?: { detail?: { error?: { message?: string } } } } })
-                .response?.data?.detail?.error?.message ?? null)
+            ? ((err as { response?: { data?: { detail?: { error?: { message?: string; details?: { errors?: unknown[] } } } } } })
+                .response?.data?.detail?.error ?? null)
             : null;
-        setError(detail || (err instanceof Error ? err.message : "Không phân tích được đầu vào."));
+        setValidationErrors((detail?.details?.errors ?? []).filter((value): value is string => typeof value === "string"));
+        setError(detail?.message || (err instanceof Error ? err.message : "Không phân tích được đầu vào."));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -116,8 +119,9 @@ export default function ScenePreviewModal({
               <div>
                 <p className="font-medium">Không phân tích được</p>
                 <p className="mt-0.5 text-rose-300/90">{error}</p>
+                {validationErrors.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-5 text-rose-300/90">{validationErrors.map((message, index) => <li key={index}>{message}</li>)}</ul>}
                 <p className="mt-1 text-xs text-rose-300/70">
-                  Bạn vẫn có thể tạo dự án — adapter sẽ chạy lại khi tạo.
+                  Đóng bản xem trước, sửa đầu vào theo lỗi trên rồi xem trước lại.
                 </p>
               </div>
             </div>
@@ -193,7 +197,7 @@ export default function ScenePreviewModal({
                 onConfirm();
                 onClose();
               }}
-              disabled={loading}
+              disabled={loading || !data}
               className={btnPrimary}
             >
               Tạo dự án

@@ -6,7 +6,8 @@ Options (``AdapterInput.options``):
     - ``preset``          (str)  — ``"light"`` | ``"aggressive"`` | ``"translate_only"``
                                    (default: ``"light"``)
     - ``workdir``         (str)  — working directory for downloads/output
-                                   (default: system temp dir)
+                                   (default: system temp dir; deliverables saved
+                                    under storage/remaster before cleanup)
     - ``source_language`` (str)  — source language code (default: ``"zh"``)
     - ``target_language`` (str)  — target language code (default: ``"vi"``)
     - ``project_id``      (str)  — project identifier for the SceneList
@@ -33,8 +34,10 @@ Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.9, 2.10, 2.11, 2.12, 2.13,
 from __future__ import annotations
 
 import logging
+import shutil
 import tempfile
 import time
+import uuid
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
@@ -262,7 +265,8 @@ class VideoRemasterAdapter:
             )
 
             # 8. Validate + enforce limits (R2.7)
-            ok, validation_errors = scene_list.validate()
+            # Passthrough media is already rendered; Veo's clip limit does not apply.
+            ok, validation_errors = scene_list.validate(clip_duration=_DURATION_MAX)
             if not ok:
                 raise AdapterError(
                     "ADAPTER_INVALID_OUTPUT",
@@ -276,6 +280,17 @@ class VideoRemasterAdapter:
                 result.output_path,
                 preset.value,
             )
+            if _tmp_ctx is not None:
+                from server.config import load_settings
+
+                destination = load_settings().data_dir / "remaster" / uuid.uuid4().hex
+                destination.mkdir(parents=True, exist_ok=True)
+                for key in ("output_path", "translated_srt", "original_srt"):
+                    if key in scene_list.metadata:
+                        source = Path(scene_list.metadata[key])
+                        target = destination / source.name
+                        shutil.copy2(source, target)
+                        scene_list.metadata[key] = str(target.resolve())
             return scene_list
 
         finally:

@@ -46,6 +46,7 @@ async def test_initial_reference_and_aspect_forwarded(tmp_path):
     sdk = MagicMock(gen_video=AsyncMock(return_value="operation"))
     orch = PipelineOrchestrator(settings=Settings(data_dir=tmp_path), flow_sdk=sdk, event_bus=MagicMock())
     orch._aspect = "16:9"
+    orch._flow_project_id = "12345678-1234-4234-8234-123456789abc"
     orch._poll_until_done = AsyncMock(return_value=tmp_path / "result.mp4")
     scene = Scene(project_id=1, order=0, prompt="A green room", narration="", duration=6)
     lock = SimpleNamespace(inject=lambda text: text)
@@ -56,6 +57,8 @@ async def test_initial_reference_and_aspect_forwarded(tmp_path):
     assert arguments["start_image"] == reference
     assert arguments["aspect"] == "16:9"
     assert arguments["duration"] == 6
+    assert arguments["project_id"] == orch._flow_project_id
+    assert orch._poll_until_done.call_args.kwargs["project_id"] == orch._flow_project_id
     assert "A green room" in arguments["prompt"]
 
 

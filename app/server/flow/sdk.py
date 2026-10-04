@@ -24,6 +24,7 @@ import httpx
 from loguru import logger
 
 from server.flow.client import FlowClient
+from server.flow.rpc import FlowRPC
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
@@ -155,7 +156,11 @@ def resolve_video_model(
     """
     # Full resolution via tier/aspect/quality table
     if paygate_tier and aspect_ratio:
-        q = (quality or DEFAULT_VIDEO_QUALITY).lower()
+        model_quality = {
+            "VEO3_LITE": "lite",
+            "VEO3_QUALITY": "quality",
+        }.get(model_name, DEFAULT_VIDEO_QUALITY)
+        q = (quality or model_quality).lower()
         tier_map = (
             VIDEO_MODEL_KEYS.get(paygate_tier)
             or VIDEO_MODEL_KEYS.get("PAYGATE_TIER_ONE")
@@ -180,12 +185,12 @@ CAPTCHA_IMAGE = "IMAGE_GENERATION"
 # Minimum file size for a valid generated image (50 KB)
 MIN_IMAGE_SIZE_BYTES = 50 * 1024
 
-# Static headers that work against labs.google
+# Browser origin used by the current Google Flow frontend.
 _API_HEADERS = {
     "content-type": "text/plain;charset=UTF-8",
     "accept": "*/*",
-    "origin": "https://labs.google",
-    "referer": "https://labs.google/",
+    "origin": "https://flow.google.com",
+    "referer": "https://flow.google.com/",
 }
 
 # Valid paygate tiers
@@ -483,6 +488,7 @@ class FlowSDK:
 
     def __init__(self, client: Optional[FlowClient] = None) -> None:
         self._client = client or FlowClient()
+        self._rpc = FlowRPC(self._client)
 
     async def _fetch_paygate_tier(self) -> str:
         """Resolve the user's paygate tier from /v1/credits.
@@ -497,7 +503,7 @@ class FlowSDK:
         if not token:
             raise RuntimeError(
                 "No Bearer token available. "
-                "Make sure the extension is connected and you are logged in to labs.google."
+                "Make sure the extension is connected and has captured a Google Flow Bearer token."
             )
         try:
             async with httpx.AsyncClient(timeout=15.0) as http:
@@ -506,8 +512,8 @@ class FlowSDK:
                     params={"key": _FLOW_API_KEY},
                     headers={
                         "authorization": f"Bearer {token}",
-                        "origin": "https://labs.google",
-                        "referer": "https://labs.google/",
+                        "origin": "https://flow.google.com",
+                        "referer": "https://flow.google.com/",
                     },
                 )
         except httpx.HTTPError as exc:
@@ -516,7 +522,7 @@ class FlowSDK:
         if resp.status_code != 200:
             raise RuntimeError(
                 f"Paygate tier fetch returned HTTP {resp.status_code}. "
-                "Token may be expired — navigate to labs.google to refresh."
+                "Token may be expired — open Google Flow to refresh."
             )
         try:
             data = resp.json()
@@ -532,6 +538,19 @@ class FlowSDK:
             )
         logger.info(f"FlowSDK: paygate tier resolved: {tier}")
         return tier
+
+    async def resolve_project_id(self, project_id: Optional[str] = None) -> str:
+        """Resolve an existing remote Flow project; local database IDs are unrelated."""
+        if not project_id:
+            response = await self._client.get_flow_project()
+            if response.get("error"):
+                raise RuntimeError(f"Flow project resolution failed: {response['error']}")
+            data = response.get("data")
+            project_id = data.get("projectId") if isinstance(data, dict) else None
+        try:
+            return str(uuid.UUID(str(project_id)))
+        except (ValueError, AttributeError, TypeError) as exc:
+            raise RuntimeError("Open an existing Google Flow project in Chrome; a remote project UUID is required.") from exc
 
     async def gen_image(
         self,
@@ -559,7 +578,7 @@ class FlowSDK:
                    Also accepts "NARWHAL" (faster/lighter).
             aspect: Aspect ratio string. "9:16" (portrait) or "16:9" (landscape).
                     Mapped to Flow's IMAGE_ASPECT_RATIO_* enum.
-            project_id: Flow project ID. Auto-generated UUID if not provided.
+            project_id: Existing Flow project UUID. Uses an open Flow project if omitted.
             storage_dir: Base directory for saving images. Defaults to
                          Path("storage/media").
 
@@ -581,10 +600,9 @@ class FlowSDK:
         # Resolve paygate tier
         paygate_tier = await self._fetch_paygate_tier()
 
-        # Use provided project_id or generate one
+        # Use an existing Flow project, never a random or local database ID.
         if not project_id:
-            project_id = str(uuid.uuid4())
-            logger.debug(f"FlowSDK: auto-generated project_id={project_id}")
+            project_id = await self.resolve_project_id()
 
         # Resolve model name
         model_name = resolve_image_model(model)
@@ -711,7 +729,7 @@ class FlowSDK:
             prompt: Text prompt describing the video to generate.
             duration: Video duration in seconds. Default 8.
             aspect: Aspect ratio string. "9:16" (portrait) or "16:9" (landscape).
-            project_id: Flow project ID. Auto-generated UUID if not provided.
+            project_id: Existing Flow project UUID. Uses an open Flow project if omitted.
             storage_dir: Base directory (unused here, kept for API symmetry).
             model: Video model key. Default "VEO3" (fast quality).
             quality: Quality level override ("fast", "lite", "quality").
@@ -736,13 +754,26 @@ class FlowSDK:
         if not start_image.exists():
             raise FileNotFoundError(f"start_image not found: {start_image}")
 
+        if not self._client.get_token():
+            if reference_images:
+                raise RuntimeError("Reference images are not yet supported by the current Flow RPC bridge.")
+            if duration != 8:
+                raise ValueError("The current Flow RPC bridge supports 8-second clips.")
+            remote_project_id = await self.resolve_project_id(project_id)
+            model_key = resolve_video_model(model, quality=quality)
+            if quality:
+                model_key = resolve_video_model(
+                    model, "PAYGATE_TIER_ONE", "VIDEO_ASPECT_RATIO_PORTRAIT" if aspect == "9:16"
+                    else "VIDEO_ASPECT_RATIO_LANDSCAPE", quality,
+                )
+            return await self._rpc.submit(prompt, model_key, aspect, remote_project_id, start_image)
+
         # Resolve paygate tier
         paygate_tier = await self._fetch_paygate_tier()
 
-        # Use provided project_id or generate one
+        # Use an existing Flow project, never a random or local database ID.
         if not project_id:
-            project_id = str(uuid.uuid4())
-            logger.debug(f"FlowSDK gen_video: auto-generated project_id={project_id}")
+            project_id = await self.resolve_project_id()
 
         # Map aspect ratio string to Flow video enum
         aspect_map = {
@@ -910,6 +941,31 @@ class FlowSDK:
         logger.info(f"FlowSDK gen_video: submitted, operation_name={operation_name}")
         return operation_name
 
+    async def preflight_text_video(self, project_id: str) -> None:
+        """Check whether the page permits extension generation, without submitting."""
+        remote_project_id = await self.resolve_project_id(project_id)
+        await self._rpc.preflight_ui(remote_project_id)
+
+    async def gen_text_video(
+        self, prompt: str, model: str = "VEO3_LITE", duration: int = 8,
+        aspect: str = "16:9", project_id: Optional[str] = None,
+        reference_image: Optional[Path] = None,
+        allow_silent_video: bool = False,
+        reference_mode: str = "ingredients",
+    ) -> str:
+        """Generate an 8-second Lite video using the signed-in current Flow page."""
+        if model != "VEO3_LITE":
+            raise ValueError("Current text-to-video support is verified for VEO3_LITE.")
+        if duration != 8:
+            raise ValueError("The current Flow UI bridge supports 8-second clips.")
+        if not isinstance(allow_silent_video, bool):
+            raise ValueError("allow_silent_video must be a boolean.")
+        if reference_mode not in ("ingredients", "first_frame") or (reference_mode == "first_frame" and reference_image is None):
+            raise ValueError("Invalid reference_mode or missing first-frame PNG.")
+        remote_project_id = await self.resolve_project_id(project_id)
+        return await self._rpc.submit_ui(prompt, aspect, remote_project_id, reference_image,
+                                         allow_silent_video=allow_silent_video, reference_mode=reference_mode)
+
     async def check_async(self, operation_name: str) -> dict[str, Any]:
         """Poll the status of an async video generation operation.
 
@@ -930,6 +986,9 @@ class FlowSDK:
         Raises:
             RuntimeError: On transport-level errors (extension disconnected, timeout).
         """
+        if operation_name.startswith("rpc:"):
+            return await self._rpc.check_async(operation_name)
+
         body = {
             "operations": [
                 {"operation": {"name": operation_name}}

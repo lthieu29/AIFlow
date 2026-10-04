@@ -12,9 +12,11 @@
  */
 
 import { sendToAgent, sendWs, onTokenCaptured } from './shared.js';
+import { FLOW_RPC_IDS, executeFlowRpc } from './flow_rpc.js';
+import { executeFlowUi } from './flow_ui.js';
 
-const FLOW_URL  = 'https://labs.google/fx/tools/flow';
-const FLOW_URLS = ['https://labs.google/fx/tools/flow*', 'https://labs.google/fx/*/tools/flow*'];
+const FLOW_URL  = 'https://flow.google.com/';
+const FLOW_URLS = ['https://flow.google.com/*', 'https://labs.google/fx/tools/flow*', 'https://labs.google/fx/*/tools/flow*'];
 
 // ─── URL Classifier ──────────────────────────────────────────
 
@@ -80,7 +82,7 @@ export function initFlowProxy(state) {
         fetchAndPushUserInfo(state, token);
       }
     },
-    { urls: ['https://aisandbox-pa.googleapis.com/*', 'https://labs.google/*'] },
+    { urls: ['https://aisandbox-pa.googleapis.com/*', 'https://labs.google/*', 'https://flow.google.com/*'] },
     ['requestHeaders', 'extraHeaders'],
   );
 }
@@ -125,6 +127,72 @@ export function clearCachedUserInfo() {
  * @param {object} state
  */
 export async function handleFlowMessage(msg, state) {
+  if (msg.method === 'flow_ui_request' || msg.type === 'flow_ui_request') {
+    const { projectId, prompt, aspect, preflightOnly, reference, allow_silent_video = false, reference_mode = 'ingredients' } = msg.params || {};
+    if (typeof allow_silent_video !== 'boolean' || !['ingredients', 'first_frame'].includes(reference_mode)
+        || (reference_mode === 'first_frame' && !reference)) {
+      sendToAgent(state, { id: msg.id, error: 'INVALID_FLOW_UI_REQUEST', requestSent: false });
+      return;
+    }
+    const tabs = await chrome.tabs.query({ url: ['https://flow.google.com/*'] });
+    const tab = tabs.find(candidate => flowProjectIdFromUrl(candidate.url) === projectId);
+    if (!tab) {
+      sendToAgent(state, { id: msg.id, error: 'FLOW_PROJECT_TAB_REQUIRED', requestSent: false });
+      return;
+    }
+    try {
+      const results = await chrome.scripting.executeScript({
+        target: { tabId: tab.id }, world: 'MAIN', func: executeFlowUi,
+        args: [projectId, prompt || '', aspect || '16:9', preflightOnly === true, reference || null, allow_silent_video, reference_mode],
+      });
+      sendToAgent(state, { id: msg.id, ...(results?.[0]?.result || { error: 'FLOW_UI_NO_RESULT' }) });
+    } catch {
+      sendToAgent(state, { id: msg.id, error: 'FLOW_UI_TAB_UNAVAILABLE' });
+    }
+    return;
+  }
+  if (msg.method === 'open_flow_project' || msg.type === 'open_flow_project') {
+    const result = await openFlowProject(msg.params?.url);
+    sendToAgent(state, { id: msg.id, ...result });
+    return;
+  }
+  if (msg.method === 'flow_rpc_request' || msg.type === 'flow_rpc_request') {
+    const { rpcId, request, projectId, captchaAction, preflightOnly } = msg.params || {};
+    if (!FLOW_RPC_IDS.includes(rpcId) || !Array.isArray(request)) {
+      sendToAgent(state, { id: msg.id, status: 400, error: 'INVALID_FLOW_RPC' });
+      return;
+    }
+    const tabs = await chrome.tabs.query({ url: ['https://flow.google.com/*'] });
+    const tab = tabs.find((candidate) => flowProjectIdFromUrl(candidate.url) === projectId);
+    if (!tab) {
+      sendToAgent(state, { id: msg.id, status: 404, error: 'FLOW_PROJECT_TAB_REQUIRED' });
+      return;
+    }
+    try {
+      const results = await chrome.scripting.executeScript({
+        target: { tabId: tab.id }, world: 'MAIN', func: executeFlowRpc,
+        args: [rpcId, request, captchaAction || null, '6LdsFiUsAAAAAIjVDZcuLhaHiDn5nnHVXVRQGeMV', preflightOnly === true],
+      });
+      const result = results?.[0]?.result || { error: 'FLOW_RPC_NO_RESULT' };
+      if (!result.error && result.status === 200) {
+        state.flow.rpcReady = true;
+        onTokenCaptured(state);
+      }
+      sendToAgent(state, { id: msg.id, ...result });
+    } catch {
+      sendToAgent(state, { id: msg.id, error: 'FLOW_RPC_TAB_UNAVAILABLE' });
+    }
+    return;
+  }
+  if (msg.method === 'get_flow_project' || msg.type === 'get_flow_project') {
+    const tabs = await chrome.tabs.query({ url: FLOW_URLS });
+    tabs.sort((a, b) => Number(!!b.active) - Number(!!a.active) || (b.lastAccessed || 0) - (a.lastAccessed || 0));
+    const projectId = tabs.map((tab) => flowProjectIdFromUrl(tab.url)).find(Boolean);
+    sendToAgent(state, projectId
+      ? { id: msg.id, status: 200, data: { projectId } }
+      : { id: msg.id, status: 404, error: 'FLOW_PROJECT_REQUIRED: Open a Google Flow project in Chrome.' });
+    return;
+  }
   if (msg.method === 'api_request' || msg.type === 'api_request') {
     return handleApiRequest(msg, state);
   }
@@ -144,6 +212,63 @@ export async function handleFlowMessage(msg, state) {
     cachedUserInfo = null;
     state.flow.token = null;
     return;
+  }
+}
+
+export function flowProjectIdFromUrl(value) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:') return null;
+    const match = url.hostname === 'flow.google.com'
+      ? url.pathname.match(/^\/project\/([^/]+)(?:\/|$)/)
+      : url.hostname === 'labs.google'
+        ? url.pathname.match(/^\/fx\/(?:[^/]+\/)?tools\/flow\/project\/([^/]+)(?:\/|$)/)
+        : null;
+    const id = match?.[1];
+    return id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function openFlowProject(value) {
+  let url, projectId;
+  try {
+    url = new URL(value);
+    projectId = flowProjectIdFromUrl(value)?.toLowerCase();
+    if (!projectId || url.hostname !== 'flow.google.com' || url.username || url.password
+        || url.port || url.search || url.hash || !/^\/project\/[0-9a-f-]+\/?$/i.test(url.pathname)) {
+      return { status: 400, error: 'INVALID_FLOW_PROJECT_URL' };
+    }
+  } catch {
+    return { status: 400, error: 'INVALID_FLOW_PROJECT_URL' };
+  }
+  const targetUrl = `https://flow.google.com/project/${projectId}`;
+  try {
+    const tabs = await chrome.tabs.query({ url: FLOW_URLS });
+    const existing = tabs.find(tab => flowProjectIdFromUrl(tab.url)?.toLowerCase() === projectId);
+    const landing = tabs.find(tab => {
+      try {
+        const current = new URL(tab.url);
+        return (current.hostname === 'flow.google.com' && current.pathname === '/')
+          || (current.hostname === 'labs.google' && /^\/fx\/(?:[a-z]{2}(?:-[A-Za-z]{2})?\/)?tools\/flow\/?$/.test(current.pathname));
+      } catch { return false; }
+    });
+    const reusable = existing || landing;
+    const tab = reusable
+      ? await chrome.tabs.update(reusable.id, { active: true, ...(reusable.url === targetUrl && !reusable.discarded ? {} : { url: targetUrl }) })
+      : await openFlowTabResilient(true, targetUrl);
+    if (!tab?.id) return { status: 503, error: 'FLOW_PROJECT_TAB_UNAVAILABLE' };
+    for (let attempt = 0; attempt < 80; attempt++) {
+      const current = await chrome.tabs.get(tab.id);
+      if (current.status === 'complete' && flowProjectIdFromUrl(current.url)?.toLowerCase() === projectId) {
+        return { status: 200, data: { projectId } };
+      }
+      await sleep(250);
+    }
+    return { status: 504, error: 'FLOW_PROJECT_OPEN_TIMEOUT' };
+  } catch {
+    return { status: 503, error: 'FLOW_PROJECT_TAB_UNAVAILABLE' };
   }
 }
 
@@ -282,15 +407,15 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 let _openingFlowTab = false;
 
-async function openFlowTabResilient(active = false) {
+async function openFlowTabResilient(active = false, url = FLOW_URL) {
   try {
-    return await chrome.tabs.create({ url: FLOW_URL, active });
+    return await chrome.tabs.create({ url, active });
   } catch (e) {
     const msg = e?.message || '';
     if (!msg.includes('No current window')) throw e;
     console.log('[AIFlow] No Chrome window — spawning a fresh one for Flow');
     const win = await chrome.windows.create({
-      url:     FLOW_URL,
+      url,
       focused: false,
       state:   'minimized',
     });
@@ -351,18 +476,11 @@ export async function solveCaptcha(requestId, captchaAction) {
         requestCaptchaFromTab(live.id, requestId, captchaAction),
         new Promise((_, rej) => setTimeout(() => rej(new Error('CAPTCHA_TIMEOUT')), 30000)),
       ]);
-      return resp;
+      if (resp?.token) return resp;
+      errors.push(resp?.error || 'CAPTCHA_FAILED');
     } catch (e) {
       const msg = e?.message || '';
       errors.push(msg);
-      if (
-        msg.includes('No current window') ||
-        msg.includes('No tab with id') ||
-        msg.includes('Receiving end does not exist')
-      ) {
-        continue;
-      }
-      return { error: msg };
     }
   }
 
@@ -396,10 +514,11 @@ export function openFlowTab() {
   });
 }
 
-export async function captureTokenFromFlowTab() {
+export async function captureTokenFromFlowTab(state) {
+  const capturedAtBefore = state?.flow?.capturedAt;
   const tabs = await chrome.tabs.query({ url: FLOW_URLS });
   if (!tabs.length) {
-    if (_openingFlowTab) return;
+    if (_openingFlowTab) return { ok: false, error: 'FLOW_TAB_OPENING' };
     _openingFlowTab = true;
     try {
       await openFlowTabResilient(false);
@@ -408,15 +527,42 @@ export async function captureTokenFromFlowTab() {
     } finally {
       _openingFlowTab = false;
     }
-    return;
+    return { ok: false, error: 'FLOW_TOKEN_MISSING: Open Flow and use a session supported by the API bridge.' };
   }
   try {
     await chrome.scripting.executeScript({
       target: { tabId: tabs[0].id },
-      func:   () => fetch('/fx/tools/flow', { credentials: 'include' }),
+      func:   () => fetch(window.location.href, { credentials: 'include' }),
     });
-    console.log('[AIFlow] Token refresh triggered on Flow tab');
+    if (state?.flow?.token && state.flow.capturedAt !== capturedAtBefore) return { ok: true };
+    return { ok: false, error: 'FLOW_TOKEN_MISSING: This Flow session has not supplied an API token to the bridge.' };
   } catch (e) {
     console.error('[AIFlow] Token refresh failed:', e);
+    return { ok: false, error: e.message || 'FLOW_TOKEN_REFRESH_FAILED' };
+  }
+}
+
+export async function refreshFlowSession(state) {
+  const tabs = await chrome.tabs.query({ url: ['https://flow.google.com/*'] });
+  const tab = tabs.find((candidate) => flowProjectIdFromUrl(candidate.url));
+  if (!tab) return captureTokenFromFlowTab(state);
+  try {
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tab.id }, world: 'MAIN', func: executeFlowRpc,
+      args: ['HTrJv', [], null, '6LdsFiUsAAAAAIjVDZcuLhaHiDn5nnHVXVRQGeMV'],
+    });
+    const result = results?.[0]?.result;
+    if (result?.status === 200 && !result.error) {
+      state.flow.rpcReady = true;
+      onTokenCaptured(state);
+      return { ok: true };
+    }
+    state.flow.rpcReady = false;
+    onTokenCaptured(state);
+    return { ok: false, error: result?.error || 'FLOW_RPC_SESSION_UNAVAILABLE' };
+  } catch {
+    state.flow.rpcReady = false;
+    onTokenCaptured(state);
+    return { ok: false, error: 'FLOW_RPC_TAB_UNAVAILABLE' };
   }
 }

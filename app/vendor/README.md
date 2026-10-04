@@ -7,13 +7,13 @@ See [ADR-005](../docs/adr/ADR-005-ship-binary.md) for the rationale.
 
 | Binary | Version | Purpose | License |
 |--------|---------|---------|---------|
-| `ffmpeg.exe` | 7.1 (GPL build) | Video/audio processing: merge DASH, burn subtitles, encode output, Ken Burns, overlay | GPL v2+ |
-| `ffprobe.exe` | 7.1 (GPL build) | Media file inspection: probe duration, stream info | GPL v2+ |
+| `ffmpeg.exe` | 8.1.3 (GPL build, 330caae0c1) | Video/audio processing: merge DASH, burn subtitles, encode output, Ken Burns, overlay | GPL v2+ |
+| `ffprobe.exe` | 8.1.3 (GPL build, 330caae0c1) | Media file inspection: probe duration, stream info | GPL v2+ |
 | `aria2c.exe` | 1.37.0 | Parallel download for Bilibili/Douyin CDN segments | GPL v2+ |
 
 ## How to Download
 
-Run the download script from the project root:
+Run the download script from the `app/` directory:
 
 ```bash
 python scripts/download_vendor.py
@@ -35,26 +35,29 @@ python scripts/download_vendor.py --aria2c   # aria2c only
 The script will:
 1. Check PATH / `vendor/` and skip anything already available
 2. Download the official release zip from GitHub for what's missing
-3. Extract the binary to `vendor/`
-4. Verify the binary works (`-version` for FFmpeg, `--version` for aria2c)
-5. Print the SHA256 checksum for pinning
+3. Verify the FFmpeg archive against the pinned upstream SHA256 before extraction
+4. Extract the binary to `vendor/`
+5. Verify the binary works (`-version` for FFmpeg, `--version` for aria2c)
+6. Print the SHA256 checksum for pinning
 
 ## Download Sources
 
 - **FFmpeg**: [BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds/releases) — GPL Windows x64 build
-  - URL: `https://github.com/BtbN/FFmpeg-Builds/releases/download/n7.1-latest/ffmpeg-n7.1-latest-win64-gpl-7.1.zip`
+  - URL: `https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-01-13-06/ffmpeg-n8.1.3-14-g330caae0c1-win64-gpl-8.1.zip`
+  - SHA256: `6aca87b75999c4793871754c5c2e211129a56a160c1654a7d1c9c518a7eda9c0`
+  - Checksum source: [upstream checksums.sha256](https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-01-13-06/checksums.sha256), also matches the GitHub release asset digest.
+  - The former `n7.1-latest` URL returns 404. Dated assets are pinned, but upstream may eventually remove old builds; keep the verified vendor binaries for offline use.
 - **aria2c**: [aria2/aria2](https://github.com/aria2/aria2/releases) — Windows x64 release
   - URL: `https://github.com/aria2/aria2/releases/download/release-1.37.0/aria2-1.37.0-win-64bit-build1.zip`
 
 ## SHA256 Checksums
 
-> FFmpeg/FFprobe are used from the system PATH on this machine (not vendored),
-> so their checksums are not pinned here. Fill them in if you later run
-> `download_vendor.py --force` to vendor a pinned copy.
+The archive checksum above is checked before extraction. Individual executable
+checksums below identify the installed vendor files.
 
 ```
-ffmpeg.exe   SHA256: <not vendored — using PATH binary>
-ffprobe.exe  SHA256: <not vendored — using PATH binary>
+ffmpeg.exe   SHA256: 8e11e7ad62d949783eda7cdf904bb3a82355655bc9be512e60b320924fc02a58
+ffprobe.exe  SHA256: 3739dfd1f2c1e7a52e482a94e5d957d0fda99d628c2ddd6a5cded9b6b6f41683
 aria2c.exe   SHA256: be2099c214f63a3cb4954b09a0becd6e2e34660b886d4c898d260febfe9d70c2
 ```
 

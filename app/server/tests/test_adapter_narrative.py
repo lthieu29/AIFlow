@@ -560,34 +560,24 @@ Mặt trời dần khuất sau những tòa nhà cao tầng. Hồ Tây phản ch
         ok, errors = result.validate()
         assert ok is True, f"SceneList validation failed: {errors}"
 
-        # Verify structure
-        assert len(result.scenes) == 3
-        assert result.scenes[0].order == 0
-        assert result.scenes[1].order == 1
-        assert result.scenes[2].order == 2
-
-        # Verify all scenes have content
+        # Long narrations expand into bounded clips without losing location or text.
+        assert len(result.scenes) >= 3
+        assert [scene.order for scene in result.scenes] == list(range(len(result.scenes)))
+        groups = {location: [scene for scene in result.scenes if scene.location_hint == location]
+                  for location in ("outdoor_urban", "indoor_cafe", "outdoor_nature")}
+        for location, heading, phrase in (
+            ("outdoor_urban", "Mở đầu: Buổi sáng tại Hà Nội", "Hà Nội"),
+            ("indoor_cafe", "Cao trào: Khám phá phố cổ", "lịch sử và hiện đại"),
+            ("outdoor_nature", "Kết thúc: Hoàng hôn trên Hồ Tây", "hoàng hôn"),
+        ):
+            assert groups[location]
+            assert all(heading in scene.prompt for scene in groups[location])
+            assert phrase in " ".join(scene.narration for scene in groups[location])
         for scene in result.scenes:
-            assert scene.prompt.strip()
-            assert scene.narration and scene.narration.strip()
-            assert 3.0 <= scene.duration <= 30.0
-
-        # Verify location hints
-        assert result.scenes[0].location_hint == "outdoor_urban"
-        assert result.scenes[1].location_hint == "indoor_cafe"
-        assert result.scenes[2].location_hint == "outdoor_nature"
-
-        # Verify headings appear in prompts
-        assert "Mở đầu: Buổi sáng tại Hà Nội" in result.scenes[0].prompt
-        assert "Cao trào: Khám phá phố cổ" in result.scenes[1].prompt
-        assert "Kết thúc: Hoàng hôn trên Hồ Tây" in result.scenes[2].prompt
-
-        # Verify narrations
-        assert "Hà Nội" in result.scenes[0].narration
-        assert "lịch sử và hiện đại" in result.scenes[1].narration
-        assert "hoàng hôn" in result.scenes[2].narration
+            assert scene.narration.strip()
+            assert 3.0 <= scene.duration <= 8.0
 
         # Verify cost estimate
         cost = result.estimate_cost()
-        assert cost["veo3_clips"] == 3
+        assert cost["veo3_clips"] == len(result.scenes)
         assert cost["total_video_duration_sec"] > 0

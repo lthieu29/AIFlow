@@ -11,6 +11,7 @@
 
 import { useState, useEffect, useRef, useCallback, type ChangeEvent } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 import {
   ArrowLeft,
   Play,
@@ -163,6 +164,7 @@ function VoiceCard({ voice, isPlaying, onPlay, onStop, onDelete }: VoiceCardProp
         Nền tảng:{" "}
         <span className="font-medium text-zinc-300">{backendLabel(voice.backend)}</span>
       </p>
+      {voice.is_custom && voice.backend !== "remote" && <p className="text-xs text-amber-200">Gói đã lưu trên máy. Chưa tự nạp vào worker Colab để tạo lời đọc.</p>}
 
       {/* Actions row */}
       <div className="mt-auto flex items-center gap-2 pt-1">
@@ -241,7 +243,8 @@ function UploadPanel({ onUploaded }: UploadPanelProps) {
       if (fileInputRef.current) fileInputRef.current.value = "";
       onUploaded();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Tải lên thất bại. Vui lòng thử lại.");
+      const detail = axios.isAxiosError(err) ? err.response?.data?.detail : null;
+      setError(typeof detail === "string" ? detail : "Tải gói giọng thất bại. Kiểm tra ZIP có metadata.json và voices.json, rồi thử lại.");
     } finally {
       setUploading(false);
     }
@@ -452,7 +455,7 @@ export default function VoiceGallery() {
         Thư viện giọng nói
       </h1>
       <p className="mt-1 max-w-2xl text-sm text-zinc-400">
-        Danh sách giọng từ kết nối Colab đã lưu. Giọng fine-tune được lưu trên My Drive;
+        Danh sách gồm giọng từ kết nối Colab đã lưu và các gói giọng đã nhập trên máy. Giọng fine-tune được lưu trên My Drive;
         chọn model trong notebook rồi kiểm tra và lưu lại kết nối để đổi giọng.
       </p>
 

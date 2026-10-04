@@ -177,12 +177,12 @@ class TestSceneList:
     def test_validate_duration_boundary_values(self):
         from server.content.base import SceneList, SceneSpec
 
-        # Exactly 3.0 and 30.0 are valid
+        # Exactly 3.0 and the default 8.0s clip boundary are valid
         sl = SceneList(
             project_id="p1",
             scenes=[
                 SceneSpec(order=0, prompt="a", duration=3.0),
-                SceneSpec(order=1, prompt="b", duration=30.0),
+                SceneSpec(order=1, prompt="b", duration=8.0),
             ],
         )
         ok, errors = sl.validate()

@@ -11,12 +11,14 @@ type Revision = {
   content: Record<string, unknown>; provider: string; model: string;
   usage: Record<string, unknown> | null; error: string; approved: boolean;
   project_id: number | null; created_at: string;
+  project_aspect?: string | null;
   quality?: QualityReport; editorially_approved?: boolean; can_revise?: boolean;
   latest_review?: Revision | null;
   approval?: { notes: string; created_at: string } | null;
   brief?: Record<string, unknown> | null;
 };
 type Model = { id: string; name: string };
+type Series = { id: number; name: string; version: number; bible: string; language: string };
 type Connection = { configured: boolean; codex_reason: string; codex_enabled: boolean; gemini_enabled: boolean };
 type ScriptScene = EditableScene;
 const labels: Record<string, string> = {
@@ -35,6 +37,10 @@ const example = {
   scenes: [{ visual_prompt: "An empty hallway, a brass key on a dark wooden table, cold cinematic light.",
     narration: "The key appeared every night. This time, someone was waiting.", duration: 8, location_hint: "indoor" }],
   continuity_notes: "Keep the brass key and hallway identical across shots.",
+};
+const emptyScript = {
+  title: "", continuity_notes: "", scenes: [{ visual_prompt: "", narration: "", duration: 8,
+    location_hint: "unspecified", story_beat: "unspecified", purpose: "" }],
 };
 
 async function api<T>(path: string, method = "GET", body?: unknown): Promise<T> {
@@ -75,9 +81,8 @@ export default function ScriptStudio() {
   const [model, setModel] = useState("");
   const [textProvider, setTextProvider] = useState("openrouter");
   const [geminiModel, setGeminiModel] = useState("");
-  const [series, setSeries] = useState<{ id: number; name: string; version: number; bible: string; language: string }[]>([]);
+  const [series, setSeries] = useState<Series[]>([]);
   const [seriesId, setSeriesId] = useState("");
-  useEffect(() => { fetch("/api/studio/series").then(r => r.ok ? r.json() : []).then(setSeries).catch(() => setError("Không tải được series.")); }, []);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -86,6 +91,8 @@ export default function ScriptStudio() {
   const [idea, setIdea] = useState("");
   const [bible, setBible] = useState("");
   const [briefLanguage, setBriefLanguage] = useState("en");
+  const [entryMode, setEntryMode] = useState<"ai" | "manual">("ai");
+  const [manualLanguage, setManualLanguage] = useState("vi");
   const [seconds, setSeconds] = useState(240);
   const [audience, setAudience] = useState("Adults who enjoy original short mysteries");
   const [tone, setTone] = useState("Suspenseful, grounded, non-graphic");
@@ -104,6 +111,17 @@ export default function ScriptStudio() {
   const isScript = row && ["script", "revise", "manual"].includes(row.stage) && row.status === "succeeded";
   const step = row && !(row.stage === "review" && row.can_revise === false) ? nextStep[row.stage] : undefined;
   const scriptScenes = isScript ? row.content.scenes as ScriptScene[] : [];
+  const entirelySilent = scriptScenes.length > 0 && scriptScenes.every(scene => !scene.narration.trim());
+  async function loadSeries(): Promise<Series[]> {
+    const response = await fetch("/api/studio/series", { headers: { "X-AIFlow-Client": "1" } });
+    if (!response.ok) throw new Error("Không tải được series. Kiểm tra kết nối rồi bấm Tải lại series.");
+    return response.json();
+  }
+  useEffect(() => {
+    let active = true;
+    loadSeries().then(value => { if (active) setSeries(value); }).catch(error => { if (active) setError(error.message); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -147,7 +165,7 @@ export default function ScriptStudio() {
     </nav>
     <header className="mb-6"><p className="text-sm text-emerald-400">Xưởng nội dung · Fiction / series</p>
       <h1 className="mt-1 text-3xl font-semibold">Kịch bản & phiên bản</h1>
-      <p className="mt-2 text-zinc-400">Brief → dàn ý → kịch bản → nhận xét → bạn duyệt → tạo dự án. Không cần bật Colab ở bước này.</p>
+      <p className="mt-2 text-zinc-400">Tạo kịch bản bằng AI hoặc nhập thủ công → kiểm tra → bạn duyệt → tạo dự án. Không cần bật Colab ở bước này.</p>
     </header>
     {error && <div role="alert" className="mb-4 rounded-xl border border-rose-400/30 p-4 text-rose-300 break-words">{error}</div>}
     <p role="status" aria-live="polite" className="mb-4 text-sm text-emerald-300">{busy ? "Đang xử lý… Có thể mất khoảng 2 phút. Không cần bấm lại." : notice}</p>
@@ -178,10 +196,10 @@ export default function ScriptStudio() {
     <div className="grid items-start gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
       <aside className={`${card} p-4`}>
         <div className="flex items-center justify-between"><h2 className="font-semibold">Lịch sử</h2>
-          <button className={btnGhost} disabled={busy} onClick={() => setParams({})}>Brief mới</button></div>
+          <button className={btnGhost} disabled={busy} onClick={() => setParams({})}>Kịch bản mới</button></div>
         <p className="my-3 text-xs text-zinc-500">300 checkpoint gần nhất · bản cũ được giữ trong database</p>
         {loading && <p role="status">Đang tải…</p>}
-        {!loading && !rows.length && <p className="text-sm text-zinc-400">Chưa có kịch bản. Bắt đầu bằng brief bên cạnh.</p>}
+        {!loading && !rows.length && <p className="text-sm text-zinc-400">Chưa có kịch bản. Chọn cách nhập bên cạnh.</p>}
         <ul className="max-h-[65vh] space-y-2 overflow-y-auto">{rows.map((item) => <li key={item.id}>
           <button disabled={busy} onClick={() => setParams({ revision: String(item.id) })} aria-current={item.id === selected ? "true" : undefined}
             className={`w-full rounded-xl border p-3 text-left text-sm focus-visible:ring-2 focus-visible:ring-emerald-400 ${item.id === selected ? "border-emerald-500/50 bg-emerald-500/10" : "border-white/10"}`}>
@@ -191,7 +209,29 @@ export default function ScriptStudio() {
         </li>)}</ul>
       </aside>
       <section className={`${card} min-w-0 p-5 sm:p-6`}>
-        {!selected ? <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); void act(async () => {
+        {!selected ? <>
+          <fieldset className="mb-5 space-y-3" disabled={busy}>
+            <legend className={fieldLabel}>Cách tạo kịch bản</legend>
+            <div className="flex flex-wrap gap-4 text-sm">
+              <label className="flex items-center gap-2"><input type="radio" name="entry-mode" checked={entryMode === "ai"} onChange={() => setEntryMode("ai")} />AI từ brief</label>
+              <label className="flex items-center gap-2"><input type="radio" name="entry-mode" checked={entryMode === "manual"} onChange={() => setEntryMode("manual")} />Nhập kịch bản thủ công</label>
+            </div>
+          </fieldset>
+          {entryMode === "manual" ? <div className="space-y-5">
+            <h2 className="text-xl font-semibold">Kịch bản thủ công</h2>
+            <p className="text-sm text-zinc-400">Lưu trực tiếp nội dung bạn nhập, không gọi AI viết kịch bản. Mỗi cảnh 4–8 giây, tổng tối đa 360 giây.</p>
+            <label className={fieldLabel}>Ngôn ngữ lời dẫn<select className={`${input} mt-2`} disabled={busy} value={manualLanguage} onChange={e => setManualLanguage(e.target.value)}><option value="vi">Tiếng Việt</option><option value="en">Tiếng Anh</option></select></label>
+            <label className={fieldLabel}>Nhịp đọc dự kiến ({manualLanguage === "vi" ? "tiếng/phút" : "từ/phút"})<input type="number" className={`${input} mt-2`} disabled={busy} min={100} max={manualLanguage === "vi" ? 300 : 180} value={wpm} onChange={e => setWpm(Number(e.target.value))} /></label>
+            <p className="text-xs text-zinc-400">{manualLanguage === "vi" ? "Đếm tiếng tách bằng khoảng trắng; có thể nhập 240 tiếng/phút rồi đo lại bằng giọng TTS đã chọn." : "Đếm từ tiếng Anh, giới hạn 100–180 từ/phút."} Đây là ước tính kịch bản, không đổi tốc độ giọng TTS.</p>
+            <ScriptSceneEditor content={emptyScript} busy={busy} creating onSave={async content => {
+              let saved = false;
+              await act(async () => {
+                await selectResult(await api<Revision>("/manual", "POST", { request_id: crypto.randomUUID(), content, language: manualLanguage, narration_wpm: wpm }));
+                saved = true; setNotice("Đã lưu kịch bản thủ công. Kiểm tra và duyệt để tạo dự án.");
+              });
+              return saved;
+            }} />
+          </div> : <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); void act(async () => {
           await selectResult(await api<Revision>("/brief", "POST", { request_id: crypto.randomUUID(),
             series_id: seriesId ? Number(seriesId) : null, series_version: series.find(s => s.id === Number(seriesId))?.version,
             content: { title, idea, series_bible: bible, language: briefLanguage, target_seconds: seconds, audience, tone,
@@ -200,6 +240,13 @@ export default function ScriptStudio() {
           <h2 className="text-xl font-semibold">Bắt đầu tập mới</h2>
           <label className={fieldLabel}>Ngôn ngữ (tập có series kế thừa cấu hình series)<select className={input} disabled={!!seriesId} value={briefLanguage} onChange={e => setBriefLanguage(e.target.value)}><option value="en">Tiếng Anh</option><option value="vi">Tiếng Việt</option></select></label>
           <label className={fieldLabel}>Series<select className={`${input} mt-2`} value={seriesId} onChange={e => { setSeriesId(e.target.value); const s = series.find(x => x.id === Number(e.target.value)); if (s) { setBible(s.bible); setBriefLanguage(s.language); } }}><option value="">Tập độc lập</option>{series.map(s => <option key={s.id} value={s.id}>{s.name} · v{s.version}</option>)}</select></label>
+          <button type="button" className={btnGhost} disabled={busy} onClick={() => void act(async () => {
+            const fresh = await loadSeries(); setSeries(fresh);
+            const current = fresh.find(item => item.id === Number(seriesId));
+            if (current) { setBible(current.bible); setBriefLanguage(current.language); }
+            else if (seriesId) setSeriesId("");
+            setNotice("Đã tải lại series; brief đang nhập được giữ.");
+          })}>Tải lại series</button>
           <Link className="text-sm text-emerald-300" to="/studio-settings">Quản lý series, nhân vật và kết nối</Link>
           <label className={fieldLabel}>Tên tập<input className={`${input} mt-2`} required maxLength={200} value={title} onChange={(e) => setTitle(e.target.value)} /></label>
           <label className={fieldLabel}>Ý tưởng & khán giả<textarea className={`${input} mt-2`} required rows={5} maxLength={10000} value={idea} onChange={(e) => setIdea(e.target.value)} /></label>
@@ -211,10 +258,11 @@ export default function ScriptStudio() {
           <label className={fieldLabel}>Bắt buộc giữ / cần tránh<textarea className={`${input} mt-2`} rows={2} maxLength={3000} value={constraints} onChange={(e) => setConstraints(e.target.value)} /></label>
           <label className={fieldLabel}>Bối cảnh series, nhân vật & quy tắc cần giữ<textarea className={`${input} mt-2`} rows={5} maxLength={20000} readOnly={!!seriesId} value={bible} onChange={(e) => setBible(e.target.value)} /></label>
           <label className={fieldLabel}>Thời lượng mục tiêu (giây)<input type="number" className={`${input} mt-2`} min={30} max={360} required value={seconds} onChange={(e) => setSeconds(Number(e.target.value))} /></label>
-          <label className={fieldLabel}>Nhịp đọc dự kiến (từ/phút)<input type="number" className={`${input} mt-2`} min={100} max={180} required value={wpm} onChange={(e) => setWpm(Number(e.target.value))} /></label>
-          <p className="text-xs text-zinc-400">135 từ/phút là giả định biên tập ban đầu, không phải tốc độ TTS đã đo. Không cần lấp đầy mọi giây bằng lời nói.</p>
+          <label className={fieldLabel}>Nhịp đọc dự kiến ({briefLanguage === "vi" ? "tiếng/phút" : "từ/phút"})<input type="number" className={`${input} mt-2`} min={100} max={briefLanguage === "vi" ? 300 : 180} required value={wpm} onChange={(e) => setWpm(Number(e.target.value))} /></label>
+          <p className="text-xs text-zinc-400">{briefLanguage === "vi" ? "Đếm tiếng tách bằng khoảng trắng; có thể nhập 240 tiếng/phút rồi đo lại bằng giọng TTS đã chọn." : "135 từ/phút là giả định biên tập ban đầu."} Đây là ước tính kịch bản, không đổi tốc độ giọng TTS. Không cần lấp đầy mọi giây bằng lời nói.</p>
           <button className={btnPrimary} disabled={busy}>Lưu brief</button>
-        </form> : !row ? <p role="status">{loading ? "Đang tải phiên bản…" : "Chưa tải được phiên bản. Kiểm tra kết nối hoặc chọn lại từ lịch sử."}</p> : <>
+        </form>}
+        </> : !row ? <p role="status">{loading ? "Đang tải phiên bản…" : "Chưa tải được phiên bản. Kiểm tra kết nối hoặc chọn lại từ lịch sử."}</p> : <>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div><p className="text-sm text-emerald-400">#{row.id} · {labels[row.stage]} · {row.approved ? "Đã duyệt" : statuses[row.status]}</p>
               <h2 className="mt-1 text-xl font-semibold">{row.title}</h2>
@@ -229,7 +277,7 @@ export default function ScriptStudio() {
             setTitle(String(source.title ?? "")); setIdea(String(source.idea ?? "")); setBible(String(source.series_bible ?? ""));
             setSeconds(Number(source.target_seconds ?? 240)); setAudience(String(source.audience ?? "Adults who enjoy original short mysteries"));
             setTone(String(source.tone ?? "Suspenseful, grounded, non-graphic")); setPromise(String(source.viewer_promise ?? ""));
-            setConstraints(String(source.constraints ?? "")); setWpm(Number(source.narration_wpm ?? 135)); setParams({});
+            setConstraints(String(source.constraints ?? "")); setWpm(Number(source.narration_wpm ?? 135)); setEntryMode("ai"); setParams({});
             setNotice("Đã chép brief để chỉnh hoặc tạo tập mới. Chỉ tạo nhánh mới khi bấm Lưu brief.");
           }}>Chép brief để chỉnh / tạo tập mới</button>}
           {row.error && <p role="alert" className="mt-4 text-rose-300">{row.error}</p>}
@@ -258,7 +306,7 @@ export default function ScriptStudio() {
                 <p className="mt-2 whitespace-pre-wrap text-zinc-100">{scene.narration}</p>
                 <p className="mt-3 whitespace-pre-wrap text-sm text-zinc-400">Hình ảnh: {scene.visual_prompt}</p>
                 <p className="mt-2 text-xs text-zinc-400">{scene.story_beat ?? "unspecified"} · {scene.purpose || "Chưa ghi vai trò của cảnh"}</p>
-                {row.quality?.scenes[index] && <p className="mt-2 text-xs text-zinc-500">Từ giây {row.quality.scenes[index].start} · {row.quality.scenes[index].words} từ · lời đọc ước tính {row.quality.scenes[index].estimated_speech_seconds}s</p>}
+                {row.quality?.scenes[index] && <p className="mt-2 text-xs text-zinc-500">Từ giây {row.quality.scenes[index].start} · {row.quality.scenes[index].words} {row.quality.narration_unit === "syllables" ? "tiếng" : "từ"} · lời đọc ước tính {row.quality.scenes[index].estimated_speech_seconds}s</p>}
               </li>)}</ol>
               <p className="whitespace-pre-wrap text-sm text-zinc-400">Ghi chú liên tục: {String(row.content.continuity_notes ?? "")}</p>
               <details><summary className="cursor-pointer text-sm text-zinc-400">Xem JSON gốc</summary><pre className="mt-3 overflow-auto whitespace-pre-wrap break-words text-xs">{JSON.stringify(row.content, null, 2)}</pre></details>
@@ -320,21 +368,21 @@ export default function ScriptStudio() {
               <h3 className="font-semibold">Duyệt trước sản xuất</h3>
               {!row.editorially_approved ? <>
                 {row.approved && <p className="text-sm text-amber-200">Bản này được duyệt theo luồng cũ; cần xác nhận checklist biên tập mới.</p>}
-                {editorialChecks.map(([id, label]) => <label key={id} className="flex items-start gap-3 text-sm text-zinc-300"><input type="checkbox" className="mt-1" checked={checks.includes(id)} onChange={(e) => setChecks(e.target.checked ? [...checks, id] : checks.filter((value) => value !== id))} />{label}</label>)}
+                {editorialChecks.map(([id, label]) => <label key={id} className="flex items-start gap-3 text-sm text-zinc-300"><input type="checkbox" className="mt-1" checked={checks.includes(id)} onChange={(e) => setChecks(e.target.checked ? [...checks, id] : checks.filter((value) => value !== id))} />{id === "read_aloud" && entirelySilent ? "Đã xác nhận toàn bộ cảnh chủ ý không có lời dẫn." : label}</label>)}
                 {!!row.quality?.issues.some((item) => item.severity === "warning") && <label className="flex items-start gap-3 text-sm text-amber-200"><input type="checkbox" className="mt-1" checked={ackWarnings} onChange={(e) => setAckWarnings(e.target.checked)} />Đã đọc các cảnh báo; những điểm còn lại là lựa chọn biên tập có chủ ý.</label>}
                 <label className={fieldLabel}>Ghi chú quyết định duyệt<textarea className={`${input} mt-2`} maxLength={3000} rows={2} value={approvalNotes} onChange={(e) => setApprovalNotes(e.target.value)} /></label>
                 <button className={btnPrimary} disabled={busy || checks.length !== editorialChecks.length || !row.quality?.ready || (row.quality.issues.some((item) => item.severity === "warning") && !ackWarnings)} onClick={() => void act(async () => {
                   await api(`/${row.id}/approve`, "POST", { checklist: checks, acknowledge_warnings: ackWarnings, notes: approvalNotes });
                 })}>Duyệt phiên bản #{row.id}</button>
               </> : <>
-                <label className={fieldLabel}>Tỉ lệ khung hình<select className={`${input} mt-2`} value={aspect} onChange={(e) => setAspect(e.target.value)}>
+                <label className={fieldLabel}>Tỉ lệ khung hình<select className={`${input} mt-2`} disabled={!!row.project_id} value={row.project_aspect ?? aspect} onChange={(e) => setAspect(e.target.value)}>
                   <option className="bg-zinc-900">16:9</option><option className="bg-zinc-900">9:16</option><option className="bg-zinc-900">1:1</option>
                 </select></label>
                 <button className={btnPrimary} disabled={busy} onClick={() => void act(async () => {
                   const project = await api<{ id: number }>(`/${row.id}/project`, "POST", { aspect });
                   navigate(`/production?project=${project.id}`);
                 })}>{row.project_id ? "Mở dự án đã tạo" : "Tạo dự án từ bản đã duyệt"}</button>
-                <p className="text-xs text-zinc-400">Tạo cảnh và chuyển sang Timeline; chưa chạy TTS hay tạo video. Style: cinematic-thriller, giọng mặc định: af_heart.</p>
+                <p className="text-xs text-zinc-400">Tạo cảnh và mở Xưởng sản xuất; chưa chạy TTS hay tạo video. Cấu hình giọng của series được giữ trong từng tập.</p>
               </>}
             </div>}
           </>}

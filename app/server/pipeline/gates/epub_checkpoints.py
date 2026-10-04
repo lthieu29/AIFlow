@@ -138,7 +138,7 @@ def _create_epub_gate(
         gate_id=gate_id,
         project_id=project_id,
         status="checking",
-        expired_at=(now + timedelta(hours=timeout_hours)).replace(tzinfo=None),
+        expired_at=now + timedelta(hours=timeout_hours),
         score=None,
     )
     session.add(gate)
@@ -324,7 +324,7 @@ def approve_epub_gate(
     """
     gate = _get_active_epub_gate(session, gate_id, project_id)
     gate.status = "passed"
-    gate.updated_at = _utcnow().replace(tzinfo=None)
+    gate.updated_at = _utcnow()
     session.add(gate)
     session.commit()
 
@@ -348,6 +348,6 @@ def override_epub_gate(
     """
     gate = _get_active_epub_gate(session, gate_id, project_id)
     gate.status = "overridden"
-    gate.updated_at = _utcnow().replace(tzinfo=None)
+    gate.updated_at = _utcnow()
     session.add(gate)
     session.commit()

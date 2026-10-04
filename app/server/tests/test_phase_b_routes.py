@@ -65,7 +65,7 @@ class TestVoiceDemoSecurity:
         # Preset 'Binh' has no demo file on disk in this fresh tmp storage.
         assert resp.status_code == 404
 
-    def test_voices_list_uses_safe_demo_urls(self, client, tmp_path):
+    def test_remote_voices_list_uses_safe_demo_urls(self, client, tmp_path, monkeypatch):
         # Seed a custom voice with a demo file + catalog entry.
         gallery = tmp_path / "storage" / "voice_gallery" / "myvoice"
         gallery.mkdir(parents=True)
@@ -77,6 +77,12 @@ class TestVoiceDemoSecurity:
             "is_custom": True, "demo_audio_path": str(gallery / "demo.mp3"),
         }]}), encoding="utf-8")
 
+        from server.audio import remote
+        connection = remote.AudioConnection()
+        connection.voices = [{"id": "myvoice", "name": "My Voice", "backend": "remote",
+                              "language": "en", "gender": "neutral", "description": "",
+                              "demo_audio_path": str(gallery / "demo.mp3")}]
+        monkeypatch.setattr(remote, "connection", connection)
         resp = client.get("/api/tts/voices")
         assert resp.status_code == 200
         entry = next(v for v in resp.json() if v["id"] == "myvoice")

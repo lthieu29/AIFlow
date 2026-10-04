@@ -27,7 +27,7 @@ def main():
     data = folder / "train.parquet"
     config = {"format": 1, "epochs": args.epochs, "data_sha256": sha256(data), "base": args.base,
               "batch": 1, "accumulation": 16, "lr": 0.0002, "seed": 42,
-              "torch": str(torch.__version__), "bf16": torch.cuda.is_bf16_supported(),
+              "torch": str(torch.__version__), "bf16": torch.cuda.is_bf16_supported(including_emulation=False),
               "packages": {name: version(name) for name in ("transformers", "peft", "numpy", "safetensors", "pyarrow")}}
     path = folder / "trainer-state.pt"
     if (folder / "trainer-config.json").exists() and read_json(folder / "trainer-config.json") != config:
@@ -37,6 +37,8 @@ def main():
     random.seed(42); np.random.seed(42); torch.manual_seed(42); torch.cuda.manual_seed_all(42)
     tokenizer = AutoTokenizer.from_pretrained(args.base, subfolder="update", trust_remote_code=True)
     model = load_v3_turbo_checkpoint(args.base, subfolder="update", device="cuda", dtype=torch.float32)
+    # Transformers embedding access and PEFT checkpoint hooks must see the shared text embedding.
+    model._input_embed_layer = "text_embeddings"
     model.config.use_cache = False
     for parameter in model.parameters():
         parameter.requires_grad_(False)
@@ -55,6 +57,7 @@ def main():
     total = steps_per_epoch * args.epochs
     scheduler = get_scheduler("cosine", optimizer, num_warmup_steps=int(total * 0.05), num_training_steps=total)
     epoch, offset, step = 0, 0, 0
+    last_metrics = {}
     if path.exists():
         # Only our own checkpoint under the private Drive run directory is loaded.
         state = torch.load(path, map_location="cpu", weights_only=False)
@@ -64,20 +67,21 @@ def main():
         optimizer.load_state_dict(state["optimizer"])
         scheduler.load_state_dict(state["scheduler"])
         epoch, offset, step = state["epoch"], state["offset"], state["step"]
+        last_metrics = state.get("last_metrics", {})
         random.setstate(state["python_rng"]); np.random.set_state(state["numpy_rng"])
         torch.set_rng_state(state["torch_rng"]); torch.cuda.set_rng_state_all(state["cuda_rng"])
 
     def checkpoint(next_epoch, next_offset):
         state = {"config": config, "adapter": {k: v.detach().cpu().clone() for k, v in get_peft_model_state_dict(peft).items()},
                  "optimizer": optimizer.state_dict(), "scheduler": scheduler.state_dict(),
-                 "epoch": next_epoch, "offset": next_offset, "step": step,
+                 "epoch": next_epoch, "offset": next_offset, "step": step, "last_metrics": last_metrics,
                  "python_rng": random.getstate(), "numpy_rng": np.random.get_state(),
                  "torch_rng": torch.get_rng_state(), "cuda_rng": torch.cuda.get_rng_state_all()}
         temporary = path.with_suffix(".tmp")
         torch.save(state, temporary)
         temporary.replace(path)
         write_json(folder / "progress.json", {"step": step, "total_steps": total, "epoch": next_epoch,
-                                               "next_sample": next_offset, "checkpoint": True})
+                                               "next_sample": next_offset, "checkpoint": True, **last_metrics})
 
     optimizer.zero_grad(set_to_none=True)
     model.train()
@@ -87,20 +91,30 @@ def main():
         for group_start in range(start, len(order), config["accumulation"]):
             indices = order[group_start:group_start + config["accumulation"]]
             losses = []
+            metrics = []
             for idx in indices:
                 batch = {k: v.to("cuda") for k, v in train_data.collate([train_data[idx]]).items()}
                 with torch.autocast("cuda", dtype=torch.bfloat16, enabled=config["bf16"]):
-                    loss, _ = compute_loss(model, batch, 1.0, 8.0)
+                    loss, measured = compute_loss(model, batch, 1.0, 8.0)
                 if not torch.isfinite(loss):
                     raise RuntimeError("Loss không hữu hạn. Giữ checkpoint trước, kiểm tra dữ liệu.")
                 (loss / len(indices)).backward()
                 losses.append(float(loss.detach()))
-            torch.nn.utils.clip_grad_norm_(params, 1.0)
+                metrics.append(measured)
+            grad_norm = torch.nn.utils.clip_grad_norm_(params, 1.0)
+            if not torch.isfinite(grad_norm):
+                raise RuntimeError("Gradient không hữu hạn. Giữ checkpoint trước, không cập nhật optimizer.")
+            last_metrics = {"last_mean_loss": sum(losses)/len(losses),
+                            **{key: sum(item[key] for item in metrics)/len(metrics) for key in ("text_loss", "audio_loss", "acc_cb0")},
+                            "grad_norm": float(grad_norm), "nonzero_gradients": float(grad_norm) > 0}
             optimizer.step(); scheduler.step(); optimizer.zero_grad(set_to_none=True)
             step += 1
             next_offset = group_start + len(indices)
             checkpoint(ep + 1 if next_offset == len(order) else ep, 0 if next_offset == len(order) else next_offset)
-            print(f"step {step}/{total} loss {sum(losses)/len(losses):.4f}", flush=True)
+            print(f"step {step}/{total} loss {last_metrics['last_mean_loss']:.4f} "
+                  f"text_loss {last_metrics['text_loss']:.4f} audio_loss {last_metrics['audio_loss']:.4f} "
+                  f"acc_cb0 {last_metrics['acc_cb0']:.4f} grad_norm {last_metrics['grad_norm']:.4g} "
+                  f"nonzero_gradients {last_metrics['nonzero_gradients']}", flush=True)
             if (folder.parent.parent / "cancel.request").exists():
                 raise RuntimeError("Đã dừng ở checkpoint đầy đủ. Có thể resume cùng run.")
         model.eval()

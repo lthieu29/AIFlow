@@ -29,10 +29,14 @@ def digest(value: dict) -> str:
 
 
 def validate_url(value: str) -> str:
-    parsed = urlsplit(value.strip())
-    host = parsed.hostname or ""
+    try:
+        parsed = urlsplit(value.strip())
+        host = parsed.hostname or ""
+        port = parsed.port
+    except ValueError as exc:
+        raise AudioUnavailable("URL Colab không hợp lệ.", "invalid_url") from exc
     if (parsed.scheme != "https" or parsed.username or parsed.password or parsed.query or parsed.fragment
-            or parsed.path not in ("", "/") or parsed.port not in (None, 443)
+            or parsed.path not in ("", "/") or port not in (None, 443)
             or not re.fullmatch(r"[a-z0-9-]+\.trycloudflare\.com", host)):
         raise AudioUnavailable("Nhập URL HTTPS gốc của Quick Tunnel (*.trycloudflare.com).", "invalid_url")
     try:
@@ -170,6 +174,13 @@ def cached(data_dir: Path, key: str) -> bool:
         return False
 
 
+def _read_complete_pcm(audio) -> bytes:
+    pcm = audio.readframes(audio.getnframes())
+    if len(pcm) != audio.getnframes() * audio.getnchannels() * audio.getsampwidth():
+        raise TTSError("WAV thiếu dữ liệu PCM; cần tạo hoặc tải lại đoạn audio.", "remote")
+    return pcm
+
+
 def store_audio(data_dir: Path, key: str, content: bytes, checksum: str) -> None:
     if len(content) > 32 * 1024 * 1024 or hashlib.sha256(content).hexdigest() != checksum:
         raise AudioUnavailable("File audio tải về không khớp checksum.")
@@ -181,6 +192,7 @@ def store_audio(data_dir: Path, key: str, content: bytes, checksum: str) -> None
         with wave.open(str(temp), "rb") as audio:
             if audio.getnframes() <= 0 or audio.getsampwidth() != 2:
                 raise TTSError("Worker trả về WAV không hợp lệ.", "remote")
+            _read_complete_pcm(audio)
         temp.replace(path)
         path.with_suffix(".json").write_text(json.dumps({"checksum": checksum}))
     finally:
@@ -208,24 +220,27 @@ def combine(data_dir: Path, segments: list[dict], destination: Path) -> float:
     temporary = destination.with_suffix(".part")
     frames = 0
     rate = 24000
-    with wave.open(str(temporary), "wb") as output:
-        expected = None
-        for segment in segments:
-            if not cached(data_dir, segment["key"]):
-                raise AudioUnavailable("Một đoạn cache bị thiếu hoặc hỏng.")
-            with wave.open(str(cache_path(data_dir, segment["key"])), "rb") as source:
-                params = (source.getnchannels(), source.getsampwidth(), source.getframerate())
-                if expected is None:
-                    expected = params
-                    output.setnchannels(params[0])
-                    output.setsampwidth(params[1])
-                    output.setframerate(params[2])
-                    rate = params[2]
-                elif expected != params:
-                    raise TTSError("Các đoạn audio khác định dạng; cần tạo lại với cùng model.", "remote")
-                output.writeframes(source.readframes(source.getnframes()))
-                frames += source.getnframes()
-    temporary.replace(destination)
+    try:
+        with wave.open(str(temporary), "wb") as output:
+            expected = None
+            for segment in segments:
+                if not cached(data_dir, segment["key"]):
+                    raise AudioUnavailable("Một đoạn cache bị thiếu hoặc hỏng.")
+                with wave.open(str(cache_path(data_dir, segment["key"])), "rb") as source:
+                    params = (source.getnchannels(), source.getsampwidth(), source.getframerate())
+                    if expected is None:
+                        expected = params
+                        output.setnchannels(params[0])
+                        output.setsampwidth(params[1])
+                        output.setframerate(params[2])
+                        rate = params[2]
+                    elif expected != params:
+                        raise TTSError("Các đoạn audio khác định dạng; cần tạo lại với cùng model.", "remote")
+                    output.writeframes(_read_complete_pcm(source))
+                    frames += source.getnframes()
+        temporary.replace(destination)
+    finally:
+        temporary.unlink(missing_ok=True)
     return frames / rate
 
 

@@ -155,7 +155,11 @@ def list_voices(settings: Settings = Depends(get_settings)) -> list[VoiceInfo]:
     """
     logger.debug("[tts:routes] GET /api/tts/voices — data_dir=%s", settings.data_dir)
     from server.audio.remote import connection
-    voices = [VoiceInfo(**voice) for voice in connection.public(settings.data_dir)["voices"]]
+    voices = [VoiceInfo(**{"name": voice["id"], "backend": "remote", "gender": "neutral", "description": "", **voice})
+              for voice in connection.public(settings.data_dir)["voices"]]
+    worker_ids = {voice.id for voice in voices}
+    voices.extend(_catalog_entry_to_voice_info(entry) for entry in _load_catalog(settings.data_dir)
+                  if (entry.get("id") or entry.get("voice_id")) not in worker_ids)
 
     # Rewrite demo path → safe API URL so we never leak filesystem paths and
     # demos are only reachable through the path-checked /demo route.
@@ -304,7 +308,9 @@ async def serve_tts_audio(
     except ValueError:
         raise HTTPException(status_code=403, detail="Access denied: path outside storage directory")
 
-    if not resolved.exists():
+    if resolved.suffix.lower() not in (".mp3", ".wav", ".ogg", ".flac", ".m4a"):
+        raise HTTPException(status_code=403, detail="Only audio files can be served")
+    if not resolved.is_file():
         raise HTTPException(status_code=404, detail="Audio file not found")
 
     # Determine media type

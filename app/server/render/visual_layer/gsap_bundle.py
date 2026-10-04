@@ -32,7 +32,7 @@ _GSAP_CDN_URL = (
 )
 
 # Vendor directory: app/vendor/visual_layer/
-_VENDOR_DIR: Path = Path(__file__).resolve().parents[4] / "vendor" / "visual_layer"
+_VENDOR_DIR: Path = Path(__file__).resolve().parents[3] / "vendor" / "visual_layer"
 _GSAP_PATH: Path = _VENDOR_DIR / "gsap.min.js"
 
 # Placeholder used in HTML templates
@@ -90,7 +90,7 @@ def inject_gsap(html_content: str, *, auto_download: bool = False) -> str:
     """
     gsap_path = get_gsap_bundle_path(auto_download=auto_download)
     # Use forward slashes for the file:/// URI (works on Windows too)
-    uri = "file:///" + gsap_path.as_posix()
+    uri = gsap_path.as_uri()
     return html_content.replace(_GSAP_PLACEHOLDER, uri)
 
 

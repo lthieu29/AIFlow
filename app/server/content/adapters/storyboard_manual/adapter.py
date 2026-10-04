@@ -49,7 +49,7 @@ from server.content.adapters.storyboard_manual.schema import (
     Storyboard,
     validate_storyboard,
 )
-from server.content.duration_estimator import expand_scene_specs
+from server.content.duration_estimator import WORDS_PER_MINUTE, get_max_scene_duration
 
 logger = logging.getLogger(__name__)
 
@@ -102,9 +102,6 @@ class StoryboardManualAdapter:
 
         # 3. Build SceneSpec list
         scenes = self._build_scenes(storyboard)
-
-        # 3.5. Split scenes that exceed clip_duration into multiple sub-scenes
-        scenes = expand_scene_specs(scenes)
 
         # 4. Apply skill if requested
         if input.skill_name:
@@ -177,6 +174,16 @@ class StoryboardManualAdapter:
         ok, schema_errors = validate_storyboard(data)
         if not ok:
             errors.extend(schema_errors)
+            return errors
+
+        max_duration = get_max_scene_duration()
+        for index, scene in enumerate(Storyboard.model_validate(data).scenes):
+            duration = scene.duration
+            if duration > max_duration:
+                errors.append(f"scenes → {index} → duration: clip hiện tại tối đa {max_duration:g} giây; chia thành nhiều cảnh trước khi nhập.")
+            narration_seconds = len((scene.narration or "").split()) / WORDS_PER_MINUTE * 60
+            if narration_seconds > duration:
+                errors.append(f"scenes → {index} → narration: lời dẫn cần khoảng {narration_seconds:.1f} giây ở {WORDS_PER_MINUTE} từ/phút, vượt duration {duration:g}; rút ngắn lời dẫn hoặc chia cảnh.")
 
         return errors
 

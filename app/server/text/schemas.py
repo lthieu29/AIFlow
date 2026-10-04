@@ -14,12 +14,19 @@ class Brief(StrictModel):
     title: str = Field(min_length=1, max_length=200)
     idea: str = Field(min_length=1, max_length=10000)
     series_bible: str = Field(max_length=20000)
-    target_seconds: int = Field(ge=30, le=360)
+    target_seconds: int = Field(ge=4, le=360)
     audience: str = Field(default="Adults who enjoy original short mysteries", max_length=1000)
     tone: str = Field(default="Suspenseful, grounded, non-graphic", max_length=1000)
     viewer_promise: str = Field(default="", max_length=2000)
     constraints: str = Field(default="", max_length=3000)
-    narration_wpm: int = Field(default=135, ge=100, le=180)
+    narration_wpm: int = Field(default=135, ge=100, le=300,
+                               description="Planning pace: Vietnamese space-delimited syllables/minute (100-300), English words/minute (100-180). Not TTS speed.")
+
+    @model_validator(mode="after")
+    def language_pace(self):
+        if self.language == "en" and self.narration_wpm > 180:
+            raise ValueError("English narration planning pace must be 100-180 words/minute.")
+        return self
 
 
 class Outline(StrictModel):

@@ -29,6 +29,7 @@ Phase 3.5.1 — Task 3.5.1
 from __future__ import annotations
 
 import asyncio
+import os
 import shutil
 import subprocess
 import tempfile
@@ -52,6 +53,25 @@ except ImportError:  # pragma: no cover
 # ─── Types ────────────────────────────────────────────────────────────────────
 
 BackgroundMode = Literal["transparent", "black", "white"]
+_BROWSER_CACHE = Path(__file__).resolve().parents[3] / "vendor" / "playwright"
+
+
+def _chromium_launch_options(default_executable: str) -> dict:
+    options: dict[str, bool | str] = {"headless": True}
+    if "PLAYWRIGHT_BROWSERS_PATH" in os.environ or not _BROWSER_CACHE.is_dir():
+        return options
+    default = Path(default_executable)
+    for folder in default.parents:
+        if folder.name.startswith("chromium-"):
+            revision = folder.name.removeprefix("chromium-")
+            local = _BROWSER_CACHE / folder.name / default.relative_to(folder)
+            candidates = [local, *(_BROWSER_CACHE / f"chromium_headless_shell-{revision}").glob("*/chrome-headless-shell*")]
+            for candidate in candidates:
+                if candidate.is_file() and candidate.name in (default.name, "chrome-headless-shell", "chrome-headless-shell.exe"):
+                    options["executable_path"] = str(candidate)
+                    return options
+            break
+    return options
 
 
 # ─── Data classes ─────────────────────────────────────────────────────────────
@@ -230,7 +250,7 @@ class PlaywrightRenderer:
         total_frames = max(1, int(req.duration_sec * req.fps))
 
         async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
+            browser = await p.chromium.launch(**_chromium_launch_options(p.chromium.executable_path))
             try:
                 context = await browser.new_context(
                     viewport={"width": req.width, "height": req.height},

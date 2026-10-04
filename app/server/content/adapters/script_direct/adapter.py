@@ -24,7 +24,7 @@ Processing order in ``adapt()`` (Requirements 1.6, 1.10):
        in ``details`` → ``ADAPTER_INVALID_INPUT`` (R1.9).
     5. Validate ALL durations BEFORE assigning order (R1.10):
        - Default 8.0 when ``duration_sec`` is absent (R1.5).
-       - Raise ``ADAPTER_INVALID_INPUT`` immediately if any duration ∉ [3, 30].
+       - Raise ``ADAPTER_INVALID_INPUT`` if any duration exceeds the clip limit.
     6. Assign contiguous ``order`` starting from 0 (R1.6).
     7. Build ``SceneSpec`` objects.
     8. Apply skill prefix via ``apply_skill_to_scene`` if ``skill_name`` set (R1.14).
@@ -57,7 +57,6 @@ from server.content.adapters.script_direct.schema import (
 from server.content.pipeline_limits import enforce_pipeline_limits
 from server.content.duration_estimator import (
     MIN_DURATION,
-    expand_scene_specs,
     get_max_scene_duration,
 )
 
@@ -182,9 +181,6 @@ class ScriptDirectAdapter:
                 # asset_ids are stored in metadata; SceneSpec has no asset_ids field
             )
             specs.append(spec)
-
-        # Step 7.5 — split scenes exceeding clip_duration into sub-scenes
-        specs = expand_scene_specs(specs)
 
         # Step 8 — apply skill prefix if requested (R1.14)
         if input.skill_name:

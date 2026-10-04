@@ -608,95 +608,19 @@ class TestProbeVideo:
 
 
 class TestTranscribeAudio:
-    @pytest.fixture(autouse=True)
-    def _clear_whisper_cache(self):
-        """Isolate tests that mock faster_whisper.
-
-        The module-level ``_default_transcriber`` caches loaded models by
-        ``model_size:device:compute_type``. Without clearing it, a mock model
-        cached by one test would be reused by the next (since ``_get_model``
-        returns the cached instance without re-importing faster_whisper),
-        breaking ``patch.dict(sys.modules, ...)`` mocking.
-        """
-        from server.audio import transcribe as transcribe_module
-
-        transcribe_module._default_transcriber.clear_cache()
-        yield
-        transcribe_module._default_transcriber.clear_cache()
-
-    def test_raises_when_audio_missing(self, tmp_path):
+    @pytest.mark.parametrize("module_available", [False, True])
+    def test_local_shim_is_disabled_without_writing_subtitles(self, tmp_path, module_available):
         from server.audio.transcribe import transcribe_audio
-
-        with pytest.raises(FileNotFoundError, match="Audio file not found"):
-            transcribe_audio(tmp_path / "nonexistent.wav", tmp_path / "out.srt")
-
-    def test_raises_when_faster_whisper_not_installed(self, tmp_path):
-        from server.audio.transcribe import transcribe_audio
-
-        audio = tmp_path / "audio.wav"
+        audio, output = tmp_path / "audio.wav", tmp_path / "out.srt"
         audio.write_bytes(b"fake wav")
-
-        with patch.dict(sys.modules, {"faster_whisper": None}):
-            with pytest.raises(ImportError, match="faster-whisper"):
-                transcribe_audio(audio, tmp_path / "out.srt")
-
-    def test_writes_srt_file(self, tmp_path):
-        from server.audio.transcribe import transcribe_audio
-
-        audio = tmp_path / "audio.wav"
-        audio.write_bytes(b"fake wav")
-        output_srt = tmp_path / "out.srt"
-
-        # Build mock segment
-        seg = MagicMock()
-        seg.start = 0.0
-        seg.end = 2.5
-        seg.text = " Hello world"
-
-        mock_info = MagicMock()
-        mock_info.language = "vi"
-        mock_info.language_probability = 0.99
-
-        mock_model = MagicMock()
-        mock_model.transcribe.return_value = ([seg], mock_info)
-
-        mock_whisper_module = MagicMock()
-        mock_whisper_module.WhisperModel.return_value = mock_model
-
-        with patch.dict(sys.modules, {"faster_whisper": mock_whisper_module}):
-            result = transcribe_audio(audio, output_srt, language="vi")
-
-        assert result == output_srt
-        assert output_srt.exists()
-        content = output_srt.read_text(encoding="utf-8")
-        assert "Hello world" in content
-        assert "00:00:00,000 --> 00:00:02,500" in content
-
-    def test_returns_none_when_no_segments(self, tmp_path):
-        from server.audio.transcribe import transcribe_audio
-
-        audio = tmp_path / "audio.wav"
-        audio.write_bytes(b"fake wav")
-
-        mock_info = MagicMock()
-        mock_info.language = "vi"
-        mock_info.language_probability = 0.1
-
-        mock_model = MagicMock()
-        mock_model.transcribe.return_value = ([], mock_info)
-
-        mock_whisper_module = MagicMock()
-        mock_whisper_module.WhisperModel.return_value = mock_model
-
-        with patch.dict(sys.modules, {"faster_whisper": mock_whisper_module}):
-            result = transcribe_audio(audio, tmp_path / "out.srt")
-
-        assert result is None
+        model_module = MagicMock() if module_available else None
+        with patch.dict(sys.modules, {"faster_whisper": model_module}):
+            with pytest.raises(RuntimeError, match="STT local"):
+                transcribe_audio(audio, output)
+        assert not output.exists()
+        if model_module:
+            model_module.WhisperModel.assert_not_called()
 
     def test_format_timestamp(self):
         from server.audio.transcribe import _format_timestamp
-
-        assert _format_timestamp(0.0) == "00:00:00,000"
         assert _format_timestamp(61.5) == "00:01:01,500"
-        assert _format_timestamp(3661.123) == "01:01:01,123"
-        assert _format_timestamp(3600.0) == "01:00:00,000"

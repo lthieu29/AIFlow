@@ -525,6 +525,7 @@ class TestExportCapCutRoute:
         mock_session.__enter__ = MagicMock(return_value=mock_session)
         mock_session.__exit__ = MagicMock(return_value=False)
         mock_session.get.return_value = None  # project not found
+        mock_session.exec.return_value.first.return_value = None  # no matching short ID
 
         with patch("server.db.session.get_engine", return_value=MagicMock()):
             with patch("sqlmodel.Session", return_value=mock_session):
@@ -546,6 +547,7 @@ class TestExportCapCutRoute:
         mock_session.__enter__ = MagicMock(return_value=mock_session)
         mock_session.__exit__ = MagicMock(return_value=False)
         mock_session.get.return_value = fake_project
+        mock_session.exec.return_value.first.return_value = None  # no matching short ID
         mock_session.exec.return_value.all.return_value = []
 
         with patch("server.db.session.get_engine", return_value=MagicMock()):
@@ -571,6 +573,7 @@ class TestExportCapCutRoute:
         mock_session.__enter__ = MagicMock(return_value=mock_session)
         mock_session.__exit__ = MagicMock(return_value=False)
         mock_session.get.return_value = fake_project
+        mock_session.exec.return_value.first.return_value = None  # no matching short ID
         mock_session.exec.return_value.all.return_value = [fake_scene]
 
         expected_path = str(tmp_path / "drafts" / "Test_Project_p_test")

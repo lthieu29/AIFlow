@@ -1,11 +1,13 @@
 import hashlib
 import json
 import math
-import shutil
 import subprocess
 from pathlib import Path
+from statistics import median
 
 from PIL import Image, ImageOps
+
+from server.render.ffmpeg_utils import find_ffmpeg, find_ffprobe
 
 
 def sha256(path: Path) -> str:
@@ -14,10 +16,10 @@ def sha256(path: Path) -> str:
 
 
 def probe(path: Path) -> dict:
-    binary = shutil.which("ffprobe")
+    binary = find_ffprobe()
     if not binary:
-        raise ValueError("Cần cài FFmpeg/ffprobe và thêm vào PATH.")
-    result = subprocess.run([binary, "-v", "error", "-show_streams", "-show_format", "-of", "json", str(path)],
+        raise ValueError("Cần tải FFmpeg/ffprobe vào vendor hoặc thêm vào PATH.")
+    result = subprocess.run([str(binary), "-v", "error", "-show_streams", "-show_format", "-of", "json", str(path)],
                             capture_output=True, timeout=30, check=False)
     if result.returncode:
         raise ValueError("Không đọc được media; file hỏng hoặc định dạng không hỗ trợ.")
@@ -37,11 +39,30 @@ def image_info(path: Path) -> tuple[int, int]:
         return ImageOps.exif_transpose(image).size
 
 
-def ffmpeg(arguments: list[str], timeout: int = 300) -> None:
-    binary = shutil.which("ffmpeg")
+def validate_video_timing(path: Path) -> None:
+    """Reject sparse clip timelines before CFR rendering can duplicate held frames."""
+    binary = find_ffprobe()
     if not binary:
-        raise ValueError("Cần cài FFmpeg và thêm vào PATH.")
-    result = subprocess.run([binary, "-hide_banner", "-loglevel", "error", "-y", *arguments],
+        raise ValueError("Cần tải FFmpeg/ffprobe vào vendor hoặc thêm vào PATH.")
+    result = subprocess.run([str(binary), "-v", "error", "-select_streams", "v:0", "-show_packets",
+                             "-show_entries", "packet=pts_time", "-of", "json", str(path)],
+                            capture_output=True, timeout=30, check=False)
+    if result.returncode:
+        raise ValueError("Không đọc được timestamp của clip; nhập lại file video.")
+    times = sorted(float(packet["pts_time"]) for packet in json.loads(result.stdout).get("packets", [])
+                   if "pts_time" in packet)
+    if len(times) < 2 or not all(math.isfinite(value) for value in times):
+        raise ValueError("Clip không có đủ timestamp video hợp lệ.")
+    deltas = [right - left for left, right in zip(times, times[1:])]
+    if max(deltas) > max(0.5, 3 * median(deltas)):
+        raise ValueError("Clip có khoảng trống timestamp gây ảnh đứng khi xuất. Tải clip gốc riêng từ Flow rồi nhập lại.")
+
+
+def ffmpeg(arguments: list[str], timeout: int = 300) -> None:
+    binary = find_ffmpeg()
+    if not binary:
+        raise ValueError("Cần tải FFmpeg vào vendor hoặc thêm vào PATH.")
+    result = subprocess.run([str(binary), "-hide_banner", "-loglevel", "error", "-y", *arguments],
                             capture_output=True, timeout=timeout, check=False)
     if result.returncode:
         raise ValueError("FFmpeg không xử lý được media; kiểm tra file nguồn và dung lượng đĩa.")

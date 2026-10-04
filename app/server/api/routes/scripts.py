@@ -1,12 +1,13 @@
 """Explicit script steps, immutable results and human approval before project creation."""
 
 import json
+import math
 import uuid
 from datetime import datetime, timezone
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr, model_validator
 from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
@@ -15,13 +16,13 @@ from server.api.routes.audio import local_client
 from server.api.routes.projects import get_session
 from server.db.models.project import Project
 from server.db.models.scene import Scene
-from server.db.models.script_revision import ScriptRevision
 from server.db.models.script_approval import ScriptApproval
+from server.db.models.script_revision import ScriptRevision
+from server.text import codex_tmux
 from server.text.approval import CHECKLIST, content_hash, require_approval
 from server.text.openrouter import TextProviderError, provider
 from server.text.providers import PROVIDERS, gemini
-from server.text import codex_tmux
-from server.text.schemas import Brief, SCHEMAS, Script
+from server.text.schemas import SCHEMAS, Brief, Script
 from server.text.workflow import ancestry, build_prompt, get_revision, quality_report
 
 router = APIRouter(prefix="/api/scripts", tags=["scripts"], dependencies=[Depends(local_client)])
@@ -53,6 +54,21 @@ class ImportInput(BaseModel):
     parent_id: int
     stage: Literal["manual", "outline", "script", "review", "revise"] = "manual"
     content: dict
+
+
+class ManualInput(BaseModel):
+    request_id: uuid.UUID
+    content: Script
+    language: Literal["en", "vi"] = "vi"
+    narration_wpm: int = Field(default=135, ge=100, le=300)
+
+    @model_validator(mode="after")
+    def duration_limit(self):
+        if self.language == "en" and self.narration_wpm > 180:
+            raise ValueError("English narration planning pace must be 100-180 words/minute.")
+        if sum(scene.duration for scene in self.content.scenes) > 360:
+            raise ValueError("Kịch bản thủ công tối đa 360 giây.")
+        return self
 
 
 class ProjectInput(BaseModel):
@@ -149,6 +165,8 @@ def revision_detail(revision_id: int, session: Session = Depends(get_session)):
     chain = ancestry(session, row)
     brief = next((item for item in chain if item.stage == "brief"), None)
     result["brief"] = json.loads(brief.content_json) if brief else None
+    project = session.get(Project, row.project_id) if row.project_id else None
+    result["project_aspect"] = project.aspect if project else None
     result["can_revise"] = not any(item.stage == "revise" for item in chain)
     if row.status == "succeeded" and row.stage in ("script", "manual", "revise"):
         result["quality"] = quality_report(session, row)
@@ -168,6 +186,47 @@ def create_brief(body: BriefInput, session: Session = Depends(get_session)):
         return public(create_episode(session, body))
     return public(persist(session, ScriptRevision(request_id=str(body.request_id), title=body.content.title,
                                                   stage="brief", content_json=body.content.model_dump_json())))
+
+
+@router.post("/manual", status_code=201)
+def create_manual_script(body: ManualInput, session: Session = Depends(get_session)):
+    brief = Brief(title=body.content.title, idea="Kịch bản do người dùng nhập thủ công.",
+                  series_bible=body.content.continuity_notes, language=body.language,
+                  target_seconds=math.ceil(sum(scene.duration for scene in body.content.scenes)),
+                  narration_wpm=body.narration_wpm)
+    request_id = str(body.request_id)
+
+    def existing_result():
+        existing = session.exec(select(ScriptRevision).where(ScriptRevision.request_id == request_id)).first()
+        if existing is None:
+            return None
+        parent = session.get(ScriptRevision, existing.parent_id) if existing.parent_id else None
+        if (existing.stage != "manual" or existing.content_json != body.content.model_dump_json()
+                or parent is None or parent.stage != "brief" or parent.content_json != brief.model_dump_json()):
+            raise HTTPException(409, "Request ID đã dùng cho nội dung khác; tải lại kết quả trước khi gửi mới.")
+        return public(existing)
+
+    existing = existing_result()
+    if existing is not None:
+        return existing
+    root = ScriptRevision(request_id=str(uuid.uuid5(body.request_id, "manual-brief")),
+                          title=brief.title, stage="brief", content_json=brief.model_dump_json())
+    row = ScriptRevision(request_id=request_id, title=body.content.title, stage="manual",
+                         content_json=body.content.model_dump_json())
+    try:
+        session.add(root)
+        session.flush()
+        row.parent_id = root.id
+        session.add(row)
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        existing = existing_result()
+        if existing is None:
+            raise HTTPException(409, "Request ID đã được dùng; gửi một request ID mới.")
+        return existing
+    session.refresh(row)
+    return public(row)
 
 
 @router.get("/{revision_id}/prompt/{stage}")

@@ -47,9 +47,10 @@ def build_prompt(session: Session, parent: ScriptRevision, stage: str) -> str:
         context["preflight"] = inspect_script(Script.model_validate(context["script"]), brief)
     if stage != "revise":
         context.pop("review", None)
-    budget = (f"Target {brief.target_seconds}s; narration planning pace {brief.narration_wpm} words/minute. "
+    unit = "Vietnamese space-delimited syllables" if brief.language == "vi" else "words"
+    budget = (f"Target {brief.target_seconds}s; narration planning pace {brief.narration_wpm} {unit}/minute. "
               f"Leave at least 0.35 seconds of breathing room in each spoken shot. "
-              f"An 8-second shot has about {int((8 - 0.35) * brief.narration_wpm / 60)} spoken words at this pace. "
+              f"An 8-second shot has about {int((8 - 0.35) * brief.narration_wpm / 60)} spoken {unit} at this pace. "
               "Do not fill silent beats merely to reach a word count. Timing is an estimate until TTS.\n")
     instructions = COMMON + STAGES[stage]
     if brief.language == "vi":

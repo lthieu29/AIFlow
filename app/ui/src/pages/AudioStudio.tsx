@@ -15,7 +15,8 @@ type Task = {
   completed_segments: number; total_segments: number; duration_sec: number;
   error: string; audio_url: string | null;
 };
-type Project = { id: number; name: string; short_id: string };
+type Project = { id: number; name: string; short_id: string; scene_count: number };
+type SeriesVoice = { voice?: string; speed: number; model_revision?: string };
 const local = { headers: { "X-AIFlow-Client": "1" } };
 const labels: Record<string, string> = {
   waiting_resource: "Chờ kết nối / thao tác", queued: "Đang chờ xử lý", running: "Đang tạo audio",
@@ -35,7 +36,8 @@ function errorText(error: unknown): string {
 }
 
 export default function AudioStudio() {
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
+  const projectParam = params.get("project") ?? "";
   const [connection, setConnection] = useState<Connection | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -47,11 +49,12 @@ export default function AudioStudio() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [text, setText] = useState("");
-  const [project, setProject] = useState(params.get("project") ?? "");
+  const project = projectParam;
   const [voice, setVoice] = useState("af_heart");
   const [projectLanguage, setProjectLanguage] = useState("en");
   const [loadingVoice, setLoadingVoice] = useState(!!project);
   const [voiceLoadFailed, setVoiceLoadFailed] = useState(false);
+  const [seriesVoice, setSeriesVoice] = useState<SeriesVoice | null>(null);
   const [speed, setSpeed] = useState(1);
   const [profile, setProfile] = useState("");
   const [selected, setSelected] = useState<number[]>([]);
@@ -75,7 +78,7 @@ export default function AudioStudio() {
       if (live.current) timer = setTimeout(poll, 4000);
     }
     void poll();
-    void apiClient.get<Project[]>("/projects").then(({ data }) => { if (live.current) setProjects(data); }).catch(() => {});
+    void apiClient.get<Project[]>("/projects").then(({ data }) => { if (live.current) setProjects(data.filter(p => p.scene_count > 0)); }).catch(() => {});
     return () => { live.current = false; clearTimeout(timer); };
   }, [refresh]);
 
@@ -86,10 +89,18 @@ export default function AudioStudio() {
   useEffect(() => {
     let cancelled = false;
     setVoiceLoadFailed(false);
+    setSeriesVoice(null);
     if (!project) { setLoadingVoice(false); return; }
     setLoadingVoice(true);
-    void apiClient.get<{ voice_id: string; language: string }>(`/projects/${project}`).then(({ data }) => {
-      if (!cancelled) { setVoice(data.voice_id); setProjectLanguage(data.language); }
+    void Promise.all([
+      apiClient.get<{ voice_id: string; language: string }>(`/projects/${project}`),
+      apiClient.get<{ brief: { series?: SeriesVoice } }>(`/production/projects/${project}`),
+    ]).then(([{ data }, { data: production }]) => {
+      if (!cancelled) {
+        setVoice(data.voice_id); setProjectLanguage(data.language);
+        setSeriesVoice(production.brief.series ?? null);
+        if (production.brief.series) setSpeed(production.brief.series.speed);
+      }
     }).catch(err => {
       if (!cancelled) { setError(errorText(err)); setVoiceLoadFailed(true); }
     }).finally(() => { if (!cancelled) setLoadingVoice(false); });
@@ -226,11 +237,12 @@ export default function AudioStudio() {
           </section>
           <section className={`${card} p-5`} aria-labelledby="create-title"><h2 id="create-title" className="text-lg font-semibold">Tạo giọng đọc</h2>
             <form onSubmit={e => void create(e)} className="mt-4 space-y-4">
-              <label className="block text-sm">Nguồn nội dung<select className={`${inputCls} mt-1 w-full`} value={project} disabled={!!busy} onChange={e => { setLoadingVoice(!!e.target.value); setVoiceLoadFailed(false); setProject(e.target.value); }}><option value="">Nhập lời đọc riêng</option>{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
+              <label className="block text-sm">Nguồn nội dung<select className={`${inputCls} mt-1 w-full`} value={project} disabled={!!busy} onChange={e => { setLoadingVoice(!!e.target.value); setVoiceLoadFailed(false); const next = new URLSearchParams(params); if (e.target.value) next.set("project", e.target.value); else next.delete("project"); setParams(next); }}><option value="">Nhập lời đọc riêng</option>{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
               {!project && <label className="block text-sm">Lời đọc theo ngôn ngữ giọng đã chọn<textarea required maxLength={50000} value={text} onChange={e => setText(e.target.value)} className={`${inputCls} mt-1 min-h-36 w-full`} placeholder="Paste your approved narration here…" /></label>}
               {project && <p className="text-xs text-zinc-400">Lấy lời đọc đã lưu của dự án. Lưu thay đổi ở Timeline trước khi tạo tác vụ.</p>}
-              <div className="grid gap-3 sm:grid-cols-2"><label className="block text-sm">Giọng đọc Colab<select className={`${inputCls} mt-1 w-full`} value={voice} disabled={!!busy || loadingVoice || !voices.length} onChange={e => setVoice(e.target.value)}>{!selectedVoice && <option value={voice}>{voice} ({voices.length ? "không có trong profile" : "chờ danh sách giọng"})</option>}{voices.map(v => <option key={v.id} value={v.id}>{v.name} · {v.gender === "female" ? "Nữ" : v.gender === "male" ? "Nam" : "Giọng đọc"} · {v.language}</option>)}</select></label>
-                <label className="block text-sm">Tốc độ<input className={`${inputCls} mt-1 w-full`} type="number" min={0.5} max={2} step={0.05} value={speed} onChange={e => setSpeed(Number(e.target.value))} /></label></div>
+              <div className="grid gap-3 sm:grid-cols-2"><label className="block text-sm">Giọng đọc Colab<select className={`${inputCls} mt-1 w-full`} value={voice} disabled={!!busy || loadingVoice || !voices.length || !!seriesVoice?.voice} onChange={e => setVoice(e.target.value)}>{!selectedVoice && <option value={voice}>{voice} ({voices.length ? "không có trong profile" : "chờ danh sách giọng"})</option>}{voices.map(v => <option key={v.id} value={v.id}>{v.name} · {v.gender === "female" ? "Nữ" : v.gender === "male" ? "Nam" : "Giọng đọc"} · {v.language}</option>)}</select></label>
+                <label className="block text-sm">Tốc độ<input className={`${inputCls} mt-1 w-full`} type="number" disabled={!!busy || !!seriesVoice} min={0.5} max={2} step={0.01} value={speed} onChange={e => setSpeed(Number(e.target.value))} /></label></div>
+              {seriesVoice && <p className="text-xs text-zinc-400">Cấu hình series đã khóa cho tập: tốc độ {seriesVoice.speed} · model {seriesVoice.model_revision || "chưa khóa"}. Tạo tập mới với phiên bản series mới để đổi cấu hình.</p>}
               {loadingVoice && <p role="status" className="text-sm text-zinc-400">Đang tải giọng đã lưu của dự án…</p>}
               {!voices.length && <p className="text-sm text-zinc-400">Kiểm tra và lưu kết nối Colab hoặc nhập profile batch để tải danh sách giọng. Khi chưa có profile, tác vụ sẽ chờ kết nối.</p>}
               {unavailableVoice && <p role="alert" className="text-sm text-amber-200">Giọng {voice} không có trong profile hiện tại. Hãy chọn một giọng có sẵn trước khi tạo audio.</p>}

@@ -292,6 +292,7 @@ class TestPlaywrightRendererRender:
         browser_mock.close = AsyncMock()
 
         chromium_mock = AsyncMock()
+        chromium_mock.executable_path = "chromium-0/chrome/chrome"
         chromium_mock.launch = AsyncMock(return_value=browser_mock)
 
         pw_instance = AsyncMock()
@@ -374,6 +375,7 @@ class TestPlaywrightRendererRender:
         browser_mock.close = AsyncMock()
 
         chromium_mock = AsyncMock()
+        chromium_mock.executable_path = "chromium-0/chrome/chrome"
         chromium_mock.launch = AsyncMock(return_value=browser_mock)
 
         pw_instance = AsyncMock()
@@ -430,6 +432,7 @@ class TestPlaywrightRendererRender:
         browser_mock.close = AsyncMock()
 
         chromium_mock = AsyncMock()
+        chromium_mock.executable_path = "chromium-0/chrome/chrome"
         chromium_mock.launch = AsyncMock(return_value=browser_mock)
 
         pw_instance = AsyncMock()
@@ -508,6 +511,7 @@ class TestPlaywrightRendererRender:
         browser_mock.close = AsyncMock()
 
         chromium_mock = AsyncMock()
+        chromium_mock.executable_path = "chromium-0/chrome/chrome"
         chromium_mock.launch = AsyncMock(return_value=browser_mock)
 
         pw_instance = AsyncMock()

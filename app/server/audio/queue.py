@@ -156,10 +156,13 @@ class AudioQueue:
             try:
                 if cancel:
                     if task.active_key:
-                        url, token, _, _ = connection.snapshot()
-                        state = request(url, token, "POST", f"/v1/jobs/{task.active_key}/cancel")
-                        if state["status"] == "cancel_requested":
-                            return
+                        try:
+                            url, token, _, _ = connection.snapshot()
+                            state = request(url, token, "POST", f"/v1/jobs/{task.active_key}/cancel")
+                            if state["status"] == "cancel_requested":
+                                return
+                        except AudioUnavailable:
+                            task.error = "Đã hủy trên máy; chưa xác nhận dừng worker. Kiểm tra hoặc dừng runtime Colab nếu cần."
                     task.status = "cancelled"
                     self.stop_generation(session, task)
                 elif not inputs_current(session, task):
@@ -208,12 +211,18 @@ class AudioQueue:
             except AudioUnavailable as exc:
                 with connection.lock:
                     connection.state = exc.state
-                task.status = "cancel_requested" if cancel else "waiting_resource"
+                with Session(self.engine) as latest:
+                    row = latest.get(AudioTask, task_id)
+                    pending_cancel = row and row.status == "cancel_requested"
+                task.status = "cancel_requested" if cancel or pending_cancel else "waiting_resource"
                 task.error = exc.message
                 session.add(task)
                 session.commit()
             except Exception:
-                task.status = "needs_attention"
+                with Session(self.engine) as latest:
+                    row = latest.get(AudioTask, task_id)
+                    pending_cancel = row and row.status == "cancel_requested"
+                task.status = "cancel_requested" if cancel or pending_cancel else "needs_attention"
                 task.error = "Không xử lý được audio. Kiểm tra dữ liệu và nhật ký backend."
                 self.stop_generation(session, task)
                 session.add(task)

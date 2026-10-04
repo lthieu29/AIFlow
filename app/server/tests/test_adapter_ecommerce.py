@@ -319,10 +319,10 @@ class TestAdapt:
         assert isinstance(result, SceneList)
 
     @pytest.mark.asyncio
-    async def test_generates_five_scenes(self):
+    async def test_expands_five_shots_into_bounded_clips(self):
         adapter = self._adapter()
         result = await adapter.adapt(_make_input())
-        assert len(result.scenes) == 5
+        assert len(result.scenes) >= 5
 
     @pytest.mark.asyncio
     async def test_scenes_have_correct_order(self):
@@ -332,18 +332,19 @@ class TestAdapt:
             assert scene.order == i
 
     @pytest.mark.asyncio
-    async def test_each_scene_is_8_seconds(self):
+    async def test_each_scene_fits_8_second_limit(self):
         adapter = self._adapter()
         result = await adapter.adapt(_make_input())
         for scene in result.scenes:
-            assert scene.duration == pytest.approx(8.0)
+            assert 3.0 <= scene.duration <= 8.0
 
     @pytest.mark.asyncio
-    async def test_total_duration_is_40_seconds(self):
+    async def test_total_duration_covers_full_narration(self):
         adapter = self._adapter()
         result = await adapter.adapt(_make_input())
         total = sum(s.duration for s in result.scenes)
-        assert total == pytest.approx(40.0)
+        narration_seconds = sum(len(scene.narration.split()) for scene in result.scenes) / 150 * 60
+        assert total >= narration_seconds
 
     @pytest.mark.asyncio
     async def test_scene_list_validates(self):
@@ -379,8 +380,8 @@ class TestAdapt:
     async def test_product_name_in_narrations(self):
         adapter = self._adapter()
         result = await adapter.adapt(_make_input(product_name="Túi Xách Nữ"))
-        for scene in result.scenes:
-            assert "Túi Xách Nữ" in scene.narration
+        assert "Túi Xách Nữ" in " ".join(scene.narration for scene in result.scenes)
+        assert all(scene.narration.strip() for scene in result.scenes)
 
     @pytest.mark.asyncio
     async def test_metadata_contains_product_name(self):
@@ -439,8 +440,8 @@ class TestAdapt:
         img.write_bytes(b"JPEG")
         adapter = self._adapter()
         result = await adapter.adapt(_make_input(product_image=img))
-        # cta_shot (index 4) should have start_image set
-        assert result.scenes[4].start_image == img
+        # The final CTA clip retains the product reference image.
+        assert result.scenes[-1].start_image == img
 
     @pytest.mark.asyncio
     async def test_middle_scenes_have_no_start_image(self, tmp_path):
@@ -448,9 +449,10 @@ class TestAdapt:
         img.write_bytes(b"JPEG")
         adapter = self._adapter()
         result = await adapter.adapt(_make_input(product_image=img))
-        # detail, lifestyle, feature shots (indices 1, 2, 3) should NOT have start_image
-        for idx in (1, 2, 3):
-            assert result.scenes[idx].start_image is None
+        # Continuations keep their shot identity; middle shots have no reference.
+        middle = [scene for scene in result.scenes if scene.prompt.startswith(("Extreme close-up", "Lifestyle scene", "Product feature"))]
+        assert len(middle) >= 3
+        assert all(scene.start_image is None for scene in middle)
 
     @pytest.mark.asyncio
     async def test_no_product_image_all_start_images_none(self):
@@ -471,16 +473,17 @@ class TestAdapt:
     async def test_lifestyle_shot_has_indoor_home_hint(self):
         adapter = self._adapter()
         result = await adapter.adapt(_make_input())
-        # lifestyle_shot is index 2
-        assert result.scenes[2].location_hint == "indoor_home"
+        lifestyle = [scene for scene in result.scenes if scene.prompt.startswith("Lifestyle scene")]
+        assert lifestyle
+        assert all(scene.location_hint == "indoor_home" for scene in lifestyle)
 
     @pytest.mark.asyncio
     async def test_cta_in_narration_when_provided(self):
         adapter = self._adapter()
         result = await adapter.adapt(_make_input(cta="Bấm mua ngay!"))
         # cta_shot narration should contain the CTA
-        cta_scene = result.scenes[4]
-        assert "Bấm mua ngay!" in cta_scene.narration
+        cta_narration = " ".join(scene.narration for scene in result.scenes if scene.prompt.startswith("Final call-to-action"))
+        assert "Bấm mua ngay!" in cta_narration
 
     @pytest.mark.asyncio
     async def test_default_cta_used_when_not_provided(self):
@@ -546,7 +549,7 @@ class TestSkillApplication:
         ai = _make_input(skill_name="nonexistent-skill-xyz")
         # Should not raise — skill application is best-effort
         result = await adapter.adapt(ai)
-        assert len(result.scenes) == 5
+        assert len(result.scenes) >= 5
 
     @pytest.mark.asyncio
     async def test_no_skill_name_no_prefix(self):
@@ -633,8 +636,8 @@ class TestProductImageToTikTokVideo:
         assert ok is True, f"SceneList validation failed: {errors}"
 
         # Verify TikTok-ready structure
-        assert len(result.scenes) == 5
-        assert sum(s.duration for s in result.scenes) == pytest.approx(40.0)
+        assert len(result.scenes) >= 5
+        assert sum(s.duration for s in result.scenes) >= sum(len(s.narration.split()) for s in result.scenes) / 150 * 60
 
         # Verify all scenes have content
         for scene in result.scenes:
@@ -644,10 +647,10 @@ class TestProductImageToTikTokVideo:
 
         # Verify product image anchoring
         assert result.scenes[0].start_image == product_img  # hero
-        assert result.scenes[4].start_image == product_img  # cta
+        assert result.scenes[-1].start_image == product_img  # cta
 
         # Verify cost estimate
         cost = result.estimate_cost()
-        assert cost["veo3_clips"] == 5
-        assert cost["total_video_duration_sec"] == pytest.approx(40.0)
-        assert cost["tts_duration_sec"] == pytest.approx(40.0)  # all scenes have narration
+        assert cost["veo3_clips"] == len(result.scenes)
+        assert cost["total_video_duration_sec"] == pytest.approx(sum(scene.duration for scene in result.scenes))
+        assert cost["tts_duration_sec"] == pytest.approx(cost["total_video_duration_sec"])  # all scenes have narration

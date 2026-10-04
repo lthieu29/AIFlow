@@ -1,6 +1,6 @@
 /**
  * AIFlow Bridge — injected.js
- * Injected into MAIN world on labs.google — has access to window.grecaptcha.
+ * Injected into MAIN world on Flow pages — has access to window.grecaptcha.
  *
  * Lifted from flowboard/extension/injected.js.
  * Used solely for reCAPTCHA solving.

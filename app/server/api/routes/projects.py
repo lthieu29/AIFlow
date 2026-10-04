@@ -12,8 +12,9 @@ Task 5.3 — Phase 5.3
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import subprocess
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import FileResponse
@@ -24,7 +25,7 @@ from sqlmodel import Session, select
 from server.config import Settings, load_settings
 from server.db.models.job import Job
 from server.db.models.project import Project, _new_short_id, _utcnow
-from server.db.models.scene import Scene
+from server.db.models.scene import Scene, LocationHint
 from server.db.session import get_engine
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
@@ -124,6 +125,18 @@ class ProjectCreateResponse(BaseModel):
 
 class DeleteResponse(BaseModel):
     deleted: bool
+
+
+class SceneEdit(BaseModel):
+    id: int | None = Field(default=None, gt=0)
+    duration: float = Field(default=8, ge=3, le=30, allow_inf_nan=False)
+    prompt: str = ""
+    narration: str = ""
+    location_hint: LocationHint = "unspecified"
+
+
+class SceneListEdit(BaseModel):
+    scenes: list[SceneEdit] = Field(min_length=1, max_length=500)
 
 
 class GenerateResponse(BaseModel):
@@ -375,6 +388,88 @@ def get_project(
     )
 
 
+@router.put("/{project_id}/scenes", response_model=ProjectDetail)
+def save_project_scenes(
+    project_id: str,
+    body: SceneListEdit,
+    session: Session = Depends(get_session),
+) -> ProjectDetail:
+    """Save additions, removals, ordering and scene content in one transaction."""
+    from server.db.models.audio_task import AudioTask
+    from server.db.models.production import ProductionMedia
+    from server.db.models.quality_gate import QualityGate
+    from server.db.models.scene_asset import SceneAsset
+    from server.db.models.studio import StudioOperation
+    import json
+
+    project = _find_project(session, project_id)
+    existing = session.exec(select(Scene).where(Scene.project_id == project.id).order_by(Scene.order)).all()
+    if project.status == "generating" or any(s.status in {"queued", "generating"} for s in existing):
+        raise HTTPException(409, "Dự án đang tạo video; chờ tác vụ hoàn tất trước khi sửa cảnh.")
+    active_audio = session.exec(select(AudioTask).where(
+        AudioTask.project_id == project.id,
+        AudioTask.status.in_(["queued", "running", "waiting_resource", "retrying", "cancel_requested"]),
+    )).first()
+    if active_audio:
+        raise HTTPException(409, "Dự án đang có tác vụ audio; hủy hoặc hoàn tất trước khi sửa cảnh.")
+    ids = [item.id for item in body.scenes if item.id is not None]
+    by_id = {row.id: row for row in existing}
+    if len(ids) != len(set(ids)) or any(scene_id not in by_id for scene_id in ids):
+        raise HTTPException(422, "Danh sách có cảnh trùng hoặc cảnh không thuộc dự án.")
+    removed = [row for row in existing if row.id not in ids]
+    # Keep immutable media and audio history attached to its original scene IDs.
+    if removed and session.exec(select(AudioTask.id).where(AudioTask.project_id == project.id)).first():
+        raise HTTPException(409, "Cảnh có lịch sử audio; tạo dự án mới để giữ bản gốc.")
+    removed_ids = {row.id for row in removed}
+    for operation in session.exec(select(StudioOperation).where(StudioOperation.project_id == project.id)).all() if removed else []:
+        if json.loads(operation.input_json).get("scene_id") in removed_ids:
+            raise HTTPException(409, "Cảnh có tác vụ sản xuất đã lưu; giữ cảnh để theo dõi hoặc xử lý tác vụ.")
+    for row in removed:
+        if (session.exec(select(ProductionMedia.id).where(ProductionMedia.scene_id == row.id)).first()
+                or session.exec(select(QualityGate.id).where(QualityGate.scene_id == row.id)).first()):
+            raise HTTPException(409, "Cảnh có lịch sử sản xuất; tạo dự án mới để giữ bản gốc.")
+
+    changed = bool(removed)
+    for order, item in enumerate(body.scenes):
+        row = by_id.get(item.id)
+        if row is None:
+            row = Scene(project_id=project.id, order=order)
+            changed = True
+        content_changed = (row.prompt, row.narration, row.duration, row.location_hint) != (
+            item.prompt, item.narration, item.duration, item.location_hint)
+        changed = changed or content_changed or row.order != order
+        if content_changed:
+            if row.narration != item.narration:
+                row.audio_path = None
+            row.video_path = None
+            row.last_frame_path = None
+            row.status = "draft"
+            for media in session.exec(select(ProductionMedia).where(
+                ProductionMedia.scene_id == row.id, ProductionMedia.role == "visual",
+            )).all() if row.id else []:
+                media.approved = False
+                session.add(media)
+        row.order = order
+        row.duration = item.duration
+        row.prompt = item.prompt
+        row.narration = item.narration
+        row.location_hint = item.location_hint
+        row.updated_at = _utcnow()
+        session.add(row)
+    # Allocate new IDs before deleting rows, avoiding ID reuse in this edit.
+    session.flush()
+    for row in removed:
+        for link in session.exec(select(SceneAsset).where(SceneAsset.scene_id == row.id)).all():
+            session.delete(link)
+        session.delete(row)
+    if changed:
+        project.status = "ready"
+        project.updated_at = _utcnow()
+        session.add(project)
+    session.commit()
+    return get_project(project_id, session)
+
+
 @router.delete("/{project_id}", response_model=DeleteResponse)
 def delete_project(
     project_id: str,
@@ -616,6 +711,8 @@ def _run_dry_run(project_id: int, job_id: int, settings: Settings) -> None:
 
     engine = get_engine(settings)
     with Session(engine) as session:
+        project = session.get(Project, project_id)
+        size = {"16:9": "1280x720", "1:1": "720x720"}.get(project.aspect if project else "9:16", "720x1280")
         scenes = list(
             session.exec(
                 select(Scene).where(Scene.project_id == project_id).order_by(Scene.order)
@@ -634,7 +731,7 @@ def _run_dry_run(project_id: int, job_id: int, settings: Settings) -> None:
     # Colour test source + silent audio, encoded to a web-friendly MP4.
     cmd = [
         str(ffmpeg), "-y",
-        "-f", "lavfi", "-i", f"color=c=0x1E3A8A:s=720x1280:d={total_dur:.1f}",
+        "-f", "lavfi", "-i", f"color=c=0x1E3A8A:s={size}:d={total_dur:.1f}",
         "-f", "lavfi", "-i", f"anullsrc=channel_layout=stereo:sample_rate=44100",
         "-shortest",
         "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p",
@@ -996,6 +1093,8 @@ def _resolve_style_json(skill_name: str) -> str:
 def get_project_output(
     project_id: str,
     download: int = 0,
+    quality: Literal["original", "1080p", "720p", "480p"] = "original",
+    format: Literal["mp4", "webm"] = "mp4",
     settings: Settings = Depends(get_settings),
     session: Session = Depends(get_session),
 ):
@@ -1025,49 +1124,17 @@ def get_project_output(
                 }
             },
         )
-    filename = f"{project.title or project.short_id}.mp4"
+    from server.export.video import export_video
+    try:
+        out_path = export_video(out_path, quality, format)
+    except (OSError, RuntimeError) as exc:
+        raise HTTPException(503, "Không thể chuyển định dạng video. Kiểm tra FFmpeg và thử lại.") from exc
+    except subprocess.SubprocessError as exc:
+        raise HTTPException(503, "Chuyển định dạng video thất bại hoặc quá thời gian; thử lại bản gốc.") from exc
+    filename = f"{project.title or project.short_id}.{format}"
     return FileResponse(
         path=str(out_path),
-        media_type="video/mp4",
-        filename=filename if download else None,
-    )
-
-
-@router.get("/{project_id}/export/srt")
-def get_project_subtitle(
-    project_id: str,
-    download: int = 0,
-    settings: Settings = Depends(get_settings),
-    session: Session = Depends(get_session),
-):
-    """Serve the Whisper-generated SRT subtitle for a project.
-
-    Looks in ``{data_dir}/output/{project.id}/subtitle.srt`` (written by the
-    orchestrator after compose). Returns the file as ``application/x-subrip``
-    so browsers offer a sensible download dialog when ``?download=1``.
-
-    Raises:
-        HTTPException 404: project not found or subtitle not yet generated.
-    """
-    project = _find_project(session, project_id)
-    from server.api.safe_files import safe_resolve
-
-    output_base = Path(settings.data_dir) / "output"
-    srt_path = safe_resolve(output_base, str(project.id), "subtitle.srt")
-    if not srt_path.is_file():
-        raise HTTPException(
-            status_code=404,
-            detail={
-                "error": {
-                    "code": "SUBTITLE_NOT_READY",
-                    "message": "Phụ đề chưa được tạo (Whisper chưa chạy hoặc chưa có narration).",
-                }
-            },
-        )
-    filename = f"{project.title or project.short_id}.srt"
-    return FileResponse(
-        path=str(srt_path),
-        media_type="application/x-subrip",
+        media_type=f"video/{format}",
         filename=filename if download else None,
     )
 

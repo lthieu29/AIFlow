@@ -65,7 +65,7 @@ const ADAPTERS: Record<AdapterName, AdapterMeta> = {
     description: "Cung cấp một storyboard JSON với các cảnh tự định nghĩa.",
     inputType: "json",
     inputLabel: "Storyboard JSON",
-    inputPlaceholder: '{"scenes": [{"narration": "...", "visual_prompt": "..."}]}',
+    inputPlaceholder: '{"scenes": [{"order": 0, "prompt": "A paper boat floating down a calm stream.", "duration": 8, "narration": "The little boat begins its journey."}]}',
   },
 };
 
@@ -256,7 +256,7 @@ export default function NewProject() {
     if (!validate()) return;
     const payload = buildAdapterInput();
     if (payload === null) return;
-    setPreviewInput(payload);
+    setPreviewInput({ ...payload, skill_name: skillId });
     setPreviewOpen(true);
   }
 
@@ -273,7 +273,7 @@ export default function NewProject() {
 
     setSubmitting(true);
     try {
-      const { data } = await apiClient.post<{ short_id: string; status: string }>(
+      const { data } = await apiClient.post<{ short_id: string; status: string; parse_error?: string }>(
         "/projects",
         {
           title: title.trim(),
@@ -284,7 +284,7 @@ export default function NewProject() {
           voice_id: voiceId || undefined,
         }
       );
-      navigate(`/timeline/${data.short_id}`);
+      navigate(`/timeline/${data.short_id}`, { state: { parseError: data.parse_error } });
     } catch (err: unknown) {
       const msg =
         err instanceof Error
@@ -305,7 +305,7 @@ export default function NewProject() {
 
     setSubmitting(true);
     try {
-      const { data } = await apiClient.post<{ short_id: string; status: string }>(
+      const { data } = await apiClient.post<{ short_id: string; status: string; parse_error?: string }>(
         "/projects",
         {
           title: title.trim(),
@@ -316,7 +316,7 @@ export default function NewProject() {
           voice_id: voiceId || undefined,
         }
       );
-      navigate(`/timeline/${data.short_id}`);
+      navigate(`/timeline/${data.short_id}`, { state: { parseError: data.parse_error } });
     } catch (err: unknown) {
       const msg =
         err instanceof Error
@@ -470,6 +470,7 @@ export default function NewProject() {
               {fieldErrors.input}
             </p>
           )}
+          {adapter === "storyboard_manual" && <p className="text-xs text-zinc-400">Mỗi cảnh dùng order liên tiếp từ 0, prompt mô tả hình ảnh và duration tính bằng giây: tối thiểu 3 giây, không vượt giới hạn clip cấu hình (mặc định 8 giây). narration là lời dẫn tùy chọn; chia cảnh nếu lời dẫn vượt thời lượng.</p>}
         </div>
 
         {/* Skill picker */}

@@ -15,7 +15,8 @@ Phase 7 — Task 7.2 / Task 7.3
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
+import re
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse, PlainTextResponse
@@ -79,7 +80,7 @@ class CapCutExportResponse(BaseModel):
     ),
 )
 def export_capcut(
-    project_id: int,
+    project_id: str,
     body: CapCutExportRequest = CapCutExportRequest(),
     settings: Settings = Depends(get_settings),
 ) -> CapCutExportResponse:
@@ -116,13 +117,15 @@ def export_capcut(
 
         engine = get_engine(settings)
         with Session(engine) as session:
-            project = session.get(Project, project_id)
+            from server.api.routes.projects import _find_project
+            project = _find_project(session, project_id)
             if project is None:
                 raise HTTPException(
                     status_code=404,
                     detail=f"Project {project_id} not found.",
                 )
 
+            project_id = project.id
             scenes = session.exec(
                 select(Scene)
                 .where(Scene.project_id == project_id)
@@ -218,6 +221,9 @@ def _discover_srt(settings: Settings, project_id: int) -> Optional[str]:
 
     Returns the first match as a string path, or None if not found.
     """
+    rendered = Path(settings.data_dir) / "output" / str(project_id) / "subtitle.srt"
+    if rendered.is_file():
+        return str(rendered)
     audio_dir = Path(settings.data_dir) / "audio" / str(project_id)
     if not audio_dir.exists():
         return None
@@ -250,8 +256,9 @@ def _discover_srt(settings: Settings, project_id: int) -> Optional[str]:
     },
 )
 def export_srt(
-    project_id: int,
+    project_id: str,
     inline: bool = False,
+    format: Literal["srt", "vtt"] = "srt",
     settings: Settings = Depends(get_settings),
 ):
     """Export the project's subtitles as an SRT file.
@@ -294,13 +301,15 @@ def export_srt(
 
         engine = get_engine(settings)
         with Session(engine) as session:
-            project = session.get(Project, project_id)
+            from server.api.routes.projects import _find_project
+            project = _find_project(session, project_id)
             if project is None:
                 raise HTTPException(
                     status_code=404,
                     detail=f"Project {project_id} not found.",
                 )
 
+            project_id = project.id
             scenes = session.exec(
                 select(Scene)
                 .where(Scene.project_id == project_id)
@@ -329,6 +338,8 @@ def export_srt(
             project_id,
             existing_srt,
         )
+        if format == "vtt":
+            return _vtt_response(Path(existing_srt).read_text(encoding="utf-8-sig"))
         if inline:
             content = Path(existing_srt).read_text(encoding="utf-8")
             return PlainTextResponse(content=content, media_type="text/plain; charset=utf-8")
@@ -386,6 +397,8 @@ def export_srt(
         len(segments),
     )
 
+    if format == "vtt":
+        return _vtt_response(srt_content)
     if inline:
         return PlainTextResponse(
             content=srt_content, media_type="text/plain; charset=utf-8"
@@ -398,3 +411,8 @@ def export_srt(
         media_type="application/octet-stream",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+def _vtt_response(srt: str) -> PlainTextResponse:
+    timestamps = re.sub(r"(\d{2}:\d{2}:\d{2}),(\d{3})", r"\1.\2", srt.lstrip("\ufeff"))
+    return PlainTextResponse("WEBVTT\n\n" + timestamps, media_type="text/vtt")

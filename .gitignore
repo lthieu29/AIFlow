@@ -18,3 +18,13 @@ ainovel-cli-main/
 ainovel-cli-main_2/
 public-site/
 .gitnexus
+
+# Local browser automation artifacts and training recordings
+/.playwright-mcp/
+/wavs/
+
+# Tool caches
+.ruff_cache/
+.pytest_cache/
+.hypothesis/
+__pycache__/

@@ -26,18 +26,27 @@ Công cụ tạo video AI cá nhân — kết hợp Google **Veo 3** (qua Flow),
 
 ## AIFlow làm được gì
 
-- **Đầu vào**: một ảnh khởi đầu + câu lệnh (prompt) văn bản (đang chạy được qua CLI),
-  hoặc — thông qua các content adapter — ảnh sản phẩm, kịch bản, bài viết, tài liệu,
+- **Đầu vào**: kịch bản thủ công, prompt văn bản, ảnh khởi đầu,
+  hoặc — thông qua các content adapter — ảnh sản phẩm, bài viết, tài liệu,
   RSS, v.v.
 - **Đầu ra**: một file MP4 do Veo 3 tạo ra, tải về thư mục `storage/output/`.
 
-Luồng end-to-end nhỏ nhất hiện chạy được là:
+Với giao diện Flow hiện tại, luồng tạo clip là:
 
 ```
-ảnh khởi đầu + prompt  →  Veo 3 (image-to-video)  →  poll  →  file .mp4 cuối
+kịch bản đã duyệt → Client → BE → extension điều khiển UI Flow → nhận MP4 vào cảnh
 ```
 
-chạy bằng lệnh CLI `aiflow gen-clip`.
+Extension có luồng điều khiển composer hiện tại: chọn Veo 3.1 Lite / 720p / 8 giây,
+điền prompt và bấm nút tạo của trang. Luồng UI được kiểm tra riêng với RPC và không
+can thiệp captcha; có yêu cầu xác minh người dùng thì dừng. Một clip đã được kiểm tra
+thật qua Client → BE → extension → Flow Lite → polling → MP4 (8 giây, 1280×720, 24 fps).
+Luồng ảnh tham chiếu Thành phần cũng đã chạy đủ chuỗi này: PNG đã duyệt → upload/chọn
+đúng asset SHA qua extension → clip cảnh 3; kiểm tra bốn khung hình giữ đúng nhân vật,
+áo kem, áo ngoài olive và túi nâu. Kết quả này xác nhận clip đã thử, từng cảnh tiếp theo
+vẫn cần duyệt người/trang phục và chất lượng.
+Nhánh CLI image-to-video
+cũ chưa được xác minh end-to-end với phiên Flow mới.
 
 ---
 
@@ -47,21 +56,22 @@ chạy bằng lệnh CLI `aiflow gen-clip`.
 ┌──────────────┐   HTTP :8101 / WS :9223   ┌─────────────────────┐
 │ Chrome +     │ <───────────────────────> │  AIFlow server      │
 │ extension    │                            │  (FastAPI, Python)  │
-│ AIFlow Bridge│  bắt Bearer token          │                     │
-└──────┬───────┘  từ labs.google            │  - Flow SDK (Veo3)  │
+│ AIFlow Bridge│  UI / RPC trong phiên trang│                     │
+└──────┬───────┘  flow.google.com           │  - Flow SDK (Veo3)  │
        │                                     │  - Gemini client   │
        ▼                                     │  - TTS / Whisper    │
 ┌──────────────┐                             │  - Adapters        │
-│ Google Flow  │   request video đã ký       │  - SQLite + storage│
+│ Google Flow  │   kiểm tra / nhận kết quả   │  - SQLite + storage│
 │ (Veo 3)      │ <───────────────────────────┤                    │
 └──────────────┘                             └─────────────────────┘
 ```
 
 1. **Server** chạy cục bộ tại `127.0.0.1:8101` (HTTP) và `:9223` (WebSocket).
-2. **Extension Chrome** ("AIFlow Bridge") kết nối tới WebSocket; khi bạn mở tab Flow,
-   nó bắt Bearer token của Google + giải reCAPTCHA ngay trong ngữ cảnh trang.
-3. Server dùng token đó để gửi yêu cầu tạo video Veo 3 và tải kết quả về — nên bạn cần
-   một **gói Flow Pro/Ultra đang hoạt động và đã đăng nhập trong Chrome**.
+2. **Extension Chrome** ("AIFlow Bridge") kết nối tới WebSocket và đọc dự án Flow đang
+   mở. RPC mới chạy trong trang đã đăng nhập; CSRF và captcha ở lại trong trang.
+3. Extension điền prompt và bấm điều khiển tạo video của Flow; lấy media ID từ phản hồi
+   khớp đúng prompt/dự án rồi nhận MP4. Tạo video dùng credit của tài khoản đang đăng nhập.
+   Nhánh REST cũ tiếp tục hỗ trợ phiên có Bearer token.
 
 > Server chỉ bind vào `127.0.0.1`. API cục bộ **không có xác thực** vì nó không mở ra
 > mạng. Đừng port-forward nó ra ngoài.
@@ -120,6 +130,22 @@ mới đến `vendor/`. Để tải/kiểm tra binary:
 python scripts/download_vendor.py
 ```
 
+### Lớp đồ họa HTML/GSAP
+
+Sau khi cài nhóm `[visual]`, chạy từ thư mục `app` trong môi trường ảo:
+
+```powershell
+python -c "from server.render.visual_layer.gsap_bundle import get_gsap_bundle_path; print(get_gsap_bundle_path(auto_download=True))"
+$env:PLAYWRIGHT_BROWSERS_PATH = Join-Path $PWD "vendor/playwright"
+python -m playwright install chromium --only-shell
+```
+
+GSAP 3.12.5 nằm trong `vendor/visual_layer`. Renderer tự tìm Chromium đúng revision
+trong `vendor/playwright` khi chưa đặt `PLAYWRIGHT_BROWSERS_PATH`; nếu đã đặt biến này,
+renderer giữ nguyên lựa chọn đó. Khi nâng Playwright, chạy lại lệnh cài Chromium để
+có revision tương ứng. Các binary này chỉ phục vụ dựng đồ họa, không đóng hoặc dùng
+lại cửa sổ Google Flow đang đăng nhập.
+
 ---
 
 ## Cấu hình (`.env`)
@@ -171,6 +197,19 @@ python -m server.main
 
 Bạn sẽ thấy nó khởi tạo DB và chạy trên `:8101` / `:9223`.
 
+Server chờ tối đa 10 giây để hoàn tất HTTP request khi dừng hoặc reload; sau đó
+hủy request còn mở (như SSE) và chạy shutdown của ứng dụng. Khi chạy trực tiếp
+bằng Uvicorn, dùng cùng giới hạn để tránh reload chờ kết nối SSE kéo dài:
+
+```powershell
+python scripts/dev_server.py --host 127.0.0.1 --port 8101 --reload --reload-dir server
+```
+
+Launcher này mặc định giới hạn shutdown HTTP là 10 giây và nhận các tham số CLI
+Uvicorn thông thường. Trên Windows khi redirect stdout, nó giữ thao tác ghi console
+mà supervisor Uvicorn dùng để đánh thức xử lý Ctrl+C trước reload. Khi chạy nền,
+dùng `Start-Process -WindowStyle Hidden` để giữ console ẩn cho cơ chế này.
+
 Trong Chrome, mở [labs.google/fx/tools/flow](https://labs.google/fx/tools/flow) và đảm
 bảo đã đăng nhập. Popup extension sẽ chuyển sang **Đã kết nối** và bắt được token.
 
@@ -193,8 +232,30 @@ nó trước để xác nhận luồng extension + token khỏe mạnh trước 
 
 ## Tạo video thật
 
-Luồng end-to-end chạy được là CLI **`gen-clip`**: một ảnh khởi đầu + một prompt → một
-clip Veo 3.
+### Nhập kịch bản thủ công trong giao diện
+
+Ở trang **Kịch bản & phiên bản** (`/scripts`), chọn **Nhập kịch bản thủ công**.
+Nhập tên tập, ngôn ngữ, lời dẫn và prompt hình ảnh cho từng cảnh (4–8 giây,
+tổng tối đa 360 giây), rồi bấm **Lưu kịch bản thủ công**. Bước lưu không gọi AI.
+Hệ thống lưu brief và kịch bản cùng một giao dịch, kiểm tra thời lượng/lời đọc,
+rồi cho phép duyệt checklist để tạo dự án trong Xưởng sản xuất. Cảnh không lời
+có thể để trống lời dẫn. Việc lưu hoặc duyệt chưa tạo video; tiếp tục tạo tài
+nguyên trong dự án. Xưởng sản xuất kiểm tra trang Flow trước khi gửi yêu cầu tạo.
+**Tạo video Veo Lite qua Bridge** dùng extension điều khiển composer của Flow. Draft
+khác hoặc reference cũ phải được xử lý trước; xác minh người dùng cần người dùng tiếp quản.
+Để giữ người/trang phục giữa các cảnh, thêm PNG tối đa 5 MiB trong **Ảnh tham chiếu
+xuyên suốt các cảnh**, ghi nguồn ảnh, duyệt checklist rồi chọn ảnh cho lượt tạo tiếp theo.
+Backend lưu checksum và nguồn ảnh cùng lượt tạo; extension chọn đúng asset theo SHA
+trong chế độ **Thành phần**, không nhận ảnh được chọn mặc định của Flow.
+Clip cần được duyệt trước khi xuất. Tạo qua extension
+dùng credit của tài khoản; khi đã có mã tác vụ, **Tiếp tục nhận clip** chỉ nhận kết
+quả cũ, không tạo lại.
+
+### Tạo clip bằng CLI
+
+CLI **`gen-clip`** giữ nhánh image-to-video cũ: một ảnh khởi đầu + một prompt → một
+clip Veo 3. Nhánh này chưa được xác minh với phiên Flow mới; phiên yêu cầu nút gốc
+sẽ trả lỗi `FLOW_UI_GENERATION_REQUIRED` trước khi gửi yêu cầu tạo.
 
 **Kiểm tra trước** (cả ba điều phải đúng):
 1. `python -m server.main` đang chạy.
@@ -255,6 +316,66 @@ python scripts/test_tts_smoke.py
 Giọng mặc định là `Binh` (VieNeu, nam tiếng Việt) với `vi-VN-HoaiMyNeural` (edge-tts)
 làm dự phòng. Khi server chạy, nó cung cấp `GET /api/tts/voices` và
 `POST /api/tts/synthesize`.
+
+### Fine-tune giọng tiếng Việt từ WAV local hoặc YouTube
+
+Mở `/voice-training`, tải notebook điều khiển và gói worker mới nhất, rồi chạy trên
+Colab GPU và kết nối URL/token phiên về AIFlow. Trong **Gửi media local sang Colab / Drive**,
+nhập tên giọng, chọn audio/video và gửi sang Drive. Hỗ trợ MP3, WAV, FLAC, M4A,
+OGG, AAC, OPUS, MP4, MOV, MKV và WEBM; tối đa **2 GiB/file, 20 GiB/lượt và 5000 file**
+có tên riêng. UI gửi từng phần 8 MiB; Colab xác nhận offset và SHA256 toàn file
+trước khi bật bước chuẩn hóa mono 24 kHz, tách đoạn và chép lời. Gửi lại cùng lựa
+chọn/tên giọng tiếp tục phần upload chưa hoàn tất; sau reload, chọn lại đúng các
+file để đọc checkpoint trên Drive. Endpoint WAV cũ vẫn giữ giới hạn 32 MiB/file
+và 512 MiB/bộ, không phải giới hạn của luồng media mới.
+
+Nguồn **Audio từ YouTube · Tiếng Việt** nhận URL HTTPS của một video công khai.
+Nhập tên giọng, xác nhận quyền sử dụng/cùng người nói rồi bấm **Gửi URL & tải audio
+trên Colab**. Colab giữ URL/metadata/checksum trên Drive, sau đó dùng cùng bước tách
+audio, chép lời và duyệt dataset. Giới hạn 3 giờ/video, 512 MiB audio và 10 phút/lượt
+tải; nguồn yêu cầu đăng nhập hoặc bị chặn sẽ báo lỗi. Worker/notebook cần phiên bản
+mới hỗ trợ YouTube. Tải và chép lời không tự duyệt hoặc bắt đầu huấn luyện.
+
+Với bộ nguồn YouTube đã chọn, bấm **3. Mở / cập nhật dataset để duyệt**, sửa transcript/bỏ
+đoạn không dùng rồi duyệt dataset. Sau đó bấm **4. Train phiên bản mới** để Colab
+chạy LoRA và lưu run/checkpoint trên Drive. Bản train mới cần sinh mẫu, duyệt và
+load riêng; không tự thay giọng TTS đang dùng.
+
+Sau khi chép lời, kiểm tra các đoạn và khai báo cách duyệt: nghe thủ công hoặc rà
+transcript cùng số liệu tín hiệu. Cách thứ hai không xác nhận đã nghe hay xác minh
+người nói. Chỉ các đoạn được chọn và duyệt mới tham gia LoRA VieNeu v3 Turbo. Bước
+chuẩn bị dataset mới dùng Whisper large-v3 FP16; dataset/checkpoint đã có giữ model,
+revision và precision trong `asr-revision.json` (pin cũ thiếu precision dùng
+`int8_float16`), không nhận dạng lại hoặc ghi đè bản sửa cũ. Bước
+**Đối chiếu các đoạn được dùng bằng Whisper large-v3** nhận dạng lại nguyên clip
+được chọn, lưu transcript đối chiếu riêng và không tự sửa hay duyệt lời gốc. Có
+thể tiếp tục phần đối chiếu chưa hoàn tất khi bị ngắt.
+
+Nếu có nhiều đoạn bị bỏ chọn vì ASR bất đồng, dùng **Đề xuất sửa transcript cho
+đoạn cần kiểm tra**. Worker nhận dạng nguyên clip bằng Whisper large-v3 FP16,
+không tự bỏ lời theo VAD/confidence và không cắt transcript theo timestamp từng từ.
+Timestamp ngoài thời lượng clip, lời lặp hoặc transcript rỗng được đánh dấu để
+kiểm tra. Gợi ý lưu riêng trên Drive. Bước này chạy được với cả đoạn đang bỏ chọn, giữ nguyên transcript,
+lựa chọn và trạng thái duyệt đã lưu. Chạy lại tiếp tục các gợi ý còn thiếu khi
+nguồn, clip, transcript, cấu hình và phiên bản model vẫn khớp. Đổi cách nhận dạng
+sẽ lưu bản đề xuất cũ theo checksum trước khi tạo lại, không trộn hai cách xử lý.
+
+Màn hình duyệt hiển thị số đoạn/thời lượng tổng, được dùng, đã duyệt và bỏ chọn;
+có bộ lọc bất đồng transcript, chưa đối chiếu và vấn đề tín hiệu. Chép gợi ý vào
+ô sửa chỉ tạo bản nháp chưa duyệt. Kiểm tra audio, sửa lời, chọn **Dùng đoạn này**
+nếu phù hợp, khai báo cách duyệt rồi lưu. Điểm ASR thấp, từ tiếng Anh hoặc chữ số
+không tự động chứng minh audio kém; gợi ý ASR cũng không tự trở thành nhãn đúng.
+Worker cũ cần tải lại gói worker để có nút đề xuất phục hồi.
+
+Bước chuẩn bị lưu checkpoint từng file; train lưu trạng thái optimizer để resume cùng
+cấu hình. Dataset, model và checkpoint nằm trong `MyDrive/AIFlow/voice-training`.
+Sinh mẫu sau train, nghe và duyệt giọng, rồi load và chọn **Dùng giọng đang load cho
+TTS trong AIFlow**. Không cài dependency model lên backend Windows.
+
+Tại `/production`, có thể nhập URL dự án Flow hiện có để mở/chọn đúng tab qua
+backend và extension. Preflight vẫn kiểm tra khả năng tạo trước khi gửi Veo; nếu
+composer không phù hợp hoặc xuất hiện xác minh người dùng, bridge dừng và không tự
+gửi lại. RPC guard vẫn được giữ; khả năng điều khiển UI được kiểm tra riêng.
 
 ### Remaster video (Bilibili / Douyin → phụ đề đã dịch)
 

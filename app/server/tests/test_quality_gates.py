@@ -234,7 +234,7 @@ class TestG2AssetApproval:
         from server.pipeline.gates.g2_asset_approval import create_g2_gate
         gate = create_g2_gate(session, project.id, timeout_hours=12)
         # expired_at should be ~12h from now (allow 5s tolerance)
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = datetime.now(timezone.utc)
         expected = now + timedelta(hours=12)
         diff = abs((gate.expired_at - expected).total_seconds())
         assert diff < 5
@@ -301,10 +301,13 @@ class TestG2AssetApproval:
 # ─────────────────────────────────────────────────────────────────────────────
 
 class TestG3SceneQuality:
-    def test_passes_when_file_exists_and_large_enough(self, tmp_path):
+    def test_passes_for_real_video_smaller_than_100kb(self, tmp_path):
         from server.pipeline.gates.g3_scene_quality import check_scene_quality
+        from server.production.media import ffmpeg
         video = tmp_path / "scene0.mp4"
-        video.write_bytes(b"x" * (101 * 1024))  # 101 KB
+        ffmpeg(["-f", "lavfi", "-i", "color=c=red:s=64x64:r=12", "-t", "0.5", "-an",
+                "-c:v", "libx264", "-pix_fmt", "yuv420p", str(video)])
+        assert video.stat().st_size < 100 * 1024
         result = check_scene_quality(FakeScene(order=0), video)
         assert result.gate_id == "G3"
         assert result.status == "passed"
@@ -316,34 +319,28 @@ class TestG3SceneQuality:
         assert result.status == "failed"
         assert "not found" in result.message.lower() or "G3.1" in result.message
 
-    def test_fails_when_file_too_small(self, tmp_path):
+    def test_fails_when_small_file_is_corrupt(self, tmp_path):
         from server.pipeline.gates.g3_scene_quality import check_scene_quality
         video = tmp_path / "tiny.mp4"
-        video.write_bytes(b"x" * 50)  # 50 bytes — way below 100 KB
-        result = check_scene_quality(FakeScene(order=0), video)
-        assert result.status == "failed"
-        assert "small" in result.message.lower() or "G3.1" in result.message
-
-    def test_fails_at_exactly_100kb(self, tmp_path):
-        """Boundary: exactly 100 KB (102400 bytes) should fail (must be > 100KB)."""
-        from server.pipeline.gates.g3_scene_quality import (
-            _MIN_VIDEO_SIZE_BYTES,
-            check_scene_quality,
-        )
-        video = tmp_path / "boundary.mp4"
-        video.write_bytes(b"x" * _MIN_VIDEO_SIZE_BYTES)
+        video.write_bytes(b"x" * 50)
         result = check_scene_quality(FakeScene(order=0), video)
         assert result.status == "failed"
 
-    def test_passes_at_100kb_plus_one(self, tmp_path):
-        from server.pipeline.gates.g3_scene_quality import (
-            _MIN_VIDEO_SIZE_BYTES,
-            check_scene_quality,
-        )
-        video = tmp_path / "just_over.mp4"
-        video.write_bytes(b"x" * (_MIN_VIDEO_SIZE_BYTES + 1))
+    def test_fails_when_container_has_only_audio(self, tmp_path):
+        from server.pipeline.gates.g3_scene_quality import check_scene_quality
+        from server.production.media import ffmpeg
+        video = tmp_path / "audio-only.mp4"
+        ffmpeg(["-f", "lavfi", "-i", "anullsrc=r=16000:cl=mono", "-t", "0.5",
+                "-c:a", "aac", str(video)])
         result = check_scene_quality(FakeScene(order=0), video)
-        assert result.status == "passed"
+        assert result.status == "failed"
+
+    def test_large_corrupt_file_cannot_pass_by_size(self, tmp_path):
+        from server.pipeline.gates.g3_scene_quality import check_scene_quality
+        video = tmp_path / "corrupt.mp4"
+        video.write_bytes(b"x" * (101 * 1024))
+        result = check_scene_quality(FakeScene(order=0), video)
+        assert result.status == "failed"
 
     def test_max_retries_is_2(self):
         from server.pipeline.gates.g3_scene_quality import MAX_RETRIES
@@ -427,7 +424,7 @@ class TestCheckExpiredGates:
         from server.pipeline.quality_gate import check_expired_gates
 
         # Create a gate that expired 1 hour ago
-        past = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=1)
+        past = datetime.now(timezone.utc) - timedelta(hours=1)
         gate = QualityGate(
             gate_id="G2",
             project_id=project.id,
@@ -448,7 +445,7 @@ class TestCheckExpiredGates:
         from server.db.models.quality_gate import QualityGate
         from server.pipeline.quality_gate import check_expired_gates
 
-        future = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=23)
+        future = datetime.now(timezone.utc) + timedelta(hours=23)
         gate = QualityGate(
             gate_id="G2",
             project_id=project.id,
@@ -468,7 +465,7 @@ class TestCheckExpiredGates:
         from server.db.models.quality_gate import QualityGate
         from server.pipeline.quality_gate import check_expired_gates
 
-        past = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=1)
+        past = datetime.now(timezone.utc) - timedelta(hours=1)
         gate = QualityGate(
             gate_id="G2",
             project_id=project.id,
@@ -504,7 +501,7 @@ class TestCheckExpiredGates:
         from server.db.models.quality_gate import QualityGate
         from server.pipeline.quality_gate import check_expired_gates
 
-        past = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=2)
+        past = datetime.now(timezone.utc) - timedelta(hours=2)
         for _ in range(3):
             session.add(QualityGate(
                 gate_id="G2",

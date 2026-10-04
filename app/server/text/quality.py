@@ -4,14 +4,15 @@ import re
 
 from server.text.schemas import Brief, Script
 
-QUALITY_VERSION = "script-preflight-2"
+QUALITY_VERSION = "script-preflight-3"
 
 
 def words(text: str) -> list[str]:
-    return re.findall(r"[A-Za-z0-9]+(?:['’-][A-Za-z0-9]+)*", text)
+    return re.findall(r"[^\W_]+(?:['’-][^\W_]+)*", text)
 
 
 def inspect_script(script: Script, brief: Brief) -> dict:
+    unit = "tiếng" if brief.language == "vi" else "từ"
     issues = []
     scenes = []
     seen_narration = {}
@@ -27,11 +28,11 @@ def inspect_script(script: Script, brief: Brief) -> dict:
         scenes.append({"number": number, "words": count, "duration": scene.duration,
                        "estimated_speech_seconds": round(estimate, 1), "start": round(sum(s.duration for s in script.scenes[:number - 1]), 1)})
         if estimate > scene.duration * 1.35:
-            issue("speech_overflow", "error", f"{count} từ cần khoảng {estimate:.1f}s, cảnh chỉ {scene.duration:g}s. Rút lời hoặc chia cảnh.", number)
+            issue("speech_overflow", "error", f"{count} {unit} cần khoảng {estimate:.1f}s, cảnh chỉ {scene.duration:g}s. Rút lời hoặc chia cảnh.", number)
         elif estimate > scene.duration:
             issue("speech_tight", "warning", f"Lời đọc ước tính {estimate:.1f}s vượt {scene.duration:g}s; cần đọc thử/TTS để chốt.", number)
         if any(len(words(sentence)) > 25 for sentence in re.split(r"[.!?]+", scene.narration)):
-            issue("long_sentence", "warning", "Câu trên 25 từ; đọc thành tiếng và cân nhắc tách ý.", number)
+            issue("long_sentence", "warning", f"Câu trên 25 {unit}; đọc thành tiếng và cân nhắc tách ý.", number)
         normalized = " ".join(words(scene.narration.lower()))
         if normalized and normalized in seen_narration:
             issue("repeated_narration", "warning", f"Lời dẫn trùng cảnh {seen_narration[normalized]}; kiểm tra có chủ đích hay lặp thừa.", number)
@@ -47,11 +48,12 @@ def inspect_script(script: Script, brief: Brief) -> dict:
     if not any(scene.narration.strip() for scene in script.scenes):
         issue("no_narration", "warning", "Toàn bộ kịch bản không có lời dẫn; xác nhận chủ đích kể chuyện bằng hình.")
     if script.scenes[0].story_beat != "hook":
-        issue("opening_hook", "warning", "Chưa đánh dấu hook ở cảnh đầu; kiểm tra lời hứa của tiêu đề trong 30 giây mở đầu.")
+        issue("opening_hook", "warning", "Chưa đánh dấu hook ở cảnh đầu; kiểm tra lời hứa của tiêu đề trong phần mở đầu.")
     if script.scenes[-1].story_beat != "payoff":
         issue("ending_payoff", "warning", "Chưa đánh dấu payoff ở cảnh cuối; kiểm tra câu hỏi chính đã được trả lời.")
     return {"version": QUALITY_VERSION, "ready": not any(i["severity"] == "error" for i in issues),
             "target_seconds": brief.target_seconds, "total_seconds": round(total, 1),
             "words": sum(item["words"] for item in scenes), "narration_wpm": brief.narration_wpm,
+            "narration_unit": "syllables" if brief.language == "vi" else "words",
             "scenes": scenes, "issues": issues,
             "disclaimer": "Ước tính biên tập, chưa đo giọng TTS; không chấm được độ hay, tính nguyên bản hoặc retention."}

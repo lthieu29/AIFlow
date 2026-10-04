@@ -43,3 +43,11 @@ ui/dist/
 
 # Logs
 *.log
+
+# Chrome-generated extension cache (rules.json is the source)
+/extension/_metadata/
+
+# Downloaded runtime dependencies; keep setup scripts and documentation
+/vendor/*.exe
+/vendor/playwright/
+/vendor/visual_layer/*.min.js

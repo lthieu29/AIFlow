@@ -26,7 +26,7 @@ import { btnPrimary, btnGhost, card, fieldLabel } from "../components/ui";
 
 interface ProjectSummary {
   short_id: string;
-  title: string;
+  name: string;
   status: string;
   skill: string;
   created_at: string;
@@ -56,6 +56,8 @@ export default function Export() {
   const [copied, setCopied] = useState(false);
   const [capcutLoading, setCapcutLoading] = useState(false);
   const [capcutDone, setCapcutDone] = useState(false);
+  const [draftPath, setDraftPath] = useState("");
+  const [actionError, setActionError] = useState("");
 
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -93,24 +95,27 @@ export default function Export() {
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
   async function handleCopyLink() {
+    setActionError("");
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback: select a hidden input
+      setActionError(`Không thể sao chép tự động. Bạn có thể sao chép đường dẫn: ${shareUrl}`);
     }
   }
 
   async function handleCapcutExport() {
     if (!projectId) return;
     setCapcutLoading(true);
+    setActionError("");
     try {
-      await apiClient.post(`/projects/${projectId}/export/capcut`);
+      const { data } = await apiClient.post<{ draft_path: string }>(`/projects/${projectId}/export/capcut`);
+      setDraftPath(data.draft_path);
       setCapcutDone(true);
       setTimeout(() => setCapcutDone(false), 3000);
-    } catch {
-      alert("Xuất CapCut thất bại. Kiểm tra log server.");
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "Xuất CapCut thất bại.");
     } finally {
       setCapcutLoading(false);
     }
@@ -161,7 +166,7 @@ export default function Export() {
         Quay lại timeline
       </Link>
       <h1 className="mt-3 truncate text-2xl font-semibold tracking-tight text-zinc-50">
-        {project?.title ?? projectId}
+        {project?.name ?? projectId}
       </h1>
       <p className="mt-0.5 text-xs text-zinc-500">
         Trạng thái:{" "}
@@ -197,9 +202,10 @@ export default function Export() {
             playsInline
             preload="metadata"
             className="h-full w-full"
-            aria-label={`Xem trước ${project?.title ?? "dự án"}`}
+            aria-label={`Xem trước ${project?.name ?? "dự án"}`}
+            onError={() => setActionError("Không tải được video. Hãy kiểm tra tệp thành phẩm hoặc tạo lại video.")}
           >
-            <track kind="captions" src={srtUrl} label="Tiếng Việt" default />
+            <track kind="captions" src={`${srtUrl}?format=vtt`} label="Phụ đề" default />
             Trình duyệt của bạn không hỗ trợ thẻ video.
           </video>
         ) : (
@@ -259,8 +265,7 @@ export default function Export() {
 
         {(quality !== "original" || format !== "mp4") && (
           <p className="text-xs text-zinc-500">
-            Lưu ý: việc re-encode chất lượng và định dạng được xử lý phía server.
-            Link tải sẽ phản ánh lựa chọn của bạn khi server hỗ trợ.
+            Server sẽ chuyển video theo lựa chọn này; lần tải đầu có thể cần thêm thời gian.
           </p>
         )}
       </div>
@@ -269,7 +274,7 @@ export default function Export() {
       <div className="mt-6 flex flex-wrap gap-3">
         <a
           href={isReady ? `${downloadUrl}&quality=${quality}&format=${format}` : undefined}
-          download={`${project?.title ?? projectId}.${format}`}
+          download={`${project?.name ?? projectId}.${format}`}
           aria-disabled={!isReady}
           className={downloadBtn}
         >
@@ -279,7 +284,7 @@ export default function Export() {
 
         <a
           href={isReady ? srtUrl : undefined}
-          download={`${project?.title ?? projectId}.srt`}
+          download={`${project?.name ?? projectId}.srt`}
           aria-disabled={!isReady}
           className={srtBtn}
         >
@@ -306,6 +311,9 @@ export default function Export() {
           {capcutLoading ? "Đang xuất…" : capcutDone ? "Đã tạo draft" : "Xuất CapCut"}
         </button>
       </div>
+
+      {actionError && <p role="alert" className="mt-4 text-sm text-rose-300">{actionError}</p>}
+      {draftPath && <p role="status" className="mt-4 break-all text-sm text-emerald-300">Đã lưu bản dựng CapCut: {draftPath}</p>}
 
       {/* Project metadata */}
       {project && (

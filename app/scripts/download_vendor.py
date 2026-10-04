@@ -40,16 +40,15 @@ _VENDOR_DIR = _APP_DIR / "vendor"
 # BtbN/FFmpeg-Builds: GPL Windows x64 release build
 # Pin to a specific release tag for reproducibility.
 # Update this URL when upgrading FFmpeg.
-FFMPEG_VERSION = "7.1"
-FFMPEG_RELEASE_TAG = "n7.1-latest"
+FFMPEG_VERSION = "8.1.3"
+FFMPEG_RELEASE_TAG = "autobuild-2026-10-01-13-06"
 FFMPEG_DOWNLOAD_URL = (
     "https://github.com/BtbN/FFmpeg-Builds/releases/download/"
     f"{FFMPEG_RELEASE_TAG}/"
-    "ffmpeg-n7.1-latest-win64-gpl-7.1.zip"
+    "ffmpeg-n8.1.3-14-g330caae0c1-win64-gpl-8.1.zip"
 )
-# SHA256 checksum — fill in after first download and verify manually.
-# Set to None to skip checksum verification (not recommended for production).
-FFMPEG_SHA256: Optional[str] = None  # TODO: pin after first download
+# Published in the release's checksums.sha256 and GitHub asset digest.
+FFMPEG_SHA256 = "6aca87b75999c4793871754c5c2e211129a56a160c1654a7d1c9c518a7eda9c0"
 
 # ── aria2c ────────────────────────────────────────────────────────────────────
 # aria2/aria2 GitHub releases — Windows x64 zip
@@ -232,9 +231,9 @@ def download_ffmpeg(force: bool = False) -> bool:
     if not force and ffmpeg_dest.is_file() and ffprobe_dest.is_file():
         print(f"  [OK] FFmpeg already present: {ffmpeg_dest}")
         print(f"  [OK] FFprobe already present: {ffprobe_dest}")
-        _verify_binary(ffmpeg_dest, "-version")
-        _verify_binary(ffprobe_dest, "-version")
-        return True
+        ok_ffmpeg = _verify_binary(ffmpeg_dest, "-version")
+        ok_ffprobe = _verify_binary(ffprobe_dest, "-version")
+        return ok_ffmpeg and ok_ffprobe
 
     # Skip download when both are already available on the system PATH.
     # The runtime resolver (server/render/ffmpeg_utils.py) falls back to PATH
@@ -247,9 +246,9 @@ def download_ffmpeg(force: bool = False) -> bool:
             print(f"  [OK] FFprobe found on PATH: {ffprobe_path}")
             print("  Skipping download - the runtime will use the PATH binaries.")
             print("  (Use --force to download a pinned copy into vendor/ anyway.)")
-            _verify_binary(ffmpeg_path, "-version")
-            _verify_binary(ffprobe_path, "-version")
-            return True
+            ok_ffmpeg = _verify_binary(ffmpeg_path, "-version")
+            ok_ffprobe = _verify_binary(ffprobe_path, "-version")
+            return ok_ffmpeg and ok_ffprobe
 
     try:
         data = _download_bytes(FFMPEG_DOWNLOAD_URL, f"FFmpeg {FFMPEG_VERSION}")
@@ -257,12 +256,11 @@ def download_ffmpeg(force: bool = False) -> bool:
         print(f"  [X] Download failed: {exc}")
         return False
 
-    if FFMPEG_SHA256:
-        try:
-            _verify_sha256(data, FFMPEG_SHA256, "FFmpeg")
-        except ValueError as exc:
-            print(f"  [X] {exc}")
-            return False
+    try:
+        _verify_sha256(data, FFMPEG_SHA256, "FFmpeg")
+    except ValueError as exc:
+        print(f"  [X] {exc}")
+        return False
 
     print("  Extracting ffmpeg.exe and ffprobe.exe...")
     try:
@@ -341,8 +339,7 @@ def download_aria2c(force: bool = False) -> bool:
 
     if not force and aria2c_dest.is_file():
         print(f"  [OK] aria2c already present: {aria2c_dest}")
-        _verify_binary(aria2c_dest)
-        return True
+        return _verify_binary(aria2c_dest)
 
     # Skip download when aria2c is already available on the system PATH.
     if not force:
@@ -351,8 +348,7 @@ def download_aria2c(force: bool = False) -> bool:
             print(f"  [OK] aria2c found on PATH: {aria2c_path}")
             print("  Skipping download - the runtime will use the PATH binary.")
             print("  (Use --force to download a pinned copy into vendor/ anyway.)")
-            _verify_binary(aria2c_path)
-            return True
+            return _verify_binary(aria2c_path)
 
     try:
         data = _download_bytes(ARIA2C_DOWNLOAD_URL, f"aria2c {ARIA2C_VERSION}")

@@ -196,6 +196,7 @@ class PipelineOrchestrator:
         await self._wait_for_g2(project_id)
 
         # ── Step 5: Sequential scene generation ──────────────────────────────
+        self._flow_project_id = await self._sdk.resolve_project_id()
         sorted_scenes = sorted(scenes, key=lambda s: s.order)
         scene_chain = _SceneChainState()
         all_passed = True
@@ -710,7 +711,7 @@ class PipelineOrchestrator:
 
         # ── Submit gen_video ──────────────────────────────────────────────────
         storage_dir = Path(self._settings.data_dir) / "media"
-        flow_project_id = str(project_id)
+        flow_project_id = self._flow_project_id
 
         ref_images = _resolve_ref_image_paths(assets)
         if ref_images:

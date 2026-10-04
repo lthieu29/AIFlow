@@ -63,20 +63,17 @@ def check_expired_gates(session: "object", settings: "Settings") -> int:
 
     now = datetime.now(timezone.utc)
 
-    # SQLite stores datetimes as naive UTC strings; compare against naive UTC.
-    now_naive = now.replace(tzinfo=None)
-
     statement = select(QualityGate).where(
         QualityGate.status == "checking",
         QualityGate.expired_at.isnot(None),  # type: ignore[union-attr]
-        QualityGate.expired_at < now_naive,  # type: ignore[operator]
+        QualityGate.expired_at < now,  # type: ignore[operator]
     )
     expired_gates = session.exec(statement).all()  # type: ignore[attr-defined]
 
     count = 0
     for gate_row in expired_gates:
         gate_row.status = "expired"
-        gate_row.updated_at = now_naive
+        gate_row.updated_at = now
         session.add(gate_row)  # type: ignore[attr-defined]
         logger.warning(
             "G2.8 SLA expired: gate id={} project_id={} gate_id={} "

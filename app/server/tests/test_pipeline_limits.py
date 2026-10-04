@@ -86,7 +86,7 @@ def test_property7_within_limits_no_error(n: int, dur: float) -> None:
 
     scene_list = _make_scene_list([safe_dur] * n)
     # Pre-condition: SceneList must be structurally valid
-    ok, errors = scene_list.validate()
+    ok, errors = scene_list.validate(clip_duration=_MAX_DUR)
     assert ok, f"Test setup error — invalid SceneList: {errors}"
 
     # Property: must not raise
@@ -109,7 +109,7 @@ def test_property7_scene_count_exceeded_raises(n: int) -> None:
     dur = _MIN_DUR  # 3.0 s — smallest valid duration
     scene_list = _make_scene_list([dur] * n)
 
-    ok, errors = scene_list.validate()
+    ok, errors = scene_list.validate(clip_duration=_MAX_DUR)
     assert ok, f"Test setup error — invalid SceneList: {errors}"
 
     with pytest.raises(AdapterError) as exc_info:
@@ -153,7 +153,7 @@ def test_property7_total_duration_exceeded_raises(n: int, extra_sec: float) -> N
         return  # skip — can't construct an over-limit list with these params
 
     scene_list = _make_scene_list(durations)
-    ok, errors = scene_list.validate()
+    ok, errors = scene_list.validate(clip_duration=_MAX_DUR)
     assert ok, f"Test setup error — invalid SceneList: {errors}"
 
     with pytest.raises(AdapterError) as exc_info:
@@ -187,7 +187,7 @@ def test_property7_custom_max_scenes_respected(max_s: int, n: int) -> None:
     custom_max_dur = float(n * _MAX_DUR + 1.0)  # always above total
     scene_list = _make_scene_list([dur] * n)
 
-    ok, errors = scene_list.validate()
+    ok, errors = scene_list.validate(clip_duration=_MAX_DUR)
     assert ok, f"Test setup error — invalid SceneList: {errors}"
 
     if n > max_s:
@@ -208,7 +208,7 @@ def test_property7_exactly_at_scene_limit_no_error() -> None:
     A SceneList with exactly 50 scenes must NOT raise (boundary is inclusive).
     """
     scene_list = _make_scene_list([_MIN_DUR] * DEFAULT_MAX_SCENES)
-    ok, _ = scene_list.validate()
+    ok, _ = scene_list.validate(clip_duration=_MAX_DUR)
     assert ok
     enforce_pipeline_limits(scene_list)  # must not raise
 
@@ -223,7 +223,7 @@ def test_property7_exactly_at_duration_limit_no_error() -> None:
     n = 20
     dur = DEFAULT_MAX_DURATION_SEC / n  # 30.0 s
     scene_list = _make_scene_list([dur] * n)
-    ok, _ = scene_list.validate()
+    ok, _ = scene_list.validate(clip_duration=_MAX_DUR)
     assert ok
     enforce_pipeline_limits(scene_list)  # must not raise
 
@@ -234,7 +234,7 @@ def test_property7_one_over_scene_limit_raises() -> None:
     A SceneList with 51 scenes (one over the limit) MUST raise.
     """
     scene_list = _make_scene_list([_MIN_DUR] * (DEFAULT_MAX_SCENES + 1))
-    ok, _ = scene_list.validate()
+    ok, _ = scene_list.validate(clip_duration=_MAX_DUR)
     assert ok
     with pytest.raises(AdapterError) as exc_info:
         enforce_pipeline_limits(scene_list)
@@ -252,7 +252,7 @@ def test_property7_one_over_duration_limit_raises() -> None:
     n = 21
     dur = (DEFAULT_MAX_DURATION_SEC + 0.01) / n
     scene_list = _make_scene_list([dur] * n)
-    ok, _ = scene_list.validate()
+    ok, _ = scene_list.validate(clip_duration=_MAX_DUR)
     assert ok
     with pytest.raises(AdapterError) as exc_info:
         enforce_pipeline_limits(scene_list)

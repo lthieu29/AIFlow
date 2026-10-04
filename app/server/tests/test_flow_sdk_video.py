@@ -115,6 +115,18 @@ class TestResolveVideoModel:
         expected = VIDEO_MODEL_KEYS["PAYGATE_TIER_ONE"]["quality"]["VIDEO_ASPECT_RATIO_LANDSCAPE"]
         assert result == expected
 
+    @pytest.mark.parametrize("tier", ["PAYGATE_TIER_ONE", "PAYGATE_TIER_TWO"])
+    @pytest.mark.parametrize("aspect", ["VIDEO_ASPECT_RATIO_LANDSCAPE", "VIDEO_ASPECT_RATIO_PORTRAIT"])
+    @pytest.mark.parametrize("model,quality", [("VEO3_LITE", "lite"), ("VEO3_QUALITY", "quality")])
+    def test_model_alias_preserves_quality_with_tier_and_aspect(self, tier, aspect, model, quality):
+        assert resolve_video_model(model, tier, aspect) == VIDEO_MODEL_KEYS[tier][quality][aspect]
+
+    def test_explicit_quality_overrides_model_alias(self):
+        result = resolve_video_model(
+            "VEO3_LITE", "PAYGATE_TIER_TWO", "VIDEO_ASPECT_RATIO_PORTRAIT", quality="fast",
+        )
+        assert result == VIDEO_MODEL_KEYS["PAYGATE_TIER_TWO"]["fast"]["VIDEO_ASPECT_RATIO_PORTRAIT"]
+
     def test_full_resolution_unknown_tier_falls_back_to_tier_one(self):
         result = resolve_video_model(
             "VEO3",
@@ -365,6 +377,15 @@ class TestFlowSDKGenVideo:
             )
 
         assert result == op_name
+
+    async def test_gen_video_lite_model_is_submitted_without_quality_override(self, tmp_image: Path):
+        sdk = self._make_sdk(api_request_side_effect=[
+            self._make_upload_resp("start-media"), self._make_video_submit_resp("op/lite"),
+        ])
+        with patch.object(sdk, "_fetch_paygate_tier", new=AsyncMock(return_value="PAYGATE_TIER_TWO")):
+            await sdk.gen_video(start_image=tmp_image, prompt="Test", model="VEO3_LITE", project_id="flow-project")
+        body = sdk._client.api_request.call_args.kwargs["body"]
+        assert body["requests"][0]["videoModelKey"] == "veo_3_1_i2v_lite"
 
     @pytest.mark.asyncio
     async def test_gen_video_raises_if_image_not_found(self):

@@ -8,17 +8,18 @@
         {
           "header": "Referer",
           "operation": "set",
-          "value": "https://labs.google/"
+          "value": "https://flow.google.com/"
         },
         {
           "header": "Origin",
           "operation": "set",
-          "value": "https://labs.google"
+          "value": "https://flow.google.com"
         }
       ]
     },
     "condition": {
       "urlFilter": "aisandbox-pa.googleapis.com",
+      "excludedInitiatorDomains": ["labs.google", "flow.google.com"],
       "resourceTypes": ["xmlhttprequest"]
     }
   },

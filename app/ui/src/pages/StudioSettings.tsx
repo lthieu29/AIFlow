@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import CodexTmuxSettings from "../components/CodexTmuxSettings";
 const field = "w-full rounded-lg border border-white/15 bg-zinc-900 p-3 text-sm";
@@ -6,13 +6,14 @@ const button = "rounded-lg border border-white/20 px-4 py-2 text-sm disabled:opa
 const panel = "space-y-4 rounded-xl border border-white/10 p-5";
 type Series = { id?: number; name: string; bible: string; version: number; voice: string; language: string; model_revision: string; speed: number };
 type Item = { id: number; name: string; kind: string; description: string; media_id: number | null };
+export type ColabImageConnection = { url: string; configured: boolean; state: string; health: { model_revision?: string; capabilities?: string[] } };
 const empty: Series = { name: "", bible: "", version: 1, voice: "", language: "en", model_revision: "", speed: 1 };
 export async function studioRequest<T>(path: string, method = "GET", body?: unknown): Promise<T> {
   const response = await fetch(`/api${path}`, { method, headers: { "Content-Type": "application/json", "X-AIFlow-Client": "1" }, body: body === undefined ? undefined : JSON.stringify(body) });
   const data = await response.json();
-  if (!response.ok) throw new Error(typeof data.detail === "string" ? data.detail : Array.isArray(data.detail)
+  if (!response.ok) throw Object.assign(new Error(typeof data.detail === "string" ? data.detail : Array.isArray(data.detail)
     ? data.detail.map((issue: { loc?: (string | number)[]; msg?: string }) => `${issue.loc?.filter(value => value !== "body").join(".") || "Dữ liệu"}: ${issue.msg || "không hợp lệ"}`).join("; ")
-    : "Kiểm tra dữ liệu nhập.");
+    : "Kiểm tra dữ liệu nhập."), { status: response.status });
   return data;
 }
 export default function StudioSettings() {
@@ -22,17 +23,38 @@ export default function StudioSettings() {
   const [provider, setProvider] = useState("openrouter"), [key, setKey] = useState(""), [model, setModel] = useState(""), [billing, setBilling] = useState(false);
   const [busy, setBusy] = useState(false), [error, setError] = useState(""), [notice, setNotice] = useState("");
   const [project, setProject] = useState(""), [revision, setRevision] = useState("");
+  const [colabImage, setColabImage] = useState<ColabImageConnection | null>(null);
+  const [imageUrl, setImageUrl] = useState(""), [imageToken, setImageToken] = useState("");
+  const imageUrlEdited = useRef(false);
   async function refresh() {
-    const [a, b, c] = await Promise.all([studioRequest<Series[]>("/studio/series"), studioRequest<Item[]>("/studio/library"), studioRequest<NonNullable<typeof state>>("/studio/connections")]);
+    const [a, b, c, d] = await Promise.all([studioRequest<Series[]>("/studio/series"), studioRequest<Item[]>("/studio/library"), studioRequest<NonNullable<typeof state>>("/studio/connections"), studioRequest<ColabImageConnection>("/studio/connections/colab-image")]);
     setSeries(a); setItems(b); setState(c);
+    setColabImage(d); if (!imageUrlEdited.current) setImageUrl(d.url);
   }
   useEffect(() => { void refresh().catch(e => setError(e.message)); }, []);
   async function act(fn: () => Promise<unknown>, success = "Đã lưu.") { setBusy(true); setError(""); setNotice(""); try { await fn(); await refresh(); setNotice(success); } catch (e) { setError(String(e)); } finally { setBusy(false); } }
+  async function downloadImageWorker(path: string, filename: string, mode = "colab-image") {
+    const response = await fetch(`/api/studio/${mode}/${path}`, { headers: { "X-AIFlow-Client": "1" } });
+    if (!response.ok) throw new Error("Không tải được notebook / worker ảnh. Kiểm tra server và thử lại.");
+    const url = URL.createObjectURL(await response.blob());
+    const anchor = document.createElement("a"); anchor.href = url; anchor.download = filename; anchor.click(); URL.revokeObjectURL(url);
+  }
   return <main className="mx-auto max-w-6xl space-y-6 px-4 py-8"><h1 className="text-3xl font-semibold">Kết nối, series & tài nguyên dùng lại</h1><p className="text-zinc-400">Cấu hình trước khi sản xuất. Thay đổi series chỉ áp dụng cho tập mới.</p>{error && <p role="alert" className="text-rose-300">{error}</p>}<p role="status">{busy ? "Đang xử lý…" : notice}</p>
     <button className={button} disabled={busy} onClick={() => void act(async () => {}, "Đã tải lại.")}>Tải lại kết nối & danh sách</button>
     <fieldset disabled={busy} className="space-y-6 border-0 p-0">
     <section className={panel}><h2 className="text-xl">Kết nối</h2><p className="text-sm">OpenRouter: {state?.openrouter ? "đã nhập key" : "chưa cấu hình"} · Gemini: {state?.gemini ? "sẵn sàng" : "chưa cấu hình"} · Ảnh: {state?.image.configured ? state.image.model : "chưa cấu hình"} · Flow: {state?.flow.connected ? "đã kết nối" : "chưa kết nối"} · Colab: {state?.audio.configured ? "đã kết nối" : "chưa kết nối"}</p><Link className="text-emerald-300 underline" to="/connections">Kiểm tra / đổi API Colab</Link>
       <form className="space-y-3" onSubmit={e => { e.preventDefault(); void act(async () => { await studioRequest(provider === "image" ? "/studio/connections/image" : "/scripts/connection", "PUT", provider === "image" ? { key, model, billing_confirmed: billing } : { key, provider, billing_confirmed: billing }); setKey(""); }); }}><label className="block">Provider<select className={field} value={provider} onChange={e => { setProvider(e.target.value); setBilling(false); setKey(""); }}><option value="openrouter">OpenRouter free-only</option><option value="gemini">Gemini kịch bản</option><option value="image">Gemini ảnh có tham chiếu</option></select></label><label className="block">API key (để trống và lưu để ngắt)<input className={field} type="password" autoComplete="off" maxLength={512} value={key} onChange={e => setKey(e.target.value)} /></label>{provider === "image" && <label className="block">Model ảnh<input required={!!key} maxLength={160} className={field} value={model} onChange={e => setModel(e.target.value)} /></label>}{provider !== "openrouter" && <label className="flex gap-2 text-sm"><input type="checkbox" checked={billing} onChange={e => setBilling(e.target.checked)} />Tôi đã kiểm tra quota/billing của Gemini. Lời gọi có thể tính phí theo tài khoản; chỉ chạy khi tôi bấm tạo.</label>}<button className={button} disabled={busy || (!!key && provider !== "openrouter" && !billing)}>Lưu cho phiên server này</button></form><p className="text-sm text-amber-200">Codex: {state?.codex.reason} Có thể dùng xuất prompt / nhập JSON ở xưởng kịch bản.</p>
+    </section>
+    <section className={panel}><h2 className="text-xl">Colab tạo ảnh người / thú cưng</h2>
+      <p className="text-sm text-zinc-400">Chạy worker ảnh trên Colab, rồi nhập URL và token của worker. Kết nối chỉ giữ trong phiên server; token không lưu trong trình duyệt.</p>
+      <div className="flex flex-wrap gap-3"><button className={button} onClick={() => void act(() => downloadImageWorker("notebook", "aiflow_image_worker.ipynb"), "Đã tải notebook ảnh.")}>Tải notebook ảnh</button><button className={button} onClick={() => void act(() => downloadImageWorker("worker.zip", "aiflow_image_worker.zip"), "Đã tải gói worker ảnh.")}>Tải gói worker ảnh</button><a className="self-center text-emerald-300 underline" target="_blank" rel="noreferrer" href="https://colab.research.google.com/">Mở Colab</a></div>
+      <div className="space-y-2 border-t border-white/10 pt-3"><p className="text-sm text-zinc-400">Thử trang phục shop: dùng notebook VTON riêng, tải ảnh người và ảnh một sản phẩm trải phẳng, nền sạch. Worker này tạo ảnh 576 × 864px; chạy một chế độ mỗi phiên Colab.</p><div className="flex flex-wrap gap-3"><button className={button} onClick={() => void act(() => downloadImageWorker("notebook", "aiflow_vton_worker.ipynb", "colab-vton"), "Đã tải notebook VTON.")}>Tải notebook VTON</button><button className={button} onClick={() => void act(() => downloadImageWorker("worker.zip", "aiflow_vton_worker.zip", "colab-vton"), "Đã tải gói worker VTON.")}>Tải gói worker VTON</button></div></div>
+      <p role="status" className="text-sm">{colabImage?.state === "ready" ? "Worker ảnh sẵn sàng" : colabImage?.configured ? "Worker ảnh chưa sẵn sàng — bấm kiểm tra kết nối" : "Chưa kết nối worker ảnh"}{colabImage?.health.model_revision && ` · ${colabImage.health.model_revision}`}</p>
+      <form className="space-y-3" onSubmit={e => { e.preventDefault(); void act(async () => { await studioRequest("/studio/connections/colab-image", "PUT", { url: imageUrl.trim(), token: imageToken }); setImageToken(""); imageUrlEdited.current = false; }, imageUrl.trim() ? "Đã lưu kết nối ảnh. Kiểm tra worker trước khi tạo." : "Đã ngắt kết nối ảnh."); }}>
+        <label className="block">URL worker ảnh<input type="url" className={field} autoComplete="off" maxLength={300} value={imageUrl} onChange={e => { imageUrlEdited.current = true; setImageUrl(e.target.value); }} placeholder="https://…" /></label>
+        <label className="block">Token worker ảnh<input type="password" className={field} autoComplete="off" maxLength={512} required={!!imageUrl.trim()} value={imageToken} onChange={e => setImageToken(e.target.value)} /></label>
+        <div className="flex flex-wrap gap-3"><button className={button}>Lưu kết nối ảnh</button><button type="button" className={button} disabled={!colabImage?.configured} onClick={() => void act(() => studioRequest("/studio/connections/colab-image/check", "POST"), "Đã kiểm tra worker ảnh.")}>Kiểm tra worker ảnh</button></div>
+      </form><p className="text-xs text-zinc-400">Để trống cả URL và token rồi lưu để ngắt kết nối. Tạo ảnh chỉ chạy khi bạn bấm tạo trong xưởng sản xuất.</p>
     </section>
     <CodexTmuxSettings />
     <section className={panel}><h2 className="text-xl">Series và cấu hình giọng</h2><div className="flex flex-wrap gap-2"><button className={button} onClick={() => setDraft(empty)}>Series mới</button>{series.map(s => <button key={s.id} className={button} onClick={() => setDraft(s)}>{s.name} · v{s.version}</button>)}</div><form className="space-y-3" onSubmit={e => { e.preventDefault(); void act(async () => setDraft(await studioRequest<Series>(`/studio/series${draft.id ? `/${draft.id}` : ""}`, draft.id ? "PUT" : "POST", draft))); }}><label className="block">Tên series<input required maxLength={200} className={field} value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} /></label><label className="block">Nhân vật, bối cảnh, diễn biến đã chốt<textarea className={`${field} min-h-40`} maxLength={20000} value={draft.bible} onChange={e => setDraft({ ...draft, bible: e.target.value })} /></label><label className="block">Giọng từ worker hiện tại<select className={field} value={draft.voice} onChange={e => { const voice = state?.audio.voices.find(v => v.id === e.target.value); setDraft({ ...draft, voice: e.target.value, language: voice?.language || draft.language, model_revision: e.target.value ? state?.audio.health.model_revision || "" : "" }); }}><option value="">Chưa khóa giọng</option>{draft.voice && !state?.audio.voices.some(v => v.id === draft.voice) && <option value={draft.voice}>{draft.voice} (worker chưa load)</option>}{state?.audio.voices.map(v => <option key={v.id} value={v.id}>{v.name} · {v.language}</option>)}</select></label><label className="block">Ngôn ngữ<select className={field} disabled={!!draft.voice} value={draft.language} onChange={e => setDraft({ ...draft, language: e.target.value })}><option value="en">English</option><option value="vi">Tiếng Việt</option></select></label><label className="block">Tốc độ<input type="number" min={0.5} max={2} step={0.05} className={field} value={draft.speed} onChange={e => setDraft({ ...draft, speed: Number(e.target.value) })} /></label><p className="text-xs text-zinc-400">Ngôn ngữ {draft.language} · model {draft.model_revision || "chưa khóa"}. Mỗi tập giữ bản chụp cấu hình; bản cũ không bị đổi.</p><button className={button} disabled={busy}>Lưu phiên bản series</button></form>

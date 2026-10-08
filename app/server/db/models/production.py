@@ -9,7 +9,7 @@ class ProductionMedia(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     project_id: int = Field(index=True)
     scene_id: int | None = Field(default=None, index=True)
-    role: str  # reference | portrait | visual
+    role: str  # reference | garment | portrait | visual
     path: str
     sha256: str
     mime: str

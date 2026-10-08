@@ -8,13 +8,15 @@ import json
 import tempfile
 from pathlib import Path
 from urllib.parse import urlsplit
+from unittest.mock import AsyncMock, patch
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from playwright.sync_api import sync_playwright, expect
 from sqlmodel import Session, SQLModel, create_engine
 
-from server.api.routes import scripts
+from server.api.routes import production, scripts, studio
+from server.config import Settings
 from server.tests.test_script_studio import create_script
 
 
@@ -24,20 +26,27 @@ def main():
         SQLModel.metadata.create_all(engine)
         app = FastAPI()
         app.include_router(scripts.router)
+        app.include_router(studio.router)
+        app.include_router(production.router)
         def session():
             with Session(engine) as db:
                 yield db
         app.dependency_overrides[scripts.get_session] = session
+        app.dependency_overrides[production.get_session] = session
+        app.dependency_overrides[production.get_settings] = lambda: Settings(_env_file=None, data_dir=Path(folder))
         def forbidden(*args, **kwargs):
             raise AssertionError("Browser smoke must never call inference")
         original = scripts.provider.generate_structured
         scripts.provider.generate_structured = forbidden
         try:
-            with TestClient(app, headers={"X-AIFlow-Client": "1"}) as client, sync_playwright() as playwright:
+            with patch.object(production, "_flow_capability", new=AsyncMock(return_value={
+                "available": False, "project_url": "https://flow.google.com/", "message": "Offline browser smoke"})), \
+                TestClient(app, headers={"X-AIFlow-Client": "1"}) as client, sync_playwright() as playwright:
                 _, draft = create_script(client)
                 browser = playwright.chromium.launch(headless=True)
                 page = browser.new_page(viewport={"width": 1440, "height": 1000})
                 errors = []
+                api_errors = []
                 page.on("pageerror", lambda error: errors.append(str(error)))
                 def route_api(route):
                     request = route.request
@@ -50,6 +59,8 @@ def main():
                         return
                     response = client.request(request.method, url.path + ("?" + url.query if url.query else ""),
                         content=request.post_data, headers={"Content-Type": "application/json", "X-AIFlow-Client": "1"})
+                    if response.status_code >= 400:
+                        api_errors.append(f"{request.method} {url.path}: {response.status_code}")
                     route.fulfill(status=response.status_code, body=response.content,
                                   headers={"Content-Type": "application/json"})
                 page.route("**/api/**", route_api)
@@ -73,7 +84,11 @@ def main():
                 assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), "Horizontal overflow"
                 assert not errors, errors
                 page.get_by_role("button", name="Tạo dự án từ bản đã duyệt", exact=True).click()
-                page.wait_for_url("**/timeline/*")
+                page.wait_for_url("**/production?project=*")
+                expect(page.get_by_role("heading", name="The clock", exact=True)).to_be_visible()
+                expect(page.get_by_role("heading", name="Cảnh 1", exact=False)).to_be_visible()
+                assert not errors, errors
+                assert not api_errors, api_errors
                 browser.close()
                 print(json.dumps({"browser": "chromium", "desktop": "1440x1000", "mobile": "390x844",
                     "flow": "load > edit scene > save new revision > quality > checklist > approve > create project",

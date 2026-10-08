@@ -4,6 +4,7 @@ Trainer auto resume từ checkpoint mới nhất trên Drive nếu có. Mất 5-
 tuỳ GPU và preset.
 """
 import json
+import hashlib
 import time
 from pathlib import Path
 
@@ -12,6 +13,7 @@ from torch.utils.data import Dataset
 from transformers import Trainer, TrainingArguments, default_data_collator
 
 from cells._shared import (
+    BASE_MODEL,
     DRIVE_DIR,
     WORK_DIR,
     _state,
@@ -19,7 +21,7 @@ from cells._shared import (
     require_state,
 )
 
-require_state('mode', 'config', 'lora_model', 'tokenizer', 'encoded_path')
+require_state('mode', 'data_ready', 'config', 'lora_model', 'tokenizer', 'encoded_path')
 if _state['mode'] != 'lora':
     raise SystemExit('ℹ️ Path B — bỏ qua.')
 
@@ -38,16 +40,18 @@ def _preprocess(sample, tokenizer, max_len=2048):
         f"<|SPEECH_GENERATION_START|>{codes_str}<|SPEECH_GENERATION_END|>"
     )
     ids = tokenizer.encode(chat)
+    if len(ids) > max_len:
+        raise ValueError('Đoạn vượt giới hạn token. Chia audio/transcript rồi mã hóa lại; không cắt nhãn huấn luyện.')
     if len(ids) < max_len:
         ids = ids + [tokenizer.pad_token_id] * (max_len - len(ids))
-    else:
-        ids = ids[:max_len]
     input_ids = torch.tensor(ids, dtype=torch.long)
     labels = torch.full_like(input_ids, -100)
     idx = (input_ids == speech_gen_start).nonzero(as_tuple=True)[0]
-    if len(idx) > 0:
-        labels[idx[0]:] = input_ids[idx[0]:]
+    if not len(idx):
+        raise ValueError('Tokenizer không nhận được token bắt đầu speech; kiểm tra model/tokenizer trước khi train.')
+    labels[idx[0]:] = input_ids[idx[0]:]
     attention_mask = (input_ids != tokenizer.pad_token_id).long()
+    labels[attention_mask == 0] = -100
     return {'input_ids': input_ids, 'labels': labels, 'attention_mask': attention_mask}
 
 
@@ -84,6 +88,32 @@ print(f'✅ Dataset: {len(train_ds)} samples')
 drive_ckpt_dir = DRIVE_DIR / voice_id / 'checkpoints'
 drive_ckpt_dir.mkdir(parents=True, exist_ok=True)
 
+def _resume_checkpoint(folder, identity):
+    existing = list(folder.glob('checkpoint-*'))
+    identity_path = folder / 'resume-identity.json'
+    if existing:
+        try:
+            saved = json.loads(identity_path.read_text(encoding='utf-8'))
+        except (OSError, ValueError) as exc:
+            raise RuntimeError('Checkpoint cũ thiếu provenance. Dùng Voice ID khác hoặc xử lý checkpoint thủ công; không tự resume.') from exc
+        if saved != identity:
+            raise RuntimeError('Dataset, model, cấu hình hoặc precision khác checkpoint. Dùng Voice ID khác hoặc xử lý thủ công; không tự resume.')
+        latest = sorted(existing, key=lambda path: int(path.name.split('-')[1]))[-1]
+        return str(latest)
+    temporary = identity_path.with_suffix('.tmp')
+    temporary.write_text(json.dumps(identity, ensure_ascii=False, sort_keys=True), encoding='utf-8')
+    temporary.replace(identity_path)
+    return None
+
+use_bf16 = torch.cuda.is_bf16_supported(including_emulation=False)
+with Path(_state['encoded_path']).open('rb') as encoded:
+    dataset_digest = hashlib.file_digest(encoded, 'sha256').hexdigest()
+resume_ckpt = _resume_checkpoint(drive_ckpt_dir, {
+    'format': 1, 'dataset_sha256': dataset_digest, 'base_model': BASE_MODEL,
+    'language': cfg['language'], 'hyperparams': hp, 'max_length': 2048,
+    'precision': 'bf16' if use_bf16 else 'fp32',
+})
+
 training_args = TrainingArguments(
     output_dir=str(drive_ckpt_dir),
     max_steps=hp['max_steps'],
@@ -91,7 +121,7 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=hp['grad_accum'],
     learning_rate=hp['learning_rate'],
     warmup_ratio=hp['warmup_ratio'],
-    bf16=True,
+    bf16=use_bf16,
     logging_steps=50,
     save_steps=500,
     save_total_limit=2,
@@ -109,13 +139,8 @@ trainer = Trainer(
     data_collator=default_data_collator,
 )
 
-# Auto-resume từ checkpoint Drive (nếu disconnect lần trước)
-resume_ckpt = None
-existing = list(drive_ckpt_dir.glob('checkpoint-*'))
-if existing:
-    latest = sorted(existing, key=lambda p: int(p.name.split('-')[1]))[-1]
-    resume_ckpt = str(latest)
-    print(f'🔄 Resume từ checkpoint: {latest.name}')
+if resume_ckpt:
+    print(f'🔄 Resume từ checkpoint đã khớp provenance: {Path(resume_ckpt).name}')
 
 banner(f'🚀 Start training — {hp["max_steps"]} steps')
 print(f'   Effective batch: {hp["batch_size"] * hp["grad_accum"]}')

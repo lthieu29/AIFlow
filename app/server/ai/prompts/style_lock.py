@@ -48,12 +48,21 @@ class StyleData(BaseModel):
         We normalise them here so callers can pass the raw JSON dict directly.
         """
         if isinstance(values, dict):
+            values = dict(values)
             # art_style → visual_style
             if "art_style" in values and not values.get("visual_style"):
                 values["visual_style"] = values["art_style"]
             # camera_style → camera
             if "camera_style" in values and not values.get("camera"):
                 values["camera"] = values["camera_style"]
+            if "camera_rules" in values and not values.get("camera"):
+                values["camera"] = values["camera_rules"]
+            if "post" in values and not values.get("post_processing"):
+                values["post_processing"] = values["post"]
+            if "negative_prompts" in values and not values.get("negative_prompt"):
+                values["negative_prompt"] = ", ".join(values["negative_prompts"])
+            if isinstance(values.get("color_palette"), list):
+                values["color_palette"] = ", ".join(values["color_palette"])
         return values
 
     def build_prefix(self) -> str:

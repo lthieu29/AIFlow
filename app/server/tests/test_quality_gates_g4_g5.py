@@ -271,8 +271,8 @@ class TestG4AudioQuality:
 
     # ── ffprobe unavailable — graceful degradation ────────────────────────────
 
-    def test_passes_when_ffprobe_unavailable(self, tmp_path):
-        """When ffprobe is not found, stream checks are skipped and gate passes."""
+    def test_fails_when_ffprobe_unavailable(self, tmp_path):
+        """Missing or unprobeable streams cannot pass on file size alone."""
         from server.pipeline.gates.g4_audio_quality import (
             _MIN_AUDIO_SIZE_BYTES,
             check_audio_quality,
@@ -281,7 +281,33 @@ class TestG4AudioQuality:
         audio.write_bytes(b"x" * (_MIN_AUDIO_SIZE_BYTES + 1))
         with patch("server.pipeline.gates.g4_audio_quality._probe_audio_stream", return_value=None):
             result = check_audio_quality(audio)
+        assert result.status == "failed"
+        assert "Cannot verify" in result.message
+
+    def test_corrupt_large_audio_cannot_pass_size_check_alone(self, tmp_path):
+        from server.pipeline.gates.g4_audio_quality import check_audio_quality
+        audio = tmp_path / "corrupt.wav"
+        audio.write_bytes(b"not audio" * 4096)
+        assert check_audio_quality(audio).status == "failed"
+
+    @pytest.mark.parametrize("stream", [{}, {"sample_rate": "bad", "channels": 2},
+                                       {"sample_rate": "44100", "channels": "bad"}])
+    def test_missing_or_invalid_stream_fields_cannot_pass(self, tmp_path, stream):
+        from server.pipeline.gates.g4_audio_quality import check_audio_quality
+        audio = tmp_path / "fixture.wav"
+        audio.write_bytes(b"x" * 20000)
+        with patch("server.pipeline.gates.g4_audio_quality._probe_audio_stream", return_value=stream):
+            assert check_audio_quality(audio).status == "failed"
+
+    def test_passing_stream_does_not_claim_measured_signal_level(self, tmp_path):
+        from server.pipeline.gates.g4_audio_quality import check_audio_quality
+        audio = tmp_path / "fixture.wav"
+        audio.write_bytes(b"x" * 20000)
+        with patch("server.pipeline.gates.g4_audio_quality._probe_audio_stream",
+                   return_value={"sample_rate": "44100", "channels": 2}):
+            result = check_audio_quality(audio)
         assert result.status == "passed"
+        assert "silence remains unverified" in result.message
 
     # ── Gate ID ───────────────────────────────────────────────────────────────
 

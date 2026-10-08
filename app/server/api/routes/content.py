@@ -9,15 +9,18 @@ Task 5.3 — Phase 5.3
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from loguru import logger
 from pydantic import BaseModel
 
 from server.content.base import AdapterError, AdapterInput, SceneList
+from server.api.routes.audio import local_client
+from server.content.adapters.epub_novel.tiers import EpisodeList
 
-router = APIRouter(prefix="/api/content", tags=["content"])
+router = APIRouter(prefix="/api/content", tags=["content"], dependencies=[Depends(local_client)])
 
 
 # ─── Request / Response models ────────────────────────────────────────────────
@@ -120,6 +123,8 @@ async def parse_content(body: ContentParseRequest) -> SceneListOut:
         source_type=body.input_data.get("source_type", body.adapter),
         raw_content=raw_content,
         skill_name=body.input_data.get("skill_name"),
+        assets={"product_image": Path(str(body.input_data["product_image_path"]))}
+        if body.adapter == "ecommerce_product" and body.input_data.get("product_image_path") else {},
         options={
             k: v
             for k, v in body.input_data.items()
@@ -168,6 +173,12 @@ async def parse_content(body: ContentParseRequest) -> SceneListOut:
                 }
             },
         ) from exc
+
+    if isinstance(scene_list, EpisodeList):
+        raise HTTPException(400, detail={"error": {
+            "code": "ADAPTER_EPISODE_SELECTION_REQUIRED",
+            "message": "EPUB có nhiều tập. Chọn tier='manual' cùng chapter_start và chapter_end để tạo một dự án cho khoảng chương đã chọn.",
+        }})
 
     logger.info(
         "[content] adapter %r returned %d scenes",

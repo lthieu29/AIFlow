@@ -1,0 +1,44 @@
+{
+  "review_date": "2026-10-05",
+  "scope": "Colab image inference humans and pets",
+  "preliminary_versions_rejected": {
+    "diffusers": "0.35.1",
+    "transformers": "4.56.2",
+    "pillow": "11.3.0"
+  },
+  "registry": "https://pypi.org",
+  "checked_wheel_count": 51,
+  "pypi_advisory_matches": 0,
+  "osv_advisory_matches": 0,
+  "archive_inspection": {
+    "path_traversal_hits": 0,
+    "startup_pth": [
+      {
+        "package": "setuptools",
+        "file": "distutils-precedence.pth",
+        "assessment": "Expected upstream distutils compatibility shim"
+      }
+    ]
+  },
+  "selected_code_review": [
+    "diffusers IPAdapterMixin load_ip_adapter safetensors path and local file loading",
+    "diffusers dynamic module remote-code guards",
+    "huggingface_hub telemetry opt-out path",
+    "worker bootstrap/download/request authentication/job persistence"
+  ],
+  "model_policy": "Exact official publisher revisions and SHA256 for 21 JSON/TXT/safetensors files; no model repository Python code or pickle weights",
+  "antivirus": {
+    "provider": "Windows Defender",
+    "enabled": false,
+    "scan_performed": false
+  },
+  "runtime": {
+    "python": "3.12.13",
+    "gpu": "Tesla T4",
+    "native_bf16": false,
+    "torch": "2.11.0+cu128",
+    "torchvision": "0.26.0+cu128",
+    "advisory_exception": "GHSA-rrmf-rvhw-rf47 affects torch.jit.script; this worker does not compile or run untrusted scripts and accepts only pinned safetensors"
+  },
+  "assurance_limit": "No malicious behavior found in inspected paths; registry/source/hash/advisory review cannot prove all dependencies malware-free."
+}

@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     from server.db.session import bootstrap_schema
     from server.flow.client import FlowClient
     from server.flow.ws_server import start_ws_server
-    from server.pipeline.event_bus import EventBus
+    from server.pipeline.event_bus import get_event_bus
     from server.pipeline.poller import VideoPoller
     from server.pipeline.quality_gate import periodic_gate_checker
 
@@ -77,7 +77,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     flow_client = FlowClient()
 
     # 3. Create EventBus singleton and expose on app.state
-    event_bus = EventBus()
+    event_bus = get_event_bus()
     app.state.event_bus = event_bus
     logger.info("EventBus created and attached to app.state.event_bus")
 

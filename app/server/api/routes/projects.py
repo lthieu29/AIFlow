@@ -197,6 +197,7 @@ def list_projects(
 async def create_project(
     body: ProjectCreateRequest,
     session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
 ) -> ProjectCreateResponse:
     """Create a new project and parse its input into scenes.
 
@@ -246,6 +247,7 @@ async def create_project(
             adapter_name=body.adapter,
             skill_name=body.skill,
             adapter_input=body.adapter_input,
+            settings=settings,
         )
         if parse_error is None:
             project.status = "ready"
@@ -269,6 +271,7 @@ async def _parse_and_persist_scenes(
     adapter_name: str,
     skill_name: str,
     adapter_input: dict[str, Any],
+    settings: Settings,
 ) -> tuple[int, Optional[str]]:
     """Run the adapter for *project* and persist the resulting scenes.
 
@@ -277,6 +280,7 @@ async def _parse_and_persist_scenes(
     """
     from server.content.base import AdapterError, AdapterInput
     from server.content.registry import REGISTRY
+    from server.content.adapters.epub_novel.tiers import EpisodeList
 
     # Build AdapterInput from the UI payload.
     raw_content = adapter_input.get("raw_content")
@@ -295,6 +299,8 @@ async def _parse_and_persist_scenes(
         source_type=adapter_name,
         raw_content=str(raw_content),
         skill_name=skill_name or None,
+        assets={"product_image": Path(str(adapter_input["product_image_path"]))}
+        if adapter_name == "ecommerce_product" and adapter_input.get("product_image_path") else {},
         options={k: v for k, v in adapter_input.items() if k != "raw_content"},
     )
 
@@ -313,6 +319,28 @@ async def _parse_and_persist_scenes(
         logger.error("[projects] unexpected adapter error: %s", exc)
         return 0, f"Lỗi phân tích đầu vào: {exc}"
 
+    if isinstance(scene_list, EpisodeList):
+        return 0, "EPUB có nhiều tập. Chọn tier='manual' cùng chapter_start và chapter_end để tạo một dự án cho khoảng chương đã chọn."
+
+    product_asset = None
+    if ai.assets.get("product_image"):
+        import shutil
+        from uuid import uuid4
+        from server.db.models.asset import Asset
+
+        source = ai.assets["product_image"]
+        folder = Path(settings.data_dir) / "media" / str(project.id) / "assets"
+        try:
+            folder.mkdir(parents=True, exist_ok=True)
+            copied = folder / f"{uuid4().hex}{source.suffix.lower()}"
+            shutil.copyfile(source, copied)
+        except OSError:
+            return 0, "Không lưu được ảnh sản phẩm. Kiểm tra file nguồn và dung lượng storage."
+        product_asset = Asset(project_id=project.id, name=scene_list.metadata.get("product_name", "Product"),
+                              type="product", file_path=str(copied), source="uploaded")
+        session.add(product_asset)
+        session.flush()
+
     # Persist scenes.
     valid_hints = {"indoor", "outdoor", "transition", "unspecified"}
     count = 0
@@ -328,6 +356,11 @@ async def _parse_and_persist_scenes(
             status="draft",
         )
         session.add(scene)
+        if product_asset is not None and spec.start_image is not None:
+            from server.db.models.scene_asset import SceneAsset
+
+            session.flush()
+            session.add(SceneAsset(scene_id=scene.id, asset_id=product_asset.id))
         count += 1
     session.commit()
     logger.info("[projects] persisted %d scene(s) for project id=%d", count, project.id)
@@ -474,6 +507,7 @@ def save_project_scenes(
 def delete_project(
     project_id: str,
     session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
 ) -> DeleteResponse:
     """Delete a project and all its associated scenes and jobs.
 
@@ -504,19 +538,43 @@ def delete_project(
             },
         )
 
+    scenes = session.exec(select(Scene).where(Scene.project_id == project.id)).all()
+    output_dir = settings.data_dir / "output" / str(project.id)
+    if (any(scene.video_path or scene.audio_path or scene.last_frame_path for scene in scenes)
+            or (output_dir.is_dir() and any(output_dir.iterdir()))):
+        raise HTTPException(409, "Dự án có file audio/video đã tạo. Giữ dự án để bảo toàn file và tránh tái sử dụng thư mục đầu ra.")
+
     # Preserve delivery/audit history and prevent recycled SQLite IDs from
     # binding old media or audio work to a newly created project.
     from server.db.models.production import ProductionMedia, ProductionOutput
     from server.db.models.audio_task import AudioTask
     from server.db.models.studio import StudioOperation
+    from server.db.models.script_revision import ScriptRevision
     if (session.exec(select(ProductionMedia.id).where(ProductionMedia.project_id == project.id)).first()
             or session.exec(select(ProductionOutput.id).where(ProductionOutput.project_id == project.id)).first()
             or session.exec(select(AudioTask.id).where(AudioTask.project_id == project.id)).first()
-            or session.exec(select(StudioOperation.request_id).where(StudioOperation.project_id == project.id)).first()):
-        raise HTTPException(409, "Dự án có lịch sử audio/thành phẩm. Giữ dự án để bảo toàn tham chiếu và bộ file đã duyệt.")
+            or session.exec(select(StudioOperation.request_id).where(StudioOperation.project_id == project.id)).first()
+            or session.exec(select(ScriptRevision.id).where(
+                (ScriptRevision.project_id == project.id) | (ScriptRevision.project_short_id == project.short_id))).first()):
+        raise HTTPException(409, "Dự án có lịch sử kịch bản/audio/thành phẩm. Giữ dự án để bảo toàn tham chiếu và bộ file đã duyệt.")
 
-    # Hard delete: cascade scenes → jobs → project
-    scenes = session.exec(select(Scene).where(Scene.project_id == project.id)).all()
+    # Remove relational dependents before their parents; user files stay on disk.
+    from sqlalchemy import delete
+    from server.db.models.asset import Asset
+    from server.db.models.job import JobLog
+    from server.db.models.quality_gate import QualityGate
+    from server.db.models.scene_asset import SceneAsset
+    from server.db.models.style import Style
+    scene_ids = select(Scene.id).where(Scene.project_id == project.id)
+    asset_ids = select(Asset.id).where(Asset.project_id == project.id)
+    job_ids = select(Job.id).where(Job.project_id == project.id)
+    session.execute(delete(SceneAsset).where(
+        SceneAsset.scene_id.in_(scene_ids) | SceneAsset.asset_id.in_(asset_ids)))
+    session.execute(delete(QualityGate).where(
+        (QualityGate.project_id == project.id) | QualityGate.scene_id.in_(scene_ids)))
+    session.execute(delete(JobLog).where(JobLog.job_id.in_(job_ids)))
+    session.execute(delete(Style).where(Style.project_id == project.id))
+    session.execute(delete(Asset).where(Asset.project_id == project.id))
     for scene in scenes:
         session.delete(scene)
 
@@ -763,7 +821,7 @@ async def _orchestrate(
     """
     from server.db.models.asset import Asset
     from server.flow.sdk import FlowSDK
-    from server.pipeline.event_bus import EventBus
+    from server.pipeline.event_bus import get_event_bus
     from server.pipeline.event_bus_bridge import EventBusJobLogBridge
     from server.pipeline.job_manager import add_job_log
     from server.pipeline.orchestrator import PipelineOrchestrator
@@ -790,8 +848,8 @@ async def _orchestrate(
     style_json = _resolve_style_json(skill_name)
 
     sdk = FlowSDK()
-    bus = EventBus()
-    bridge = EventBusJobLogBridge(bus, engine, job_id)
+    bus = get_event_bus()
+    bridge = EventBusJobLogBridge(bus, engine, job_id, project_id=project_id)
     orch = PipelineOrchestrator(settings=settings, flow_sdk=sdk, event_bus=bus)
     def persist_scene(scene):
         with Session(engine) as session:

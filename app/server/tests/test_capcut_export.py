@@ -9,6 +9,7 @@ the expected fields.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 import os
 import tempfile
 
@@ -442,6 +443,30 @@ class TestDraftWriter:
         writer.write(draft)
         with pytest.raises(FileExistsError):
             writer.write(draft)
+
+    @pytest.mark.parametrize("name", ["../outside", "..\\outside", "/outside", "C:\\outside", ".", ".."])
+    def test_write_rejects_names_outside_draft_root(self, tmp_path, name):
+        root = tmp_path / "drafts"
+        root.mkdir()
+        sibling = tmp_path / "outside"
+        sibling.mkdir()
+        sentinel = sibling / "keep.txt"
+        sentinel.write_text("untouched", encoding="utf-8")
+        writer = DraftWriter(draft_root=str(root))
+        with pytest.raises(ValueError, match="folder name"):
+            writer.write(JianYingDraft(name=name))
+        assert sentinel.read_text(encoding="utf-8") == "untouched"
+        assert list(root.iterdir()) == []
+        assert list(sibling.iterdir()) == [sentinel]
+
+    def test_write_preserves_unicode_title_and_sanitizes_windows_punctuation(self, tmp_path):
+        title = "Câu chuyện: buổi sáng?"
+        writer = DraftWriter(draft_root=str(tmp_path))
+        folder = Path(writer.write(JianYingDraft(name=title)))
+        assert folder.parent == tmp_path
+        assert folder.name == "Câu chuyện_ buổi sáng_"
+        content = json.loads((folder / "draft_info.json").read_text(encoding="utf-8"))
+        assert content["name"] == title
 
     def test_meta_info_has_name(self, tmp_path):
         draft = JianYingDraft(name="Meta Test")

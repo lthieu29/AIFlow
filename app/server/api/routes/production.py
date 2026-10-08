@@ -81,7 +81,18 @@ def project_or_404(session, project_id):
 
 
 def media_public(item):
-    return {key: getattr(item, key) for key in ("id", "project_id", "scene_id", "role", "sha256", "mime", "width", "height", "duration", "approved")}
+    result = {key: getattr(item, key) for key in ("id", "project_id", "scene_id", "role", "sha256", "mime", "width", "height", "duration", "approved")}
+    origin = json.loads(item.review_json).get("origin", {})
+    if isinstance(origin, dict) and origin.get("generation_mode") == "vton":
+        result["generation_mode"] = "vton"
+        for key in ("person_media_id", "garment_media_id"):
+            if type(origin.get(key)) is int and origin[key] > 0:
+                result[key] = origin[key]
+        if origin.get("garment_category") in ("tops", "bottoms", "one-pieces"):
+            result["garment_category"] = origin["garment_category"]
+        if origin.get("garment_photo_type") in ("flat-lay", "model"):
+            result["garment_photo_type"] = origin["garment_photo_type"]
+    return result
 
 
 @router.get("/overview")
@@ -129,6 +140,10 @@ def detail(project_id: int, session: Session = Depends(get_session)):
     project = project_or_404(session, project_id)
     media = session.exec(select(ProductionMedia).where(ProductionMedia.project_id == project_id).order_by(ProductionMedia.id.desc())).all()
     scenes = session.exec(select(Scene).where(Scene.project_id == project_id).order_by(Scene.order)).all()
+    portrait_prompt = ""
+    if project.kind == "portrait":
+        reference_instruction = " Preserve identity using the provided reference images." if any(item.role == "reference" for item in media) else ""
+        portrait_prompt = f"Create a portrait of a person or pet following this brief.{reference_instruction}\n{project.production_brief}"
     return {"id": project.id, "title": project.title, "kind": project.kind, "status": project.status,
             "aspect": project.aspect, "brief": json.loads(project.production_brief),
             "scenes": [{"id": s.id, "order": s.order, "prompt": s.prompt, "narration": s.narration,
@@ -136,7 +151,7 @@ def detail(project_id: int, session: Session = Depends(get_session)):
             "media": [media_public(item) for item in media if item.role != "archived"],
             "video_operations": [flow_video.operation_public(row) for row in session.exec(select(StudioOperation).where(
                 StudioOperation.project_id == project_id, StudioOperation.kind == "flow_video")).all()],
-            "prompt": f"Create a personalized pet portrait using the attached reference images. Preserve identity exactly.\n{project.production_brief}" if project.kind == "portrait" else ""}
+            "prompt": portrait_prompt}
 
 
 @router.get("/flow-capability")
@@ -296,7 +311,7 @@ def resolve_video(request_id: uuid.UUID, body: ResolveVideoInput, session: Sessi
 
 
 @router.post("/projects/{project_id}/media", status_code=201)
-async def upload(project_id: int, role: Literal["reference", "portrait", "visual"] = Form(...),
+async def upload(project_id: int, role: Literal["reference", "garment", "portrait", "visual"] = Form(...),
                  scene_id: int | None = Form(default=None), file: UploadFile = File(...),
                  provenance_note: str = Form(default="", max_length=1000),
                  session: Session = Depends(get_session), settings: Settings = Depends(get_settings)):
@@ -307,7 +322,7 @@ async def upload(project_id: int, role: Literal["reference", "portrait", "visual
         scene = session.get(Scene, scene_id) if scene_id else None
         if project.kind != "video" or not scene or scene.project_id != project_id:
             raise HTTPException(422, "Chọn đúng cảnh của dự án video.")
-    elif not (project.kind == "portrait" or (project.kind == "video" and role == "reference")) or scene_id is not None:
+    elif not (project.kind == "portrait" or (project.kind == "video" and role in ("reference", "garment"))) or scene_id is not None:
         raise HTTPException(422, "Ảnh tham chiếu/thành phẩm chỉ dành cho dự án chân dung.")
     if role == "reference":
         refs = session.exec(select(ProductionMedia).where(ProductionMedia.project_id == project_id, ProductionMedia.role == "reference")).all()
@@ -382,6 +397,12 @@ def review_media(media_id: int, body: ReviewInput, session: Session = Depends(ge
     if not item or (item.role not in ("portrait", "visual") and not video_reference):
         raise HTTPException(404, "Không có ảnh/clip cần duyệt.")
     required = {"identity", "clothing", "rights"} if video_reference else {"likeness", "anatomy", "crop", "artifacts"} if item.role == "portrait" else {"content", "continuity", "framing"}
+    from server.image.jobs import verified_vton_origin
+    try:
+        if verified_vton_origin(session, item, settings.data_dir):
+            required.add("garment_fidelity")
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
     try:
         unchanged = sha256(contained(settings.data_dir, item.path)) == item.sha256
     except ValueError as exc:

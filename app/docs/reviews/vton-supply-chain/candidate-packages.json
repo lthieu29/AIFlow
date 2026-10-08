@@ -1,0 +1,40 @@
+[
+  {
+    "name": "einops",
+    "version": "0.8.2",
+    "requires_dist": null,
+    "project_urls": {
+      "Homepage": "https://github.com/arogozhnikov/einops"
+    },
+    "vulnerabilities": []
+  },
+  {
+    "name": "opencv-python-headless",
+    "version": "5.0.0.93",
+    "requires_dist": [
+      "numpy<2.0; python_version < \"3.9\"",
+      "numpy>=2; python_version >= \"3.9\""
+    ],
+    "project_urls": {
+      "Homepage": "https://github.com/opencv/opencv-python"
+    },
+    "vulnerabilities": []
+  },
+  {
+    "name": "onnxruntime",
+    "version": "1.30.0",
+    "requires_dist": [
+      "flatbuffers",
+      "numpy>=1.21.6",
+      "packaging",
+      "protobuf>=4.25.8",
+      "sympy; extra == \"symbolic\"",
+      "ml_dtypes; extra == \"quantization\""
+    ],
+    "project_urls": {
+      "Download": "https://github.com/microsoft/onnxruntime/tags",
+      "Homepage": "https://onnxruntime.ai"
+    },
+    "vulnerabilities": []
+  }
+]

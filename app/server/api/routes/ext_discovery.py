@@ -38,7 +38,7 @@ async def ext_discovery(request: Request) -> dict[str, Any]:
         "agent_version": "0.1.0",
         "ws_port": ws_port,
         "ws_url": f"ws://127.0.0.1:{ws_port}",
-        "callback_url": "http://127.0.0.1:8101/api/ext/callback",
+        "callback_url": f"http://127.0.0.1:{settings.port}/api/ext/callback",
         "supported_modules": ["flow_proxy", "cookie_sniffer"],
         "min_extension_version": "0.1.0",
     }

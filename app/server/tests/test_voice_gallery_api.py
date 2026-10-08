@@ -47,6 +47,8 @@ import io
 import json
 import sys
 import zipfile
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -293,6 +295,59 @@ class TestValidateVoicePackage:
 
 
 class TestExtractVoicePackage:
+    @pytest.mark.parametrize("member", ["../escaped.txt", "folder/../../escaped.txt", "/escaped.txt", "C:/escaped.txt", "..\\escaped.txt", "folder/evil.txt:stream"])
+    def test_rejects_unsafe_archive_members_before_extraction(self, tmp_path, member):
+        zip_path = tmp_path / "voice.zip"
+        zip_path.write_bytes(_make_zip_bytes(metadata=_make_valid_metadata()))
+        with zipfile.ZipFile(zip_path, "a") as archive:
+            archive.writestr(member, b"must not escape")
+        output = tmp_path / "out"
+        # Fail before extraction on a vulnerable implementation, so this test
+        # never attempts to write any absolute archive path.
+        assert validate_voice_package(zip_path)[0] is False
+        with pytest.raises(ValueError, match="Invalid voice package"):
+            extract_voice_package(zip_path, output)
+        assert not output.exists()
+        assert not (tmp_path / "escaped.txt").exists()
+
+    @pytest.mark.parametrize("voice_id", ["../outside", "..", "C:\\outside", "folder/voice", "voice:stream", "CON", "voice."])
+    def test_rejects_voice_id_that_is_not_a_safe_directory_name(self, tmp_path, voice_id):
+        zip_path = tmp_path / "voice.zip"
+        zip_path.write_bytes(_make_zip_bytes(metadata=_make_valid_metadata(voice_id=voice_id)))
+        assert validate_voice_package(zip_path)[0] is False
+
+    def test_rejects_demo_path_outside_voice(self, tmp_path):
+        metadata = {**_make_valid_metadata(), "demo_file": "../outside.mp3"}
+        zip_path = tmp_path / "voice.zip"
+        zip_path.write_bytes(_make_zip_bytes(metadata=metadata))
+        assert validate_voice_package(zip_path)[0] is False
+
+    def test_root_package_with_only_lora_subdirectory_keeps_lora_files(self, tmp_path):
+        zip_path = tmp_path / "voice.zip"
+        zip_path.write_bytes(_make_zip_bytes(metadata=_make_valid_metadata()))
+        with zipfile.ZipFile(zip_path, "a") as archive:
+            archive.writestr("lora/adapter_config.json", "{}")
+        output = tmp_path / "out"
+        extract_voice_package(zip_path, output)
+        assert (output / "lora/adapter_config.json").is_file()
+
+    def test_rejects_extracted_package_over_limit(self, tmp_path, monkeypatch):
+        import server.audio.tts.voice_package as package
+        zip_path = tmp_path / "voice.zip"
+        zip_path.write_bytes(_make_zip_bytes(metadata=_make_valid_metadata()))
+        monkeypatch.setattr(package, "MAX_EXTRACTED_BYTES", 10)
+        assert validate_voice_package(zip_path)[0] is False
+
+    def test_rejects_symlink_member(self, tmp_path):
+        zip_path = tmp_path / "voice.zip"
+        zip_path.write_bytes(_make_zip_bytes(metadata=_make_valid_metadata()))
+        with zipfile.ZipFile(zip_path, "a") as archive:
+            link = zipfile.ZipInfo("linked.txt")
+            link.create_system = 3
+            link.external_attr = 0o120777 << 16
+            archive.writestr(link, "../outside")
+        assert validate_voice_package(zip_path)[0] is False
+
     def test_extracts_files_to_output_dir(self, tmp_path):
         metadata = _make_valid_metadata(voice_id="my-voice")
         zip_bytes = _make_zip_bytes(metadata=metadata, include_demo=True)
@@ -386,10 +441,74 @@ def client(app_with_tmp_storage):
     from fastapi.testclient import TestClient
 
     app, tmp_path = app_with_tmp_storage
-    return TestClient(app), tmp_path
+    return TestClient(app, headers={"X-AIFlow-Client": "1"}), tmp_path
 
 
 class TestUploadCustomVoice:
+    def test_upload_and_delete_require_local_client_header(self, client):
+        tc, _ = client
+        package = _make_zip_bytes(metadata=_make_valid_metadata())
+        tc.headers.pop("X-AIFlow-Client")
+        assert tc.post("/api/tts/voices/custom", files={"file": ("voice.zip", package)}).status_code == 403
+        assert tc.delete("/api/tts/voices/custom/test-voice").status_code == 403
+        assert tc.post("/api/tts/synthesize", json={"text": "Hello"}).status_code == 403
+
+    def test_cross_origin_upload_is_rejected_even_with_local_header(self, client):
+        tc, _ = client
+        package = _make_zip_bytes(metadata=_make_valid_metadata())
+        assert tc.post("/api/tts/voices/custom", files={"file": ("voice.zip", package)},
+                       headers={"Origin": "https://external.example"}).status_code == 403
+
+    def test_concurrent_uploads_keep_both_packages_and_catalog_entries(self, client, monkeypatch):
+        from server.audio.tts import voice_package
+        tc, storage = client
+        barrier = threading.Barrier(2)
+        original = voice_package.extract_voice_package
+        def synchronized_extract(*args):
+            result = original(*args)
+            barrier.wait(timeout=10)
+            return result
+        monkeypatch.setattr(voice_package, "extract_voice_package", synchronized_extract)
+        def upload(voice_id):
+            package = _make_zip_bytes(metadata=_make_valid_metadata(voice_id=voice_id))
+            return tc.post("/api/tts/voices/custom", files={"file": ("voice.zip", package)})
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results = list(executor.map(upload, ["first", "second"]))
+        assert [response.status_code for response in results] == [201, 201]
+        for voice_id in ("first", "second"):
+            metadata = json.loads((storage / "voice_gallery" / voice_id / "metadata.json").read_text())
+            assert metadata["voice_id"] == voice_id
+        catalog = json.loads((storage / "voice_gallery/catalog.json").read_text())
+        assert {entry["id"] for entry in catalog["voices"]} == {"first", "second"}
+        assert not list((storage / "voice_gallery").glob("__extract_*"))
+
+    def test_existing_uncatalogued_directory_is_preserved(self, client):
+        tc, storage = client
+        existing = storage / "voice_gallery/test-voice"
+        existing.mkdir(parents=True)
+        (existing / "keep.txt").write_text("keep")
+        package = _make_zip_bytes(metadata=_make_valid_metadata())
+        assert tc.post("/api/tts/voices/custom", files={"file": ("voice.zip", package)}).status_code == 409
+        assert (existing / "keep.txt").read_text() == "keep"
+        assert not list(existing.parent.glob("__extract_*"))
+
+    def test_oversized_upload_is_rejected(self, client, monkeypatch):
+        from server.audio.tts import voice_package
+        monkeypatch.setattr(voice_package, "MAX_PACKAGE_BYTES", 10)
+        tc, _ = client
+        package = _make_zip_bytes(metadata=_make_valid_metadata())
+        assert tc.post("/api/tts/voices/custom", files={"file": ("voice.zip", package)}).status_code == 413
+
+    def test_upload_with_unsafe_id_cannot_overwrite_other_storage(self, client):
+        tc, storage = client
+        outside = storage / "protected"
+        outside.mkdir()
+        sentinel = outside / "keep.txt"
+        sentinel.write_text("keep")
+        package = _make_zip_bytes(metadata=_make_valid_metadata(voice_id="../protected"))
+        assert tc.post("/api/tts/voices/custom", files={"file": ("voice.zip", package)}).status_code == 400
+        assert sentinel.read_text() == "keep"
+
     def test_uploaded_voice_appears_in_gallery_and_demo_is_playable(self, client, monkeypatch):
         from server.audio.remote import AudioConnection
         from server.audio import remote

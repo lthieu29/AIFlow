@@ -6,12 +6,13 @@ quality thresholds before the pipeline proceeds to subtitle generation.
 Checks performed (per spec 07 §G4):
     G4.1 — Audio file exists and size > 10 KB
     G4.2 — ffprobe duration within ±20% of expected TTS duration (Warning)
-    G4.3 — Audio is not silent (RMS > -60 dBFS, via ffprobe stream info)
+    G4.3 — Optional supplied volume metadata; ffprobe does not measure RMS
     G4.5 — Audio sample rate ≥ 16 kHz
     G4.6 — Audio channels ∈ [1, 2] (mono or stereo)
 
-Critical failures (G4.1, G4.3, G4.5, G4.6) block the pipeline.
+Critical failures (G4.1, supplied G4.3 metadata, G4.5, G4.6) block the pipeline.
 Warning failures (G4.2) are logged but do not block.
+Without volume metadata, passing stream checks does not prove non-silent audio.
 
 Functions:
     check_audio_quality — run G4 checks on an audio file
@@ -66,7 +67,7 @@ def check_audio_quality(
         Warnings are logged but do not cause a "failed" status.
     """
     # G4.1 — file must exist and be > 10 KB
-    if not audio_path.exists():
+    if not audio_path.is_file():
         return GateResult(
             gate_id="G4",
             status="failed",
@@ -89,6 +90,9 @@ def check_audio_quality(
 
     # Probe audio stream info (needed for G4.3, G4.5, G4.6)
     stream_info = _probe_audio_stream(audio_path)
+    if stream_info is None:
+        return GateResult(gate_id="G4", status="failed",
+                          message="G4: Cannot verify an audio stream; check the file and ffprobe installation.")
 
     # G4.3 — audio must not be silent
     if stream_info is not None:
@@ -105,7 +109,7 @@ def check_audio_quality(
 
         # G4.5 — sample rate ≥ 16 kHz
         sample_rate = _get_sample_rate(stream_info)
-        if sample_rate is not None and sample_rate < _MIN_SAMPLE_RATE_HZ:
+        if sample_rate is None or sample_rate < _MIN_SAMPLE_RATE_HZ:
             return GateResult(
                 gate_id="G4",
                 status="failed",
@@ -117,7 +121,7 @@ def check_audio_quality(
 
         # G4.6 — channels must be 1 or 2
         channels = _get_channels(stream_info)
-        if channels is not None and channels not in _VALID_CHANNEL_COUNTS:
+        if channels not in _VALID_CHANNEL_COUNTS:
             return GateResult(
                 gate_id="G4",
                 status="failed",
@@ -151,8 +155,12 @@ def check_audio_quality(
         except Exception as exc:
             logger.warning("G4.2: Could not probe audio duration ({}): {}", audio_path, exc)
 
-    logger.info("G4: Audio quality check passed — {}", audio_path.name)
-    return GateResult(gate_id="G4", status="passed")
+    message = ""
+    if _get_rms_dbfs(stream_info) is None:
+        message = "Audio stream checks passed; signal level was not measured, so silence remains unverified."
+        logger.warning("G4.3: Signal level unavailable — {}", audio_path.name)
+    logger.info("G4: Audio stream checks passed — {}", audio_path.name)
+    return GateResult(gate_id="G4", status="passed", message=message)
 
 
 # ─── Internal helpers ─────────────────────────────────────────────────────────
@@ -171,7 +179,7 @@ def _probe_audio_stream(audio_path: Path) -> Optional[dict]:
     """
     ffprobe = find_ffprobe()
     if ffprobe is None:
-        logger.warning("G4: ffprobe not found — skipping stream checks (G4.3, G4.5, G4.6)")
+        logger.warning("G4: ffprobe not found — cannot verify audio stream")
         return None
 
     cmd = [
@@ -183,14 +191,14 @@ def _probe_audio_stream(audio_path: Path) -> Optional[dict]:
         str(audio_path),
     ]
     try:
-        output = subprocess.check_output(cmd, encoding="utf-8", stderr=subprocess.DEVNULL)
+        output = subprocess.check_output(cmd, encoding="utf-8", stderr=subprocess.DEVNULL, timeout=30)
         data = json.loads(output)
         streams = data.get("streams", [])
         if not streams:
             logger.warning("G4: No audio stream found in {}", audio_path.name)
             return None
         return streams[0]
-    except (subprocess.CalledProcessError, json.JSONDecodeError, OSError) as exc:
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, json.JSONDecodeError, OSError) as exc:
         logger.warning("G4: ffprobe stream probe failed for {}: {}", audio_path.name, exc)
         return None
 

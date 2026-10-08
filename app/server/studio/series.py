@@ -1,10 +1,12 @@
 import json
+from pydantic import ValidationError
 from fastapi import HTTPException
 from sqlalchemy import update
 from sqlmodel import select
 from server.db.models.studio import StorySeries, SeriesEpisode
 from server.db.models.script_revision import ScriptRevision
 from server.text.workflow import ancestry
+from server.text.schemas import Brief
 
 def create_episode(session, body):
     def existing_result():
@@ -34,7 +36,10 @@ def create_episode(session, body):
     if existing:
         return existing
     session.refresh(series)
-    content = body.content.model_copy(update={"series_bible": series.bible, "language": series.language})
+    try:
+        content = Brief.model_validate({**body.content.model_dump(), "series_bible": series.bible, "language": series.language})
+    except ValidationError as exc:
+        raise HTTPException(422, exc.errors(include_input=False, include_url=False, include_context=False)) from exc
     row = ScriptRevision(request_id=str(body.request_id), title=content.title, stage="brief", content_json=content.model_dump_json())
     session.add(row)
     session.flush()

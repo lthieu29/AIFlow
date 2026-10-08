@@ -661,6 +661,24 @@ class TestDetectPlatform:
         from server.content.crawlers.generic import detect_platform
         assert detect_platform("") == "generic"
 
+    @pytest.mark.parametrize("url", [
+        "https://untrusted.example/?next=v.douyin.com",
+        "https://untrusted.example/douyin.com/video/123",
+        "https://notdouyin.com/video/123",
+        "https://douyin.com.untrusted.example/video/123",
+        "https://douyin.com@untrusted.example/video/123",
+    ])
+    def test_platform_lookalikes_do_not_route_to_cookie_native_api(self, url, tmp_path, monkeypatch):
+        from server.content.crawlers.manager import DownloadManager
+
+        manager = DownloadManager()
+        called = []
+        monkeypatch.setattr(manager._generic, "download", lambda *args, **kwargs: called.append("generic"))
+        for downloader in manager._downloaders.values():
+            monkeypatch.setattr(downloader, "download", lambda *args, **kwargs: called.append("native"))
+        manager.download(url, tmp_path, cookies=tmp_path / "fake-test-cookies.txt")
+        assert called == ["generic"]
+
 
 # ─── GenericDownloader ────────────────────────────────────────────────────────
 

@@ -655,6 +655,19 @@ test('HTTP callback success sends no duplicate WebSocket response', async () => 
   assert.equal(count, 0);
 });
 
+test('HTTP callbacks use the callback port returned by discovery', async () => {
+  const urls = [];
+  const bridge = await loadBridge('modules/shared.js', {
+    fetch: async url => {
+      urls.push(url);
+      return { ok: true, json: async () => ({ callback_url: 'http://127.0.0.1:8123/api/ext/callback' }) };
+    },
+  });
+  await bridge.api.discoverAgent();
+  await bridge.api.postCallback({ callbackSecret: 'fixture' }, { id: 'request', status: 200 });
+  assert.equal(urls[1], 'http://127.0.0.1:8123/api/ext/callback');
+});
+
 test('current Flow RPC runs with page CSRF and returns only parsed payload', async () => {
   let options;
   const page = {

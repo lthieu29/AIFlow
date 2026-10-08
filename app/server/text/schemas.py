@@ -41,7 +41,7 @@ class Outline(StrictModel):
 
 class ScriptScene(StrictModel):
     visual_prompt: str = Field(min_length=1, max_length=3000)
-    narration: str = Field(max_length=1000, description="Spoken English only; empty for an intentional silent shot.")
+    narration: str = Field(max_length=1000, description="Spoken narration in the brief's language; empty for an intentional silent shot.")
     duration: float = Field(ge=4, le=8)
     location_hint: Literal["indoor", "outdoor", "transition", "unspecified"]
     story_beat: Literal["hook", "setup", "escalation", "reveal", "payoff", "unspecified"] = "unspecified"

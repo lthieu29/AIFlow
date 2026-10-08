@@ -235,6 +235,24 @@ class TestNetscapeFileRoundTrip:
         result = _parse_netscape_file(tmp_path / "nonexistent.txt")
         assert result == []
 
+    def test_http_only_rows_reach_native_cookie_header_without_comment_rows(self, tmp_path):
+        from server.content.crawlers.cookies.manager import read_cookie_string
+
+        source = tmp_path / "fake-cookies.txt"
+        source.write_text(
+            "# Netscape HTTP Cookie File\n"
+            "# ordinary comment\n"
+            "#HttpOnly_.douyin.com\tTRUE\t/\tTRUE\t0\tsessionid\tFAKE_TEST_ONLY\n"
+            ".douyin.com\tTRUE\t/video\tFALSE\t0\tpreference\tfake\n",
+            encoding="utf-8",
+        )
+        parsed = _parse_netscape_file(source)
+        assert len(parsed) == 2
+        assert parsed[0]["domain"] == ".douyin.com"
+        assert parsed[0]["flag"] == "TRUE" and parsed[0]["secure"] is True
+        assert parsed[1]["path"] == "/video" and parsed[1]["secure"] is False
+        assert read_cookie_string(source) == "sessionid=FAKE_TEST_ONLY; preference=fake"
+
     def test_parse_skips_malformed_lines(self, tmp_path):
         f = tmp_path / "bad.txt"
         f.write_text(

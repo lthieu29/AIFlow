@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 import uuid
 from typing import Optional
@@ -63,6 +64,14 @@ class DraftWriter:
             FileExistsError: If a folder with *draft_name* already exists.
         """
         name = draft_name or draft.name
+        if not name or name in (".", "..") or "/" in name or "\\" in name or os.path.isabs(name):
+            raise ValueError("Draft name must be a folder name within the configured draft root.")
+        # Keep Unicode titles while making ordinary punctuation valid on Windows.
+        name = re.sub(r'[<>:"|?*\x00-\x1f]', "_", name).rstrip(" .")
+        if not name:
+            raise ValueError("Draft name must contain a valid folder name.")
+        if re.fullmatch(r"(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?", name, re.IGNORECASE):
+            name = "_" + name
         folder = os.path.join(self.draft_root, name)
 
         if os.path.exists(folder):

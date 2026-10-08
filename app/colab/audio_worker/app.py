@@ -334,6 +334,8 @@ async def submit_stt(file: UploadFile = File(...), language: Literal["en", "vi"]
         with wave.open(io.BytesIO(raw), "rb") as audio:
             if audio.getsampwidth() != 2 or audio.getnchannels() not in (1, 2) or not 0 < audio.getnframes() / audio.getframerate() <= 360:
                 raise ValueError("Unsupported WAV")
+            if len(audio.readframes(audio.getnframes())) != audio.getnframes() * audio.getnchannels() * audio.getsampwidth():
+                raise ValueError("Incomplete WAV PCM")
     except (ValueError, EOFError, wave.Error) as exc:
         raise HTTPException(422, "Use PCM16 WAV, mono/stereo, at most 360 seconds.") from exc
     payload = {"type": "stt", "audio_sha256": hashlib.sha256(raw).hexdigest(), "language": language, "model_revision": model_revision}
@@ -345,7 +347,7 @@ async def submit_stt(file: UploadFile = File(...), language: Literal["en", "vi"]
             raise HTTPException(409, "Worker is training or changing models")
         path = manifest_path(job_id)
         job = read_job(job_id) if path.exists() else {"job_id": job_id, "type": "stt", "input": payload, "created_at": time.time(), "status": "queued"}
-        if job_id in ACTIVE or job["status"] == "succeeded" or (job["status"] in ("failed", "cancelled") and not retry):
+        if job_id in ACTIVE or (job["status"] == "succeeded" and (ROOT / "jobs" / f"{job_id}.transcript.json").is_file()) or (job["status"] in ("failed", "cancelled") and not retry):
             return {k: v for k, v in job.items() if k != "input"}
         if len(ACTIVE) >= 16:
             raise HTTPException(429, "Worker queue is full")

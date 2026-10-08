@@ -51,19 +51,17 @@ async def download_video(signed_url: str, out_path: Path) -> Path:
             video_bytes = resp.content
     except httpx.HTTPError as exc:
         raise RuntimeError(
-            f"downloader: failed to download video from signed URL: {exc}"
-        ) from exc
+            f"downloader: failed to download video ({type(exc).__name__})"
+        ) from None
 
-    out_path.write_bytes(video_bytes)
-    file_size = out_path.stat().st_size
-    logger.info(f"downloader: saved {file_size:,} bytes to {out_path}")
-
+    file_size = len(video_bytes)
     if file_size < MIN_VIDEO_SIZE_BYTES:
-        out_path.unlink(missing_ok=True)
         raise RuntimeError(
             f"downloader: downloaded video is too small "
             f"({file_size} bytes < {MIN_VIDEO_SIZE_BYTES} bytes). "
             "The video may be corrupt or the generation failed silently."
         )
 
+    out_path.write_bytes(video_bytes)
+    logger.info(f"downloader: saved {file_size:,} bytes to {out_path}")
     return out_path

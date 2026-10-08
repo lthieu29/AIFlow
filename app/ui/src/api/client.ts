@@ -112,7 +112,7 @@ export async function uploadCustomVoice(
   const { data } = await apiClient.post<CustomVoiceUploadResponse>(
     "/tts/voices/custom",
     form,
-    { headers: { "Content-Type": "multipart/form-data" } }
+    { headers: { "Content-Type": "multipart/form-data", "X-AIFlow-Client": "1" } }
   );
   return data;
 }
@@ -132,7 +132,8 @@ export async function getCustomVoice(id: string): Promise<VoiceInfo> {
  */
 export async function deleteCustomVoice(id: string): Promise<{ deleted: boolean }> {
   const { data } = await apiClient.delete<{ deleted: boolean }>(
-    `/tts/voices/custom/${id}`
+    `/tts/voices/custom/${id}`,
+    { headers: { "X-AIFlow-Client": "1" } }
   );
   return data;
 }
@@ -191,7 +192,7 @@ export async function uploadAsset(
   form.append("name", name);
   form.append("type", assetType);
   const { data } = await apiClient.post<AssetInfo>("/assets/upload", form, {
-    headers: { "Content-Type": "multipart/form-data" },
+    headers: { "Content-Type": "multipart/form-data", "X-AIFlow-Client": "1" },
   });
   return data;
 }
@@ -209,7 +210,7 @@ export async function getAssets(
 /** DELETE /api/assets/item/{assetId} — delete an asset */
 export async function deleteAsset(assetId: number): Promise<{ deleted: boolean }> {
   const { data } = await apiClient.delete<{ deleted: boolean }>(
-    `/assets/item/${assetId}`
+    `/assets/item/${assetId}`, { headers: { "X-AIFlow-Client": "1" } }
   );
   return data;
 }
@@ -263,7 +264,7 @@ export async function parseContent(
   const { data } = await apiClient.post<SceneListOut>("/content/parse", {
     adapter,
     input_data: inputData,
-  });
+  }, { headers: { "X-AIFlow-Client": "1" } });
   return data;
 }
 

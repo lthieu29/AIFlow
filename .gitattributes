@@ -1,0 +1,5 @@
+# Worker approval/source locks hash exact bytes, including existing line endings.
+# Preserve the reviewed bytes across Git add/checkout on Windows and Linux.
+# Existing CRLF and terminal blank lines are part of those approved bytes.
+app/colab/image_worker/** -text whitespace=cr-at-eol,-blank-at-eof
+app/colab/vton_worker/** -text whitespace=cr-at-eol,-blank-at-eof

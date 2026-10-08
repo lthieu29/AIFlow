@@ -253,16 +253,12 @@ quả cũ, không tạo lại.
 
 ### Tạo clip bằng CLI
 
-CLI **`gen-clip`** giữ nhánh image-to-video cũ: một ảnh khởi đầu + một prompt → một
-clip Veo 3. Nhánh này chưa được xác minh với phiên Flow mới; phiên yêu cầu nút gốc
-sẽ trả lỗi `FLOW_UI_GENERATION_REQUIRED` trước khi gửi yêu cầu tạo.
+CLI **`gen-clip` chạy độc lập hiện không được hỗ trợ**. Bridge được kết nối với
+tiến trình server; singleton trong tiến trình CLI không dùng được kết nối đó.
+Lệnh dừng ngay trước khi tạo project/job hoặc thay đổi dữ liệu, kèm hướng dẫn mở
+**Sản xuất** (`/production`) trong ứng dụng để tạo và nhận clip qua Bridge.
 
-**Kiểm tra trước** (cả ba điều phải đúng):
-1. `python -m server.main` đang chạy.
-2. Tab Flow đang mở và extension hiển thị **Đã kết nối**.
-3. Gói Flow Pro/Ultra của bạn đang hoạt động.
-
-Sau đó:
+Ví dụ dưới đây chỉ minh họa cú pháp legacy; chạy độc lập sẽ trả lỗi hướng dẫn trên:
 
 ```powershell
 # Dùng entry point đã cài
@@ -288,19 +284,14 @@ Các tùy chọn:
 | `--model` | `VEO3` | `VEO3`, `VEO3_LITE`, `VEO3_QUALITY`. |
 | `--quality` | `fast` | `lite` \| `fast` \| `quality`. |
 
-CLI sẽ chờ extension + token, gửi yêu cầu, poll mỗi 5 giây (tối đa ~10 phút), rồi ghi
-`video_<id>_<timestamp>.mp4` vào thư mục đầu ra và lưu job vào SQLite
-(`storage/projects.db`).
-
-**Chưa có ảnh khởi đầu?** Script này tự tạo một ảnh (PNG màu đơn sắc, không cần thư viện
-ngoài), chạy toàn bộ pipeline và kiểm tra file MP4:
+Script legacy dưới đây cũng không dùng được Bridge của server khi chạy độc lập:
 
 ```powershell
 python scripts/test_gen_clip.py
 ```
 
-Nó tải về `storage/output/test_gen_clip_<timestamp>.mp4`. Mở bằng trình phát để xem
-chuyển động/chất lượng (Veo 3 cũng tạo cả âm thanh nền).
+Script dừng ngay với hướng dẫn mở **Sản xuất**, trước khi tạo ảnh test hay gửi yêu
+cầu Flow. Để kiểm tra video thật, dùng UI, nhận clip rồi xem và duyệt chất lượng.
 
 ---
 
@@ -404,7 +395,7 @@ Khi server đang chạy và project đã có scene:
 
 | Khả năng | Trạng thái |
 |----------|------------|
-| Tạo clip đơn (`aiflow gen-clip`) | ✅ Chạy được end-to-end |
+| Tạo clip đơn (`aiflow gen-clip`) | ⚠️ Legacy chạy độc lập chưa được hỗ trợ; dừng sớm, dùng UI Sản xuất |
 | Gemini text + ảnh Veo 3 (`smoke_phase0`) | ✅ Chạy được |
 | TTS (VieNeu / edge-tts) + phụ đề Whisper | ✅ Chạy được (cài `[audio]`) |
 | Content adapter (parse → SceneList) qua `POST /api/content/parse` | ✅ Trả về scene |
@@ -413,8 +404,9 @@ Khi server đang chạy và project đã có scene:
 | **Pipeline đa-cảnh** (orchestrator: nhiều clip + continuity + compose) | ⚠️ Đã có code nhưng **chưa nối vào trigger API/CLI** |
 | **Giao diện React** (`ui/`) | ⚠️ Các trang đã có nhưng luồng tạo/sinh chưa nối với backend |
 
-Nếu bạn chỉ muốn "tạo video ngay", dùng **`gen-clip`** — đó là luồng chạy được hoàn
-chỉnh. Luồng đa-cảnh có orchestrator và giao diện vẫn cần được nối thêm.
+Để tạo và nhận clip, mở **Sản xuất** trong ứng dụng, chọn dự án video có prompt đã
+duyệt và kiểm tra Bridge. Việc tạo thật dùng credit Flow; mã tác vụ đã gửi được giữ
+để tiếp tục nhận kết quả. Không dùng CLI legacy làm bằng chứng tạo video end-to-end.
 
 ---
 
@@ -429,11 +421,12 @@ chỉnh. Luồng đa-cảnh có orchestrator và giao diện vẫn cần đượ
 cổng WebSocket.
 
 **CLI treo ở "Waiting for Bearer token"**
-→ Mở [labs.google/fx/tools/flow](https://labs.google/fx/tools/flow) trong đúng profile
-Chrome đã nạp extension, và đảm bảo đã đăng nhập. Token được bắt từ request của trang đó.
+→ Đây là hành vi bản legacy trước khi có kiểm tra dừng sớm. Tiến trình CLI độc lập
+không nhận kết nối Bridge của server; cập nhật source và dùng **Sản xuất** trong UI.
 
 **`gen-clip` báo lỗi quota / paygate**
-→ Xác nhận gói Flow Pro/Ultra đang hoạt động và còn credit trong ngày.
+→ CLI độc lập hiện dừng trước khi gửi yêu cầu Flow. Khi tạo qua UI Sản xuất, kiểm
+tra credit và trạng thái trong đúng tab dự án Flow nếu tác vụ báo lỗi.
 
 **Tải remaster thất bại**
 → Cài `[remaster]` và đảm bảo có `ffmpeg`. Nếu không có cookie hợp lệ, video bị tường
@@ -447,6 +440,27 @@ Chrome đã nạp extension, và đảm bảo đã đăng nhập. Token được
 ---
 
 ## Tài liệu
+
+### Thử trang phục bằng Colab (VTON)
+
+Trong **Kết nối & series**, tải notebook VTON và ZIP worker tương ứng. Chạy trên
+runtime Colab mới (đã kiểm thử L4), rồi nhập URL/token tạm vào kết nối worker ảnh.
+Trong **Sản xuất**, chọn **Colab tạo ảnh → Người → Thử trang phục shop lên người
+(VTON)**, chọn riêng ảnh người và ảnh trang phục trải phẳng, sau đó chọn loại đồ.
+Chưa hỗ trợ ảnh shop có người mẫu mặc sản phẩm. Worker VTON chạy riêng với worker
+tạo nhân vật SDXL; không nạp cả hai vào cùng GPU.
+
+VTON không dùng prompt để sửa số đo. Muốn chỉnh ngoại hình, tạo/chọn ảnh nhân vật
+trước; mô tả vòng 1/eo/hông chỉ là điều kiện ngôn ngữ, không phải số đo centimet.
+Sau khi mặc thử, so sánh người gốc, sản phẩm gốc và kết quả trước khi đánh dấu
+**Đã so với sản phẩm shop**. Model có thể thay đổi chất liệu, phụ kiện hoặc dáng;
+không duyệt ảnh nếu sản phẩm sai. Kết quả gốc 576×864, giữ nguyên canvas nên có
+thể có viền đen; không tự phóng lớn. Ảnh thử đồ không chứng minh size vừa thực tế.
+
+Tải kết quả về máy trước khi chọn **Thời gian chạy → Ngắt kết nối và xoá thời gian
+chạy** trong Colab. Hướng dẫn kỹ thuật và giới hạn:
+[`vton_worker/README.md`](colab/vton_worker/README.md),
+[báo cáo kiểm thử và chuỗi cung ứng](docs/reviews/DEVLEAD_REVIEW_2026-10-05.md).
 
 - Thiết kế + spec đầy đủ: [`docs/PLAN.md`](docs/PLAN.md) và `docs/00`–`docs/11`.
 - Giấy phép bên thứ ba: [`LICENSE_NOTICES.md`](LICENSE_NOTICES.md).

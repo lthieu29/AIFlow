@@ -186,6 +186,23 @@ class TestCapCutExporterExport:
         with pytest.raises(ValueError, match="no valid video files"):
             exporter.export(project=project, scenes=scenes)
 
+    def test_missing_scene_clip_cannot_export_a_shortened_timeline(self, fake_settings, tmp_path):
+        exporter = CapCutExporter(fake_settings, draft_root=str(tmp_path / "drafts"))
+        clip = _create_fake_mp4(tmp_path, "first.mp4")
+        scenes = [_make_scene(order=0, video_path=str(clip)),
+                  _make_scene(order=1, video_path=str(tmp_path / "missing.mp4"))]
+        with pytest.raises(ValueError, match="scene 2"):
+            exporter.export(project=_make_project(), scenes=scenes)
+        assert list((tmp_path / "drafts").iterdir()) == []
+
+    def test_missing_explicit_clip_does_not_use_an_unrelated_fallback(self, fake_settings, tmp_path):
+        media = Path(fake_settings.data_dir) / "media" / "1"
+        media.mkdir(parents=True, exist_ok=True)
+        _create_fake_mp4(media, "unrelated.mp4")
+        exporter = CapCutExporter(fake_settings, draft_root=str(tmp_path / "drafts"))
+        scene = _make_scene(video_path=str(tmp_path / "missing.mp4"))
+        assert exporter._resolve_scene_video(_make_project(), scene) is None
+
     def test_export_with_explicit_video_path(
         self, fake_settings: MagicMock, tmp_path: Path
     ):

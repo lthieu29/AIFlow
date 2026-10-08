@@ -1,0 +1,14 @@
+FASHN VTON 1.5, Copyright FASHN AI, Apache-2.0.
+Source: https://github.com/fashn-AI/fashn-vton-1.5
+Immutable revision: 7c0f10af3f91ad4048fe9729c470a13ef905d25a
+Includes code adapted by upstream from FLUX.1 (Black Forest Labs), DWPose
+(IDEA Research) and YOLOX (Megvii), each Apache-2.0 per upstream notices.
+
+AIFlow modifications, 2026-10-06:
+- Vendor only neural model, pose detection, resize and tensor helpers.
+- Remove human parser, segmentation/mask pipeline and implicit weight download.
+- Replace checkpoint loader with local safetensors-only loading.
+- Keep grayscale pose drawing only; remove colorful drawing/matplotlib dependency.
+- Dedicated flat-lay, segmentation-free pipeline under vton_worker/pipeline.py.
+- Preserve full native 576x864 output canvas without upstream unpadding.
+No fashn-human-parser source or NVIDIA SegFormer weights are included.

@@ -19,7 +19,9 @@ from sqlmodel import Session, select
 
 from server.config import Settings, load_settings
 from server.db.models.asset import Asset
-from server.db.models.scene import Scene
+from server.db.models.scene import LocationHint, Scene
+from server.db.models.project import Project
+from server.db.models.audio_task import AudioTask
 from server.db.models.scene_asset import SceneAsset
 from server.db.session import get_engine
 
@@ -74,7 +76,7 @@ class ScenePatchRequest(BaseModel):
 
     duration: Optional[float] = None
     status: Optional[str] = None
-    location_hint: Optional[str] = None
+    location_hint: Optional[LocationHint] = None
     prompt: Optional[str] = None
     narration: Optional[str] = None
 
@@ -175,7 +177,11 @@ def patch_scene(
             },
         )
 
-    if scene.status == "generating":
+    project = session.get(Project, scene.project_id)
+    active_scene = session.exec(select(Scene.id).where(
+        Scene.project_id == scene.project_id, Scene.status.in_(["queued", "generating"]),
+    )).first()
+    if (project and project.status == "generating") or active_scene is not None:
         raise HTTPException(
             status_code=409,
             detail={
@@ -186,6 +192,16 @@ def patch_scene(
             },
         )
 
+    if session.exec(select(AudioTask.id).where(
+        AudioTask.project_id == scene.project_id,
+        AudioTask.status.in_(["queued", "running", "waiting_resource", "retrying", "cancel_requested"]),
+    )).first() is not None:
+        raise HTTPException(409, "Dự án đang có tác vụ audio; hủy hoặc hoàn tất trước khi sửa cảnh.")
+
+    content_changed = any(
+        value is not None and value != getattr(scene, name)
+        for name, value in body.model_dump().items() if name != "status"
+    )
     if body.duration is not None:
         if not (3.0 <= body.duration <= 30.0):
             raise HTTPException(
@@ -213,11 +229,18 @@ def patch_scene(
             scene.audio_path = None
         scene.narration = body.narration
 
-    if body.prompt is not None or body.narration is not None:
+    if content_changed:
+        scene.video_path = None
+        scene.last_frame_path = None
+        scene.status = "draft"
         from server.db.models.production import ProductionMedia
         for media in session.exec(select(ProductionMedia).where(ProductionMedia.scene_id == scene.id, ProductionMedia.role == "visual")).all():
             media.approved = False
             session.add(media)
+        if project:
+            project.status = "ready"
+            project.updated_at = datetime.now(timezone.utc)
+            session.add(project)
 
     scene.updated_at = datetime.now(timezone.utc)
     session.add(scene)

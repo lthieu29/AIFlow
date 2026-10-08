@@ -1,0 +1,36 @@
+{
+  "approved": true,
+  "reviewed_at": "2026-10-06",
+  "python": "3.12",
+  "package_count": 56,
+  "new_package_count": 5,
+  "requirements_sha256": "a714ddb74e3cb584c9fc5b68041e4e1c40d55d57ec60affe5f27c912b2aa58ad",
+  "model_lock_sha256": "18a70e82dcf7c5db6d9a88175b7d8a8cdaa6dd1caacf69b9975ed8af17bf0e72",
+  "source_lock_sha256": "2bb2792f15f6b93f4d85e553c67b213a5aa4d09155ddeb728ecc86190ffd08cb",
+  "pypi_advisories": 0,
+  "osv_advisories": 0,
+  "scope": "Pinned official FASHN source subset, parser-free flat-lay inference, local safetensors/ONNX loading, official PyPI origins, exact Linux CPython3.12 wheel hashes, archive paths/startup hooks, immutable model inventory. Not an antivirus or malware-free guarantee.",
+  "antivirus": {
+    "scanned": false,
+    "reason": "Windows Defender antivirus and real-time protection disabled; no antivirus scan performed."
+  },
+  "reviewed_exceptions": [
+    "Existing setuptools distutils-precedence.pth is its documented local shim; bundled Windows launcher executables are not used by Linux inference.",
+    "Existing numpy tests/data/astype_copy.pkl is a test fixture and not loaded by this worker."
+  ],
+  "excluded": [
+    "fashn-human-parser",
+    "SegFormer",
+    "pickle model loader",
+    "unversioned automatic model download",
+    "ComfyUI custom nodes"
+  ],
+  "runtime": {
+    "torch": "2.11.0+cu128",
+    "torchvision": "0.26.0+cu128",
+    "exception": {
+      "id": "GHSA-rrmf-rvhw-rf47",
+      "mitigation": "No torch.jit/compile, pickle checkpoints or remote model code; verify exact reviewed runtime before engine load."
+    }
+  }
+}

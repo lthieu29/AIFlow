@@ -57,6 +57,21 @@ If this project is ever made public or commercial, these components must be:
 
 ## Full Attribution
 
+### FASHN VTON 1.5 — 2026-10-06
+
+The dedicated `colab/vton_worker` vendors a reviewed subset of
+[FASHN VTON 1.5](https://github.com/fashn-AI/fashn-vton-1.5) at commit
+`7c0f10af3f91ad4048fe9729c470a13ef905d25a`, under Apache-2.0.
+The upstream copyright/license and modification notice are retained in
+[`LICENSE`](colab/vton_worker/vendor/fashn_vton/LICENSE) and
+[`NOTICE`](colab/vton_worker/vendor/fashn_vton/NOTICE), including upstream
+FLUX.1, DWPose and YOLOX attribution. The separately downloaded FASHN/DWPose
+model files and immutable revisions are listed in
+[`model-lock.json`](colab/vton_worker/model-lock.json).
+No FASHN human-parser source or SegFormer weights are included. The worker
+supports the parser-free, flat-lay branch only. Input photographs and product
+artwork retain their own rights; model licensing does not clear those rights.
+
 Detailed attribution will be added as components are lifted in each phase.
 
 Last updated: 2026-05-27 (Phase 0.1)

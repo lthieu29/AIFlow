@@ -35,6 +35,7 @@ zip_name = list(uploaded.keys())[0]
 if not zip_name.lower().endswith('.zip'):
     raise SystemExit(f'❌ Phải là .zip, bạn upload: {zip_name}')
 
+_state['data_ready'] = False
 reset_dir(RAW_AUDIO_DIR)
 extract_tmp = WORK_DIR / 'extract_tmp'
 reset_dir(extract_tmp)
@@ -69,6 +70,9 @@ with open(transcript_src, 'r', encoding='utf-8') as f:
         if len(parts) != 2:
             invalid_rows.append((line_no, 'format sai')); continue
         fname, text = parts[0].strip(), parts[1].strip()
+        if not fname or Path(fname).name != fname or "\\" in fname or fname in (".", ".."):
+            invalid_rows.append((line_no, 'tên audio chứa đường dẫn không hợp lệ')); continue
+        text = " ".join(text.replace('|', ' ').split())
 
         audio_path = audio_src_dir / fname
         if not audio_path.exists():
@@ -113,6 +117,9 @@ if len(valid_rows) < 50:
     print(f'⚠️  Chỉ {len(valid_rows)} file — khuyến nghị ≥200 cho LoRA tốt')
 if total_duration < 15 * 60:
     print(f'⚠️  {total_duration / 60:.1f} phút < 15 phút — chất lượng có thể chưa tối ưu')
+
+if not valid_rows:
+    raise SystemExit('❌ Không có audio/transcript hợp lệ. Sửa dataset rồi upload lại.')
 
 _state['mode'] = 'lora'
 _state['data_ready'] = True

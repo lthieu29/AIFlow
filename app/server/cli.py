@@ -124,6 +124,14 @@ async def _gen_clip_async(
     quality: str,
 ) -> None:
     """Async implementation of the gen-clip command."""
+    from server.flow.client import FlowClient
+
+    if not FlowClient().is_connected():
+        raise click.ClickException(
+            "Legacy standalone gen-clip cannot use the running server's browser bridge. "
+            "Use the Production UI at /production to generate and receive clips. "
+            "No project or job was created."
+        )
     try:
         from tqdm import tqdm
     except ImportError:

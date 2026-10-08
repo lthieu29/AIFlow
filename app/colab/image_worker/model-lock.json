@@ -1,0 +1,117 @@
+{
+  "SG161222/RealVisXL_V5.0": {
+    "revision": "ac93e0dda1f6d448cae19bbfab8c5e720a5e48bc",
+    "files": [
+      {
+        "path": "model_index.json",
+        "sha256": "f15de0dfcd39efb54005fe7110fc07580dc7b90e73b2a7fb2ad4500381592e96",
+        "size": 708
+      },
+      {
+        "path": "scheduler/scheduler_config.json",
+        "sha256": "4276ecb13fc42b6667fe47bac67a376e99e4c26d477e189c4630dd7037a25a9a",
+        "size": 526
+      },
+      {
+        "path": "text_encoder/config.json",
+        "sha256": "c5975e04befd9ced7cb307e2b6e935449e775d1963445c139d0bae8abdfacc34",
+        "size": 584
+      },
+      {
+        "path": "text_encoder/model.fp16.safetensors",
+        "sha256": "0a873801e35a008b17e228189a83a8b41e068ffe7bde7c1105e8c6e947758bc5",
+        "size": 246144152
+      },
+      {
+        "path": "text_encoder_2/config.json",
+        "sha256": "a07d5cbb8a2b6c5834e67008de0aee108bd6396edfe909ef7b6c08c21d5c4c07",
+        "size": 594
+      },
+      {
+        "path": "text_encoder_2/model.fp16.safetensors",
+        "sha256": "dfa429b268cd3f6297927f1fd3eacac04781b17ab4caa97892a461ff41400a5e",
+        "size": 1389382176
+      },
+      {
+        "path": "tokenizer/merges.txt",
+        "sha256": "0bc7695944744789d6fd6d0ab754bcbbb9e36f1c182df0a006d619ce70a1e052",
+        "size": 573514
+      },
+      {
+        "path": "tokenizer/special_tokens_map.json",
+        "sha256": "c8227988aadac941e93b5ffef08b4add8ccbdb26404a62b3e41f61eef119b252",
+        "size": 496
+      },
+      {
+        "path": "tokenizer/tokenizer_config.json",
+        "sha256": "2edbd316072af0382bb999f82b007ad8af159d6277648e29b7747d72c3add791",
+        "size": 734
+      },
+      {
+        "path": "tokenizer/vocab.json",
+        "sha256": "fd67774a869730a6b27bf53d3e434e72054f2a825873c7af3bece183bb1f791e",
+        "size": 1109372
+      },
+      {
+        "path": "tokenizer_2/merges.txt",
+        "sha256": "0bc7695944744789d6fd6d0ab754bcbbb9e36f1c182df0a006d619ce70a1e052",
+        "size": 573514
+      },
+      {
+        "path": "tokenizer_2/special_tokens_map.json",
+        "sha256": "a83f5831a70d1d21c057186d35aaa504894103d24ee905baa99bc7e83ceb70ee",
+        "size": 484
+      },
+      {
+        "path": "tokenizer_2/tokenizer_config.json",
+        "sha256": "6e6c80bd367c7b39df2d7add74577ffd79d0840f3aa96e3b5893b95230743bcf",
+        "size": 893
+      },
+      {
+        "path": "tokenizer_2/vocab.json",
+        "sha256": "fd67774a869730a6b27bf53d3e434e72054f2a825873c7af3bece183bb1f791e",
+        "size": 1109372
+      },
+      {
+        "path": "unet/config.json",
+        "sha256": "a7f46710bde141386d8b1249b16beabb769affd8873eb9c6def581e8a110798a",
+        "size": 1850
+      },
+      {
+        "path": "unet/diffusion_pytorch_model.fp16.safetensors",
+        "sha256": "ea10386073d39ffdde9fda426745b3f5e9dcd2af204c128ece0f4ea84570ffee",
+        "size": 5135149760
+      },
+      {
+        "path": "vae/config.json",
+        "sha256": "5d301324288c14277bab2b284004b91b81faffc800202ddba59e401c82683959",
+        "size": 807
+      },
+      {
+        "path": "vae/diffusion_pytorch_model.fp16.safetensors",
+        "sha256": "6353737672c94b96174cb590f711eac6edf2fcce5b6e91aa9d73c5adc589ee48",
+        "size": 167335342
+      }
+    ]
+  },
+  "h94/IP-Adapter": {
+    "revision": "018e402774aeeddd60609b4ecdb7e298259dc729",
+    "files": [
+      {
+        "path": "models/image_encoder/config.json",
+        "sha256": "625d37b31afbf2f0792a87846b3654ee23f20568409e35b78a1f795b04e1a7a1",
+        "size": 560
+      },
+      {
+        "path": "models/image_encoder/model.safetensors",
+        "sha256": "6ca9667da1ca9e0b0f75e46bb030f7e011f44f86cbfb8d5a36590fcd7507b030",
+        "size": 2528373448
+      },
+      {
+        "path": "sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors",
+        "sha256": "3f5062b8400c94b7159665b21ba5c62acdcd7682262743d7f2aefedef00e6581",
+        "size": 847517512
+      }
+    ]
+  }
+}

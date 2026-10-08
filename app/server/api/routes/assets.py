@@ -18,17 +18,27 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
+from server.api.routes.audio import local_client
 from server.config import Settings, load_settings
 from server.db.models.asset import Asset
+from server.db.models.project import Project
+from server.db.models.scene_asset import SceneAsset
 from server.db.session import get_engine
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/assets", tags=["assets"])
+router = APIRouter(prefix="/api/assets", tags=["assets"], dependencies=[Depends(local_client)])
 
 # Allowed image extensions
 _ALLOWED_EXTENSIONS = frozenset({".jpg", ".jpeg", ".png", ".webp", ".bmp"})
 _MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+
+
+def _asset_path(settings: Settings, value: str) -> Path:
+    path = Path(value).resolve()
+    if not path.is_relative_to(settings.data_dir.resolve()):
+        raise HTTPException(status_code=409, detail="Asset file is outside managed storage")
+    return path
 
 
 # ─── Dependencies ────────────────────────────────────────────────────────────
@@ -86,6 +96,9 @@ async def upload_asset(
         name:       Human-readable name (e.g. "Nhân vật chính", "Quán cafe").
         type:       One of: character, product, location, style.
     """
+    if session.get(Project, project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
     # Validate asset type
     valid_types = {"character", "product", "location", "style"}
     if asset_type not in valid_types:
@@ -117,7 +130,7 @@ async def upload_asset(
     assets_dir.mkdir(parents=True, exist_ok=True)
 
     # Unique filename to avoid collisions
-    unique_name = f"{uuid.uuid4().hex[:12]}_{file.filename}"
+    unique_name = f"{uuid.uuid4().hex}{ext}"
     file_path = assets_dir / unique_name
     file_path.write_bytes(content)
 
@@ -184,6 +197,7 @@ async def list_assets(
 async def delete_asset(
     asset_id: int,
     session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
 ) -> dict:
     """Delete an asset by ID. Removes the file from disk and the DB record."""
     asset = session.exec(select(Asset).where(Asset.id == asset_id)).first()
@@ -192,11 +206,14 @@ async def delete_asset(
 
     # Remove file from disk
     if asset.file_path:
-        fp = Path(asset.file_path)
+        fp = _asset_path(settings, asset.file_path)
         if fp.exists():
             fp.unlink()
             logger.info(f"Asset file deleted: {fp}")
 
+    for link in session.exec(select(SceneAsset).where(SceneAsset.asset_id == asset.id)).all():
+        session.delete(link)
+    session.flush()
     session.delete(asset)
     session.commit()
 
@@ -210,6 +227,7 @@ async def delete_asset(
 async def serve_asset_file(
     asset_id: int,
     session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
 ) -> FileResponse:
     """Serve the uploaded asset image file."""
     asset = session.exec(select(Asset).where(Asset.id == asset_id)).first()
@@ -218,8 +236,8 @@ async def serve_asset_file(
     if not asset.file_path:
         raise HTTPException(status_code=404, detail="Asset has no file")
 
-    fp = Path(asset.file_path)
+    fp = _asset_path(settings, asset.file_path)
     if not fp.exists():
         raise HTTPException(status_code=404, detail="Asset file missing from disk")
 
-    return FileResponse(fp, media_type="image/png")
+    return FileResponse(fp)

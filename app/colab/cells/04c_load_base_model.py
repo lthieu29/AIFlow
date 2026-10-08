@@ -19,9 +19,10 @@ tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
 
-print(f'📥 Load base model bf16 (~3 GB)...')
+model_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported(including_emulation=False) else torch.float32
+print(f'📥 Load base model {model_dtype}...')
 model = AutoModelForCausalLM.from_pretrained(
-    BASE_MODEL, dtype=torch.bfloat16, device_map='auto',
+    BASE_MODEL, dtype=model_dtype, device_map='auto',
 )
 
 banner('✅ Base model loaded')

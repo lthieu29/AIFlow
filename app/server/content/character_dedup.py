@@ -109,6 +109,7 @@ def dedup_characters(characters: list[CharacterRef]) -> list[CharacterRef]:
                 token_to_group[token] = g
         else:
             # Merge all matching groups into the first one.
+            matching_groups.sort()
             primary = matching_groups[0]
             for other in matching_groups[1:]:
                 # Move all members of `other` into `primary`.
@@ -128,6 +129,7 @@ def dedup_characters(characters: list[CharacterRef]) -> list[CharacterRef]:
     for group in groups:
         if not group:
             continue
+        group.sort()
         # Use the first character in the group as the canonical base.
         first = characters[group[0]]
         merged_aliases: list[str] = list(first.aliases)

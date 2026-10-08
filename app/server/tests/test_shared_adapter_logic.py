@@ -110,6 +110,41 @@ class TestDedupCharacters:
         result = dedup_characters(chars)
         assert len(result) == 1
 
+    def test_bridge_preserves_first_identity_and_reference(self, tmp_path):
+        from server.content.character_dedup import CharacterRef, dedup_characters
+
+        # Force the bridge's set iteration to encounter the later group first.
+        later, bridge, earlier = list({"alias-first", "alias-last", "bridge"})
+        first_image = tmp_path / "first.png"
+        later_image = tmp_path / "later.png"
+        chars = [
+            CharacterRef(name=earlier, ref_image=first_image, description="first"),
+            CharacterRef(name="Unrelated"),
+            CharacterRef(name=later, ref_image=later_image, description="later"),
+            CharacterRef(name=bridge, aliases=[earlier, later]),
+        ]
+        result = dedup_characters(chars)
+        assert [char.name for char in result] == [earlier, "Unrelated"]
+        assert result[0].ref_image == first_image
+        assert result[0].description == "first later"
+
+    def test_bridge_reference_follows_original_order(self, tmp_path):
+        from server.content.character_dedup import CharacterRef, dedup_characters
+
+        first_image = tmp_path / "first.png"
+        later_image = tmp_path / "later.png"
+        chars = [
+            CharacterRef(name="A"),
+            CharacterRef(name="B"),
+            CharacterRef(name="C", ref_image=first_image),
+            CharacterRef(name="A again", aliases=["A"], ref_image=later_image),
+            CharacterRef(name="Bridge", aliases=["A", "B", "C"]),
+        ]
+        result = dedup_characters(chars)
+        assert len(result) == 1
+        assert result[0].name == "A"
+        assert result[0].ref_image == first_image
+
 
 class TestExtractCharacterNames:
     def test_capitalized_two_word_name(self):

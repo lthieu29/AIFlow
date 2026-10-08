@@ -1,0 +1,13 @@
+{
+  "job_id": "e1240058-6084-4d0d-ba60-2a0d7c9a61e0",
+  "request_id": "e1240058-6084-4d0d-ba60-2a0d7c9a61e0",
+  "status": "failed",
+  "input_sha256": "705a18fc72bea492c22a7e8cb89956f1a6cb1b738554f81c3963921d9e52f61d",
+  "worker_id": "291d6c14-856a-41be-ac70-b87ecb88796f",
+  "created_at": 1791195580.666369,
+  "updated_at": 1791195580.6713922,
+  "error": {
+    "code": "prompt_too_long",
+    "message": "Prompt or negative prompt exceeds the SDXL token limit; shorten it before a new request"
+  }
+}

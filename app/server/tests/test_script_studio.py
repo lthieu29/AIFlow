@@ -96,6 +96,15 @@ def test_strict_remote_schema_requires_defaulted_fields():
     assert scene["additionalProperties"] is False
 
 
+def test_vietnamese_prompt_has_no_conflicting_english_narration_schema(client):
+    brief = client.post("/api/scripts/brief", json={"request_id": rid(), "content": brief_data(language="vi")}).json()
+    outline = client.post("/api/scripts/import", json={"request_id": rid(), "parent_id": brief["id"],
+        "stage": "outline", "content": {"title": "Đồng hồ", "beats": ["Một", "Hai", "Ba"], "continuity_notes": ""}}).json()
+    prompt = client.get(f"/api/scripts/{outline['id']}/prompt/script").json()["prompt"]
+    assert "natural spoken Vietnamese" in prompt
+    assert "Spoken English only" not in prompt
+
+
 def test_silence_is_intentional_and_valid():
     data = script_data()
     data["scenes"][1]["narration"] = ""

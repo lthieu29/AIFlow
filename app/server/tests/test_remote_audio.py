@@ -324,6 +324,34 @@ def test_worker_stt_shared_queue_and_result(worker, monkeypatch):
     assert response.headers["X-Checksum-SHA256"] == hashlib.sha256(response.content).hexdigest()
 
 
+def test_worker_stt_rejects_truncated_pcm_before_enqueue(worker, monkeypatch):
+    module, client, queued = worker
+    monkeypatch.setattr(module, "STT_MODEL", object())
+    monkeypatch.setattr(module, "STT_REVISION", "stt-rev")
+    raw = wav()[:-4]
+    key = module.digest({"type": "stt", "audio_sha256": hashlib.sha256(raw).hexdigest(),
+                         "language": "en", "model_revision": "stt-rev"})
+    response = client.post("/v1/stt/jobs", data={"language": "en", "model_revision": "stt-rev"},
+                           files={"file": ("audio.wav", raw)}, headers={"Idempotency-Key": key})
+    assert response.status_code == 422
+    assert not queued and not module.ACTIVE
+
+
+def test_worker_stt_rebuilds_missing_persisted_result(worker, monkeypatch):
+    module, client, queued = worker
+    monkeypatch.setattr(module, "STT_MODEL", object())
+    monkeypatch.setattr(module, "STT_REVISION", "stt-rev")
+    raw = wav()
+    payload = {"type": "stt", "audio_sha256": hashlib.sha256(raw).hexdigest(),
+               "language": "en", "model_revision": "stt-rev"}
+    key = module.digest(payload)
+    module.save_job({"job_id": key, "input": payload, "type": "stt", "status": "succeeded"})
+    response = client.post("/v1/stt/jobs", data={"language": "en", "model_revision": "stt-rev"},
+                           files={"file": ("audio.wav", raw)}, headers={"Idempotency-Key": key})
+    assert response.status_code == 202 and response.json()["status"] == "queued"
+    assert len(queued) == 1
+
+
 @pytest.mark.parametrize("segments", [[], [{"start": 2, "end": 1, "text": "bad"}], [{"start": 0, "end": float("nan"), "text": "bad"}]])
 def test_invalid_stt_timestamps(segments):
     with pytest.raises(ValueError):

@@ -1,0 +1,19 @@
+{
+  "approved": true,
+  "reviewed_at": "2026-10-05",
+  "requirements_sha256": "c80e11e7477a838c3bb77d320acb2c64846cb434e637762545edaa2b1fe31652",
+  "python": "3.12",
+  "package_count": 51,
+  "pypi_advisories": 0,
+  "osv_advisories": 0,
+  "scope": "Official PyPI project origins, exact wheel hashes, archive paths, startup hooks and selected execution-path source review. Not a malware-free guarantee; Defender unavailable.",
+  "runtime": {
+    "torch": "2.11.0+cu128",
+    "torchvision": "0.26.0+cu128",
+    "exception": {
+      "id": "GHSA-rrmf-rvhw-rf47",
+      "scope": "torch.jit.script local malformed script memory corruption",
+      "mitigation": "No JIT/torch.compile/custom remote code/pickle weights; only verified safetensors and JSON configs"
+    }
+  }
+}

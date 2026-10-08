@@ -51,10 +51,11 @@ EVT_PREFIX = "[EVT:"
 class EventBusJobLogBridge:
     """Persist EventBus events as JobLog rows for live SSE consumption."""
 
-    def __init__(self, bus: EventBus, engine: "Engine", job_id: int) -> None:
+    def __init__(self, bus: EventBus, engine: "Engine", job_id: int, project_id: int | None = None) -> None:
         self._bus = bus
         self._engine = engine
         self._job_id = job_id
+        self._project_id = project_id
 
         self._handlers: list[tuple[str, callable]] = [
             (EVENT_SCENE_STARTED, self._on_scene_started),
@@ -83,6 +84,8 @@ class EventBusJobLogBridge:
     # ── Internal handlers ─────────────────────────────────────────────────────
 
     def _persist(self, level: str, evt_type: str, data: dict) -> None:
+        if self._project_id is not None and str(data.get("project_id", "")) != str(self._project_id):
+            return
         try:
             payload = json.dumps(data, ensure_ascii=False, default=str)
         except (TypeError, ValueError):

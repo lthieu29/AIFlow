@@ -4,6 +4,7 @@ import json
 from unittest.mock import MagicMock
 
 import pytest
+import websockets
 
 from server.flow import ws_server
 
@@ -63,3 +64,33 @@ async def test_old_socket_disconnect_does_not_clear_replacement_connection():
     await new_task
     client.clear_ws.assert_called_once()
     assert ws_server.get_callback_secret() is None
+
+
+async def test_website_origin_cannot_receive_handshake_or_replace_extension(monkeypatch):
+    original = object()
+    monkeypatch.setattr(ws_server, "_extension_ws", original)
+    monkeypatch.setattr(ws_server, "_callback_secret", "existing-fixture")
+    client = MagicMock()
+    async with websockets.serve(lambda ws: ws_server._handle_connection(ws, client), "127.0.0.1", 0) as server:
+        port = server.sockets[0].getsockname()[1]
+        async with websockets.connect(f"ws://127.0.0.1:{port}", origin="https://evil.example") as socket:
+            with pytest.raises(websockets.exceptions.ConnectionClosedError) as error:
+                await socket.recv()
+            assert error.value.rcvd.code == 1008
+    assert ws_server._extension_ws is original
+    assert ws_server.get_callback_secret() == "existing-fixture"
+    client.set_ws.assert_not_called()
+    client.clear_ws.assert_not_called()
+
+
+@pytest.mark.parametrize("origin", [None, "chrome-extension://" + "a" * 32])
+async def test_extension_and_native_origins_receive_the_handshake(origin):
+    client = MagicMock()
+    async with websockets.serve(lambda ws: ws_server._handle_connection(ws, client), "127.0.0.1", 0) as server:
+        port = server.sockets[0].getsockname()[1]
+        async with websockets.connect(f"ws://127.0.0.1:{port}", origin=origin) as socket:
+            message = json.loads(await socket.recv())
+            assert message["type"] == "callback_secret"
+            assert len(message["secret"]) == 64
+    client.set_ws.assert_called_once()
+    client.clear_ws.assert_called_once()

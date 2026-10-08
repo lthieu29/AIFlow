@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 import secrets
 from typing import TYPE_CHECKING, Optional
 
@@ -39,6 +40,19 @@ async def _handle_connection(
 ) -> None:
     """Handle a single extension WebSocket connection."""
     global _extension_ws, _callback_secret
+
+    # Browsers attach Origin automatically; ordinary websites must never receive
+    # the extension handshake or replace its connection. Native local clients
+    # without Origin remain supported.
+    request = getattr(websocket, "request", None)
+    headers = getattr(request, "headers", None) or getattr(websocket, "request_headers", None)
+    try:
+        origin = headers.get("Origin") if headers is not None else None
+    except Exception:
+        origin = "invalid"
+    if origin is not None and not re.fullmatch(r"chrome-extension://[a-p]{32}", origin):
+        await websocket.close(code=1008, reason="Extension origin required")
+        return
 
     remote = websocket.remote_address
     logger.info(f"WS: extension connected from {remote}")

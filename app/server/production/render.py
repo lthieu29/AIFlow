@@ -16,6 +16,7 @@ from server.db.models.job import Job
 from server.db.models.project import Project
 from server.db.models.scene import Scene
 from server.db.models.production import ProductionMedia, ProductionOutput
+from server.db.models.studio import StudioOperation
 from server.production.media import contained, ffmpeg, probe, sha256, srt_timestamp, validate_video_timing
 from server.text.workflow import assert_project_approved
 
@@ -75,6 +76,7 @@ def _fit_narration_tail(path: Path, source_duration: float, nominal_duration: fl
     return fit
 
 def snapshot(session: Session, project: Project, root: Path, allow_loop: bool = False) -> dict:
+    from server.image.jobs import verified_vton_origin
     if project.kind not in ("portrait", "video"):
         raise ValueError("Chọn loại dự án legacy trước khi sản xuất.")
     media = session.exec(select(ProductionMedia).where(ProductionMedia.project_id == project.id).order_by(ProductionMedia.id)).all()
@@ -92,8 +94,41 @@ def snapshot(session: Session, project: Project, root: Path, allow_loop: bool = 
     if project.kind == "portrait":
         references = [item for item in media if item.role == "reference"]
         portraits = [item for item in media if item.role == "portrait"]
-        if not references or not portraits or not portraits[-1].approved:
-            raise ValueError("Cần ảnh tham chiếu và ảnh thành phẩm đã duyệt độ giống.")
+        if not portraits or not portraits[-1].approved:
+            raise ValueError("Cần ảnh thành phẩm đã duyệt.")
+        portrait = portraits[-1]
+        origin = json.loads(portrait.review_json).get("origin", {})
+        if not isinstance(origin, dict):
+            raise ValueError("Nguồn ảnh chân dung không hợp lệ.")
+        render_metadata = origin.get("render_metadata", {})
+        if not isinstance(render_metadata, dict):
+            render_metadata = {}
+        text_mode = origin.get("generation_mode") == "text" or origin.get("kind") == "colab_text_image"
+        vton_origin = verified_vton_origin(session, portrait, root)
+        if vton_origin:
+            if "garment_fidelity" not in json.loads(portrait.review_json).get("checklist", []):
+                raise ValueError("Duyệt độ khớp màu, kiểu dáng, hình in và logo của trang phục trước khi xuất.")
+            references = [session.get(ProductionMedia, ref["id"]) for ref in vton_origin["references"]]
+            result["vton"] = {key: vton_origin[key] for key in ("person_media_id", "garment_media_id", "garment_category", "garment_photo_type", "input_references")}
+        elif text_mode:
+            operation = session.get(StudioOperation, str(origin.get("request_id", "")))
+            inputs = json.loads(operation.input_json) if operation else {}
+            checkpoint = inputs.get("_remote", {})
+            receipt = json.loads(operation.result_json) if operation else {}
+            if (origin.get("kind") != "colab_text_image" or origin.get("generation_mode") != "text"
+                    or type(origin.get("reference_count")) is not int or origin.get("reference_count") != 0
+                    or render_metadata.get("adapter_active") is not False
+                    or not operation or operation.project_id != project.id or operation.kind != "image"
+                    or operation.status != "succeeded" or inputs.get("provider") != "colab"
+                    or inputs.get("generation_mode") != "text" or inputs.get("subject_type") != "human"
+                    or inputs.get("reference_media_ids") != [] or checkpoint.get("snapshot", {}).get("references") != []
+                    or not checkpoint.get("input_sha256") or checkpoint["input_sha256"] != origin.get("input_sha256")
+                    or receipt.get("id") != portrait.id or receipt.get("sha256") != portrait.sha256):
+                raise ValueError("Ảnh không có biên nhận tạo người hư cấu không dùng ảnh tham chiếu đã được xác minh.")
+            references = []
+        elif not references:
+            raise ValueError("Cần ảnh tham chiếu cho ảnh chân dung tạo từ tham chiếu.")
+        result["generation_mode"] = "vton" if vton_origin else "text" if text_mode else "reference"
         result.update(references=[record(item) for item in references], portrait=record(portraits[-1]))
         return result
     assert_project_approved(session, project.id)
@@ -107,6 +142,9 @@ def snapshot(session: Session, project: Project, root: Path, allow_loop: bool = 
             raise ValueError(f"Cảnh {scene.order + 1} cần ảnh/clip được duyệt.")
         if json.loads(visuals[-1].review_json).get("scene_content") != {"prompt": scene.prompt, "narration": scene.narration}:
             raise ValueError(f"Nội dung cảnh {scene.order + 1} đã đổi; duyệt lại ảnh/clip cho bản hiện tại.")
+        if (verified_vton_origin(session, visuals[-1], root)
+                and "garment_fidelity" not in json.loads(visuals[-1].review_json).get("checklist", [])):
+            raise ValueError("Duyệt độ khớp trang phục trước khi xuất cảnh thử đồ.")
         visual = record(visuals[-1])
         audio = None
         duration = float(scene.duration)
@@ -182,7 +220,7 @@ def render(engine, root: Path, output_id: int) -> None:
                 data["delivery_pixels"] = {"width": picture.width, "height": picture.height}
                 data["upscaled"] = False
                 (folder / "listing-draft.txt").write_text(
-                    f"{data['title']}\nPersonalized pet portrait digital files.\n"
+                    f"{data['title']}\nDigital portrait files for a person or pet.\n"
                     f"PNG and JPEG: {picture.width} x {picture.height} pixels. No physical product.\n"
                     "Draft only: review description, licensing and shop requirements before publishing.\n", encoding="utf-8")
             else:

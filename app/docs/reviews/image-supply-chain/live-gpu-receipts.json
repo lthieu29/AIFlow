@@ -1,0 +1,454 @@
+[
+  {
+    "job_id": "fd46a6db-f3eb-4bd3-9c70-005cea0d2115",
+    "request_id": "fd46a6db-f3eb-4bd3-9c70-005cea0d2115",
+    "status": "succeeded",
+    "input_sha256": "e350ac19671b23fabf312bbf2f4905580192459fab2be43388d9d519c5df06ac",
+    "worker_id": "291d6c14-856a-41be-ac70-b87ecb88796f",
+    "created_at": 1791195147.9003546,
+    "updated_at": 1791195209.3823411,
+    "result": {
+      "mime": "image/png",
+      "sha256": "da790ee6b8b65915e056d89438b9f1b9f614e7b71b0ce9ffb24059f925da2038",
+      "width": 768,
+      "height": 1344,
+      "metadata": {
+        "engine": "diffusers-sdxl-ip-adapter-plus",
+        "base_model": "SG161222/RealVisXL_V5.0",
+        "model_revision": "ac93e0dda1f6d448cae19bbfab8c5e720a5e48bc",
+        "adapter_model": "h94/IP-Adapter",
+        "adapter_revision": "018e402774aeeddd60609b4ecdb7e298259dc729",
+        "adapter_file": "sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors",
+        "seed": 314159,
+        "steps": 30,
+        "guidance_scale": 4.5,
+        "reference_strength": 0.55,
+        "reference_sha256": [
+          "ca810c33b2be2fb5cd560da6e8fd80c75ef1bf57d04b5cd215f48bd60138c9a7"
+        ],
+        "subject_type": "pet",
+        "reference_preprocessing": "RGB-white-letterbox-224",
+        "width": 768,
+        "height": 1344,
+        "prompt": "A candid close-up photograph of this cat beside a window, soft side daylight, natural fur strands and whiskers, an ordinary home background.\nNatural brown tabby cat portrait; preserve identity.\nKeep golden green eyes, pink nose, short brown fur and distinctive forehead stripes from reference.\nnatural pet photograph",
+        "negative_prompt": "",
+        "duration_seconds": 31.318,
+        "scheduler": "DPMSolverMultistepScheduler",
+        "scheduler_config": {
+          "algorithm_type": "dpmsolver++",
+          "use_karras_sigmas": true,
+          "solver_order": 2,
+          "prediction_type": "epsilon",
+          "timestep_spacing": "leading",
+          "beta_schedule": "scaled_linear",
+          "num_train_timesteps": 1000,
+          "thresholding": false
+        },
+        "peak_vram_allocated_bytes": 10187118080,
+        "peak_vram_reserved_bytes": 11368660992,
+        "device": "Tesla T4",
+        "precision": "float16",
+        "cpu_offload": false,
+        "memory_profile": "t4-gpu-resident-vae512",
+        "vae_precision": "float32_decode",
+        "vae_tile_size": 512,
+        "versions": {
+          "torch": "2.11.0+cu128",
+          "diffusers": "0.40.0",
+          "transformers": "5.18.0",
+          "accelerate": "1.15.0",
+          "safetensors": "0.8.0",
+          "Pillow": "12.3.0"
+        },
+        "runtime_review": {
+          "python": "3.12.13",
+          "torch": "2.11.0+cu128",
+          "torchvision": "0.26.0+cu128",
+          "cuda": "12.8",
+          "gpu": "Tesla T4",
+          "torch_advisory_exception": "GHSA-rrmf-rvhw-rf47; no torch.jit/compile, pickle or remote code"
+        }
+      }
+    }
+  },
+  {
+    "job_id": "db9f39c5-e053-4c40-90aa-a16bad3131ec",
+    "request_id": "db9f39c5-e053-4c40-90aa-a16bad3131ec",
+    "status": "succeeded",
+    "input_sha256": "5e60f42c62394a5d3ed1e2d36ced969d74ad0805ba4b35b3141d3faabd2557bc",
+    "worker_id": "291d6c14-856a-41be-ac70-b87ecb88796f",
+    "created_at": 1791194774.5609326,
+    "updated_at": 1791194802.700404,
+    "result": {
+      "mime": "image/png",
+      "sha256": "12cadba00a5e00ee510a2878f6af817fa79a36e5638e5c6b9d71d76166283aff",
+      "width": 768,
+      "height": 1344,
+      "metadata": {
+        "engine": "diffusers-sdxl-ip-adapter-plus",
+        "base_model": "SG161222/RealVisXL_V5.0",
+        "model_revision": "ac93e0dda1f6d448cae19bbfab8c5e720a5e48bc",
+        "adapter_model": "h94/IP-Adapter",
+        "adapter_revision": "018e402774aeeddd60609b4ecdb7e298259dc729",
+        "adapter_file": "sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors",
+        "seed": 314159,
+        "steps": 30,
+        "guidance_scale": 5,
+        "reference_strength": 0.6,
+        "reference_sha256": [
+          "95ba1930f7e27eecd162cb53585fbc1f1eb3672d6dbc8c7cd9bebaa539979804"
+        ],
+        "subject_type": "human",
+        "reference_preprocessing": "RGB-white-letterbox-224",
+        "width": 768,
+        "height": 1344,
+        "prompt": "Natural, anatomically correct human. Preserve identity from the reference images.\nadult woman\nPreserve the face shape, short light brown hair, eyes, smile and natural skin texture from reference.\nnatural documentary photograph\n\nCandid head-and-shoulders photo in a plain cotton shirt beside a window. Soft daylight, unretouched skin, relaxed smile, ordinary room.",
+        "negative_prompt": "",
+        "duration_seconds": 27.553,
+        "scheduler": "DDIMScheduler",
+        "scheduler_config": {
+          "prediction_type": "epsilon",
+          "timestep_spacing": "leading",
+          "beta_schedule": "scaled_linear",
+          "num_train_timesteps": 1000,
+          "thresholding": false
+        },
+        "peak_vram_allocated_bytes": 10188563968,
+        "peak_vram_reserved_bytes": 11364466688,
+        "device": "Tesla T4",
+        "precision": "float16",
+        "cpu_offload": false,
+        "memory_profile": "t4-gpu-resident-vae512",
+        "vae_precision": "float32_decode",
+        "vae_tile_size": 512,
+        "versions": {
+          "torch": "2.11.0+cu128",
+          "diffusers": "0.40.0",
+          "transformers": "5.18.0",
+          "accelerate": "1.15.0",
+          "safetensors": "0.8.0",
+          "Pillow": "12.3.0"
+        },
+        "runtime_review": {
+          "python": "3.12.13",
+          "torch": "2.11.0+cu128",
+          "torchvision": "0.26.0+cu128",
+          "cuda": "12.8",
+          "gpu": "Tesla T4",
+          "torch_advisory_exception": "GHSA-rrmf-rvhw-rf47; no torch.jit/compile, pickle or remote code"
+        }
+      }
+    }
+  },
+  {
+    "job_id": "be25b15f-b999-4299-aa64-34c52ff37113",
+    "request_id": "be25b15f-b999-4299-aa64-34c52ff37113",
+    "status": "failed",
+    "input_sha256": "9b612164d45672cefe0498c6bdfcc5987b9414132d2253803a55ac87648920e3",
+    "worker_id": "291d6c14-856a-41be-ac70-b87ecb88796f",
+    "created_at": 1791193962.5161097,
+    "updated_at": 1791194721.2177927,
+    "error": {
+      "code": "interrupted",
+      "message": "Runtime restarted; submit a new request ID to retry"
+    }
+  },
+  {
+    "job_id": "f72b5f83-4a4f-4581-acbf-0d9745e066a0",
+    "request_id": "f72b5f83-4a4f-4581-acbf-0d9745e066a0",
+    "status": "succeeded",
+    "input_sha256": "51aab87926f826441269a02178d636f3541a28943707f715fde62e5450eb0146",
+    "worker_id": "291d6c14-856a-41be-ac70-b87ecb88796f",
+    "created_at": 1791195365.7919235,
+    "updated_at": 1791195399.2051544,
+    "result": {
+      "mime": "image/png",
+      "sha256": "f5f7db45d092c9cba7f8260383855c64b8a5253a8d762d311ebd542ae93544a2",
+      "width": 768,
+      "height": 1344,
+      "metadata": {
+        "engine": "diffusers-sdxl-ip-adapter-plus",
+        "base_model": "SG161222/RealVisXL_V5.0",
+        "model_revision": "ac93e0dda1f6d448cae19bbfab8c5e720a5e48bc",
+        "adapter_model": "h94/IP-Adapter",
+        "adapter_revision": "018e402774aeeddd60609b4ecdb7e298259dc729",
+        "adapter_file": "sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors",
+        "seed": 314159,
+        "steps": 30,
+        "guidance_scale": 5,
+        "reference_strength": 0.35,
+        "reference_sha256": [
+          "ca810c33b2be2fb5cd560da6e8fd80c75ef1bf57d04b5cd215f48bd60138c9a7"
+        ],
+        "subject_type": "pet",
+        "reference_preprocessing": "RGB-white-letterbox-224",
+        "width": 768,
+        "height": 1344,
+        "prompt": "Medium shot, cat centered by a window, entire head and both ears visible with empty space around them, natural daylight, unretouched fur.\nNatural brown tabby cat portrait; preserve identity.\nKeep golden green eyes, pink nose, short brown fur and distinctive forehead stripes from reference.\nnatural pet photograph",
+        "negative_prompt": "",
+        "duration_seconds": 32.788,
+        "scheduler": "DPMSolverMultistepScheduler",
+        "scheduler_config": {
+          "algorithm_type": "dpmsolver++",
+          "use_karras_sigmas": true,
+          "solver_order": 2,
+          "prediction_type": "epsilon",
+          "timestep_spacing": "leading",
+          "beta_schedule": "scaled_linear",
+          "num_train_timesteps": 1000,
+          "thresholding": false
+        },
+        "peak_vram_allocated_bytes": 10187118080,
+        "peak_vram_reserved_bytes": 11368660992,
+        "device": "Tesla T4",
+        "precision": "float16",
+        "cpu_offload": false,
+        "memory_profile": "t4-gpu-resident-vae512",
+        "vae_precision": "float32_decode",
+        "vae_tile_size": 512,
+        "versions": {
+          "torch": "2.11.0+cu128",
+          "diffusers": "0.40.0",
+          "transformers": "5.18.0",
+          "accelerate": "1.15.0",
+          "safetensors": "0.8.0",
+          "Pillow": "12.3.0"
+        },
+        "runtime_review": {
+          "python": "3.12.13",
+          "torch": "2.11.0+cu128",
+          "torchvision": "0.26.0+cu128",
+          "cuda": "12.8",
+          "gpu": "Tesla T4",
+          "torch_advisory_exception": "GHSA-rrmf-rvhw-rf47; no torch.jit/compile, pickle or remote code"
+        }
+      }
+    }
+  },
+  {
+    "job_id": "71cd7b8f-05df-4f1d-96fd-5f1db4bdf455",
+    "request_id": "71cd7b8f-05df-4f1d-96fd-5f1db4bdf455",
+    "status": "failed",
+    "input_sha256": "94053cf92ba04b5edad127302da1976a1dc03fd8ad791f628a5f5a5a3fa57a80",
+    "worker_id": "291d6c14-856a-41be-ac70-b87ecb88796f",
+    "created_at": 1791193981.3096561,
+    "updated_at": 1791194721.2201648,
+    "error": {
+      "code": "interrupted",
+      "message": "Runtime restarted; submit a new request ID to retry"
+    }
+  },
+  {
+    "job_id": "c402f129-6187-40c7-a96b-b3f3564146c0",
+    "request_id": "c402f129-6187-40c7-a96b-b3f3564146c0",
+    "status": "succeeded",
+    "input_sha256": "21cead4d3f26533d49283a8cdeabfb300c7ecc1e56699eca0944f367c85e24d9",
+    "worker_id": "291d6c14-856a-41be-ac70-b87ecb88796f",
+    "created_at": 1791195267.9633572,
+    "updated_at": 1791195302.643614,
+    "result": {
+      "mime": "image/png",
+      "sha256": "7cfaaadd70b96b19592719afcf01bac0478518e1ccc1d94cb2a592d609f2073d",
+      "width": 768,
+      "height": 1344,
+      "metadata": {
+        "engine": "diffusers-sdxl-ip-adapter-plus",
+        "base_model": "SG161222/RealVisXL_V5.0",
+        "model_revision": "ac93e0dda1f6d448cae19bbfab8c5e720a5e48bc",
+        "adapter_model": "h94/IP-Adapter",
+        "adapter_revision": "018e402774aeeddd60609b4ecdb7e298259dc729",
+        "adapter_file": "sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors",
+        "seed": 314159,
+        "steps": 30,
+        "guidance_scale": 4.5,
+        "reference_strength": 0.45,
+        "reference_sha256": [
+          "ca810c33b2be2fb5cd560da6e8fd80c75ef1bf57d04b5cd215f48bd60138c9a7"
+        ],
+        "subject_type": "pet",
+        "reference_preprocessing": "RGB-white-letterbox-224",
+        "width": 768,
+        "height": 1344,
+        "prompt": "Medium portrait of the cat by a window, both ears fully inside the frame, space above its head. Natural daylight, unretouched fur.\nNatural brown tabby cat portrait; preserve identity.\nKeep golden green eyes, pink nose, short brown fur and distinctive forehead stripes from reference.\nnatural pet photograph",
+        "negative_prompt": "",
+        "duration_seconds": 34.189,
+        "scheduler": "DPMSolverMultistepScheduler",
+        "scheduler_config": {
+          "algorithm_type": "dpmsolver++",
+          "use_karras_sigmas": true,
+          "solver_order": 2,
+          "prediction_type": "epsilon",
+          "timestep_spacing": "leading",
+          "beta_schedule": "scaled_linear",
+          "num_train_timesteps": 1000,
+          "thresholding": false
+        },
+        "peak_vram_allocated_bytes": 10187118080,
+        "peak_vram_reserved_bytes": 11368660992,
+        "device": "Tesla T4",
+        "precision": "float16",
+        "cpu_offload": false,
+        "memory_profile": "t4-gpu-resident-vae512",
+        "vae_precision": "float32_decode",
+        "vae_tile_size": 512,
+        "versions": {
+          "torch": "2.11.0+cu128",
+          "diffusers": "0.40.0",
+          "transformers": "5.18.0",
+          "accelerate": "1.15.0",
+          "safetensors": "0.8.0",
+          "Pillow": "12.3.0"
+        },
+        "runtime_review": {
+          "python": "3.12.13",
+          "torch": "2.11.0+cu128",
+          "torchvision": "0.26.0+cu128",
+          "cuda": "12.8",
+          "gpu": "Tesla T4",
+          "torch_advisory_exception": "GHSA-rrmf-rvhw-rf47; no torch.jit/compile, pickle or remote code"
+        }
+      }
+    }
+  },
+  {
+    "job_id": "39e9af88-18ba-4773-9da9-8433067d55b0",
+    "request_id": "39e9af88-18ba-4773-9da9-8433067d55b0",
+    "status": "succeeded",
+    "input_sha256": "d01ac6db547e0ade28aef74dd863e93e18b48e107d2985028ebcb8414863d029",
+    "worker_id": "291d6c14-856a-41be-ac70-b87ecb88796f",
+    "created_at": 1791194776.0526345,
+    "updated_at": 1791194830.769416,
+    "result": {
+      "mime": "image/png",
+      "sha256": "830ebc43d05d3a964b69e3022dea14b3be893f96db99b4887105596cf271ecfe",
+      "width": 768,
+      "height": 1344,
+      "metadata": {
+        "engine": "diffusers-sdxl-ip-adapter-plus",
+        "base_model": "SG161222/RealVisXL_V5.0",
+        "model_revision": "ac93e0dda1f6d448cae19bbfab8c5e720a5e48bc",
+        "adapter_model": "h94/IP-Adapter",
+        "adapter_revision": "018e402774aeeddd60609b4ecdb7e298259dc729",
+        "adapter_file": "sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors",
+        "seed": 314159,
+        "steps": 30,
+        "guidance_scale": 5,
+        "reference_strength": 0.6,
+        "reference_sha256": [
+          "ca810c33b2be2fb5cd560da6e8fd80c75ef1bf57d04b5cd215f48bd60138c9a7"
+        ],
+        "subject_type": "pet",
+        "reference_preprocessing": "RGB-white-letterbox-224",
+        "width": 768,
+        "height": 1344,
+        "prompt": "Natural, anatomically correct pet. Preserve identity from the reference images.\nbrown tabby cat\nKeep golden green eyes, pink nose, short brown fur and distinctive forehead stripes from reference.\nnatural pet photograph\n\nA candid close-up photograph of this cat beside a window, soft side daylight, natural fur strands and whiskers, an ordinary home background.",
+        "negative_prompt": "",
+        "duration_seconds": 27.58,
+        "scheduler": "DDIMScheduler",
+        "scheduler_config": {
+          "prediction_type": "epsilon",
+          "timestep_spacing": "leading",
+          "beta_schedule": "scaled_linear",
+          "num_train_timesteps": 1000,
+          "thresholding": false
+        },
+        "peak_vram_allocated_bytes": 10186860032,
+        "peak_vram_reserved_bytes": 11368660992,
+        "device": "Tesla T4",
+        "precision": "float16",
+        "cpu_offload": false,
+        "memory_profile": "t4-gpu-resident-vae512",
+        "vae_precision": "float32_decode",
+        "vae_tile_size": 512,
+        "versions": {
+          "torch": "2.11.0+cu128",
+          "diffusers": "0.40.0",
+          "transformers": "5.18.0",
+          "accelerate": "1.15.0",
+          "safetensors": "0.8.0",
+          "Pillow": "12.3.0"
+        },
+        "runtime_review": {
+          "python": "3.12.13",
+          "torch": "2.11.0+cu128",
+          "torchvision": "0.26.0+cu128",
+          "cuda": "12.8",
+          "gpu": "Tesla T4",
+          "torch_advisory_exception": "GHSA-rrmf-rvhw-rf47; no torch.jit/compile, pickle or remote code"
+        }
+      }
+    }
+  },
+  {
+    "job_id": "b44103ab-1f2a-4233-8c47-1bb2282cb5ab",
+    "request_id": "b44103ab-1f2a-4233-8c47-1bb2282cb5ab",
+    "status": "succeeded",
+    "input_sha256": "a267f56cd1582f9635b97c5a090a29a023ba5d9ec20bc436baa35f6426692ae1",
+    "worker_id": "291d6c14-856a-41be-ac70-b87ecb88796f",
+    "created_at": 1791195146.6379702,
+    "updated_at": 1791195177.5445647,
+    "result": {
+      "mime": "image/png",
+      "sha256": "56ae563d9c7ebe92db5dde5b6ee1131637fb3df253bac13cadcf79e0e5b5f291",
+      "width": 768,
+      "height": 1344,
+      "metadata": {
+        "engine": "diffusers-sdxl-ip-adapter-plus",
+        "base_model": "SG161222/RealVisXL_V5.0",
+        "model_revision": "ac93e0dda1f6d448cae19bbfab8c5e720a5e48bc",
+        "adapter_model": "h94/IP-Adapter",
+        "adapter_revision": "018e402774aeeddd60609b4ecdb7e298259dc729",
+        "adapter_file": "sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors",
+        "seed": 314159,
+        "steps": 30,
+        "guidance_scale": 4.5,
+        "reference_strength": 0.45,
+        "reference_sha256": [
+          "95ba1930f7e27eecd162cb53585fbc1f1eb3672d6dbc8c7cd9bebaa539979804"
+        ],
+        "subject_type": "human",
+        "reference_preprocessing": "RGB-white-letterbox-224",
+        "width": 768,
+        "height": 1344,
+        "prompt": "Candid head-and-shoulders photo in a plain cotton shirt beside a window. Soft daylight, unretouched skin, relaxed smile, ordinary room.\nNatural adult woman portrait; preserve identity.\nPreserve the face shape, short light brown hair, eyes, smile and natural skin texture from reference.\nnatural documentary photograph",
+        "negative_prompt": "",
+        "duration_seconds": 30.327,
+        "scheduler": "DPMSolverMultistepScheduler",
+        "scheduler_config": {
+          "algorithm_type": "dpmsolver++",
+          "use_karras_sigmas": true,
+          "solver_order": 2,
+          "prediction_type": "epsilon",
+          "timestep_spacing": "leading",
+          "beta_schedule": "scaled_linear",
+          "num_train_timesteps": 1000,
+          "thresholding": false
+        },
+        "peak_vram_allocated_bytes": 10188822016,
+        "peak_vram_reserved_bytes": 11364466688,
+        "device": "Tesla T4",
+        "precision": "float16",
+        "cpu_offload": false,
+        "memory_profile": "t4-gpu-resident-vae512",
+        "vae_precision": "float32_decode",
+        "vae_tile_size": 512,
+        "versions": {
+          "torch": "2.11.0+cu128",
+          "diffusers": "0.40.0",
+          "transformers": "5.18.0",
+          "accelerate": "1.15.0",
+          "safetensors": "0.8.0",
+          "Pillow": "12.3.0"
+        },
+        "runtime_review": {
+          "python": "3.12.13",
+          "torch": "2.11.0+cu128",
+          "torchvision": "0.26.0+cu128",
+          "cuda": "12.8",
+          "gpu": "Tesla T4",
+          "torch_advisory_exception": "GHSA-rrmf-rvhw-rf47; no torch.jit/compile, pickle or remote code"
+        }
+      }
+    }
+  }
+]

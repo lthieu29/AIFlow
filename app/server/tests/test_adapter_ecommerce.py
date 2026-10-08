@@ -16,6 +16,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from PIL import Image
 
 # Ensure the server package is importable regardless of cwd
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -284,7 +285,7 @@ class TestValidateInput:
     def test_existing_product_image_is_valid(self, tmp_path):
         adapter = self._adapter()
         img = tmp_path / "product.jpg"
-        img.write_bytes(b"JPEG")
+        Image.new("RGB", (64, 64)).save(img)
         ai = _make_input(product_image=img)
         errors = adapter.validate_input(ai)
         assert errors == []
@@ -428,7 +429,7 @@ class TestAdapt:
     @pytest.mark.asyncio
     async def test_product_image_used_as_start_image_for_hero(self, tmp_path):
         img = tmp_path / "product.jpg"
-        img.write_bytes(b"JPEG")
+        Image.new("RGB", (64, 64)).save(img)
         adapter = self._adapter()
         result = await adapter.adapt(_make_input(product_image=img))
         # hero_shot (index 0) should have start_image set
@@ -437,7 +438,7 @@ class TestAdapt:
     @pytest.mark.asyncio
     async def test_product_image_used_as_start_image_for_cta(self, tmp_path):
         img = tmp_path / "product.jpg"
-        img.write_bytes(b"JPEG")
+        Image.new("RGB", (64, 64)).save(img)
         adapter = self._adapter()
         result = await adapter.adapt(_make_input(product_image=img))
         # The final CTA clip retains the product reference image.
@@ -446,7 +447,7 @@ class TestAdapt:
     @pytest.mark.asyncio
     async def test_middle_scenes_have_no_start_image(self, tmp_path):
         img = tmp_path / "product.jpg"
-        img.write_bytes(b"JPEG")
+        Image.new("RGB", (64, 64)).save(img)
         adapter = self._adapter()
         result = await adapter.adapt(_make_input(product_image=img))
         # Continuations keep their shot identity; middle shots have no reference.
@@ -615,9 +616,9 @@ class TestProductImageToTikTokVideo:
         from server.content.adapters.ecommerce_product.adapter import EcommerceProductAdapter
         from server.content.base import SceneList
 
-        # Create a fake product image
+        # Create a valid product image
         product_img = tmp_path / "ao_thun.jpg"
-        product_img.write_bytes(b"\xff\xd8\xff\xe0JPEG")  # minimal JPEG header
+        Image.new("RGB", (64, 64)).save(product_img)
 
         adapter = EcommerceProductAdapter()
         ai = _make_input(

@@ -13,6 +13,7 @@ import re
 import subprocess
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlsplit
 
 from server.content.crawlers.base import (
     BaseDownloader,
@@ -50,8 +51,13 @@ def detect_platform(url: str) -> str:
         Platform identifier string (e.g. ``"bilibili"``, ``"youtube"``).
         Returns ``"generic"`` if no known platform is detected.
     """
+    try:
+        hostname = (urlsplit(url).hostname or "").lower().rstrip(".")
+    except ValueError:
+        return "generic"
+    domain = ".".join(hostname.split(".")[-2:])
     for pattern, platform in _PLATFORM_PATTERNS:
-        if pattern.search(url):
+        if pattern.fullmatch(domain):
             return platform
     return "generic"
 

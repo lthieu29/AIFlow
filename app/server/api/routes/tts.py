@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import shutil
 import tempfile
+import threading
 from pathlib import Path
 from typing import Optional
 
@@ -24,13 +25,15 @@ from loguru import logger
 from pydantic import BaseModel
 
 from server.audio.tts.voice_catalog import VoiceInfo
+from server.api.routes.audio import local_client
 from server.config import Settings, load_settings
 
-router = APIRouter(prefix="/api/tts", tags=["tts"])
+router = APIRouter(prefix="/api/tts", tags=["tts"], dependencies=[Depends(local_client)])
 
 # Sub-directory inside settings.data_dir for custom voice files
 _VOICE_GALLERY_SUBDIR = "voice_gallery"
 _CATALOG_FILENAME = "catalog.json"
+_CATALOG_LOCK = threading.RLock()
 
 
 # ─── Dependency ───────────────────────────────────────────────────────────────
@@ -104,10 +107,12 @@ def _save_catalog(data_dir: Path, voices: list[dict]) -> None:
     """Persist the catalog list to catalog.json."""
     path = _catalog_path(data_dir)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(
         json.dumps({"voices": voices}, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+    temporary.replace(path)
 
 
 def _find_in_catalog(voices: list[dict], voice_id: str) -> Optional[dict]:
@@ -353,7 +358,7 @@ async def upload_custom_voice(
         HTTPException 400: If the zip is invalid or missing required files.
         HTTPException 409: If a voice with the same ID already exists.
     """
-    from server.audio.tts.voice_package import extract_voice_package, validate_voice_package
+    from server.audio.tts.voice_package import MAX_PACKAGE_BYTES, extract_voice_package, validate_voice_package
 
     logger.info("[tts:routes] POST /api/tts/voices/custom — filename=%s", file.filename)
 
@@ -361,10 +366,15 @@ async def upload_custom_voice(
     suffix = Path(file.filename or "upload.zip").suffix or ".zip"
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
         tmp_path = Path(tmp.name)
-        content = await file.read()
-        tmp.write(content)
-
+    tmp_extract = None
     try:
+        size = 0
+        with tmp_path.open("wb") as upload:
+            while chunk := await file.read(1024 * 1024):
+                size += len(chunk)
+                if size > MAX_PACKAGE_BYTES:
+                    raise HTTPException(413, "Voice package ZIP exceeds 512 MiB")
+                upload.write(chunk)
         # 2. Validate zip structure
         ok, errors = validate_voice_package(tmp_path)
         if not ok:
@@ -375,33 +385,19 @@ async def upload_custom_voice(
             )
 
         # 3. Extract to storage/voice_gallery/{voice_id}/
+        gallery_base = settings.data_dir / _VOICE_GALLERY_SUBDIR
+        gallery_base.mkdir(parents=True, exist_ok=True)
+        tmp_extract = Path(tempfile.mkdtemp(prefix="__extract_", dir=gallery_base))
         try:
             manifest = extract_voice_package(
                 tmp_path,
-                # Temporary extraction dir — we'll move it after conflict check
-                settings.data_dir / _VOICE_GALLERY_SUBDIR / "__tmp_extract__",
+                tmp_extract,
             )
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
         voice_id = manifest.voice_id
-        final_dir = settings.data_dir / _VOICE_GALLERY_SUBDIR / voice_id
-        tmp_extract = settings.data_dir / _VOICE_GALLERY_SUBDIR / "__tmp_extract__"
-
-        # 4. Conflict check
-        catalog = _load_catalog(settings.data_dir)
-        if _find_in_catalog(catalog, voice_id) is not None:
-            # Clean up temp extraction
-            shutil.rmtree(tmp_extract, ignore_errors=True)
-            raise HTTPException(
-                status_code=409,
-                detail=f"Voice '{voice_id}' already exists. Delete it first or use a different voice_id.",
-            )
-
-        # Move temp extraction to final location
-        if final_dir.exists():
-            shutil.rmtree(final_dir)
-        shutil.move(str(tmp_extract), str(final_dir))
+        final_dir = gallery_base / voice_id
 
         # 5. Register in catalog
         display_name = manifest.name or voice_id
@@ -417,11 +413,19 @@ async def upload_custom_voice(
         }
         # Add demo_audio_path if demo file exists
         demo_path = final_dir / manifest.demo_file
-        if demo_path.exists():
+        if (tmp_extract / manifest.demo_file).is_file():
             new_entry["demo_audio_path"] = str(demo_path)
 
-        catalog.append(new_entry)
-        _save_catalog(settings.data_dir, catalog)
+        with _CATALOG_LOCK:
+            catalog = _load_catalog(settings.data_dir)
+            if _find_in_catalog(catalog, voice_id) is not None or final_dir.exists():
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Voice '{voice_id}' already exists. Delete it first or use a different voice_id.",
+                )
+            tmp_extract.rename(final_dir)
+            catalog.append(new_entry)
+            _save_catalog(settings.data_dir, catalog)
 
         logger.info("[tts:routes] custom voice registered: %s (%s)", voice_id, display_name)
         return CustomVoiceUploadResponse(id=voice_id, name=display_name, status="ready")
@@ -429,6 +433,8 @@ async def upload_custom_voice(
     finally:
         # Always clean up the temp upload file
         tmp_path.unlink(missing_ok=True)
+        if tmp_extract is not None and tmp_extract.exists():
+            shutil.rmtree(tmp_extract)
 
 
 @router.get("/voices/custom/{voice_id}", response_model=VoiceInfo)
@@ -477,25 +483,23 @@ def delete_custom_voice(
         HTTPException 404: If the voice is not found in the catalog.
     """
     logger.info("[tts:routes] DELETE /api/tts/voices/custom/%s", voice_id)
-    catalog = _load_catalog(settings.data_dir)
-    entry = _find_in_catalog(catalog, voice_id)
-    if entry is None:
-        raise HTTPException(status_code=404, detail=f"Custom voice '{voice_id}' not found")
-
-    # Remove from catalog
-    updated = [
-        e for e in catalog
-        if (e.get("id") or e.get("voice_id")) != voice_id
-    ]
-    _save_catalog(settings.data_dir, updated)
-
-    # Delete files from storage/voice_gallery/{voice_id}/
-    voice_dir = settings.data_dir / _VOICE_GALLERY_SUBDIR / voice_id
-    if voice_dir.exists():
-        shutil.rmtree(voice_dir)
-        logger.info("[tts:routes] deleted voice directory: %s", voice_dir)
-    else:
-        logger.warning("[tts:routes] voice directory not found (already deleted?): %s", voice_dir)
+    from server.audio.tts.voice_package import VoicePackageManifest
+    try:
+        VoicePackageManifest(voice_id=voice_id)
+    except ValueError as exc:
+        raise HTTPException(422, "Invalid voice ID") from exc
+    with _CATALOG_LOCK:
+        catalog = _load_catalog(settings.data_dir)
+        entry = _find_in_catalog(catalog, voice_id)
+        if entry is None:
+            raise HTTPException(status_code=404, detail=f"Custom voice '{voice_id}' not found")
+        voice_dir = settings.data_dir / _VOICE_GALLERY_SUBDIR / voice_id
+        if not voice_dir.resolve().is_relative_to((settings.data_dir / _VOICE_GALLERY_SUBDIR).resolve()):
+            raise HTTPException(403, "Voice directory leaves the gallery")
+        if voice_dir.exists():
+            shutil.rmtree(voice_dir)
+        updated = [e for e in catalog if (e.get("id") or e.get("voice_id")) != voice_id]
+        _save_catalog(settings.data_dir, updated)
 
     return DeleteVoiceResponse(deleted=True)
 

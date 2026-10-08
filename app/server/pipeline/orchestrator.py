@@ -41,7 +41,6 @@ from __future__ import annotations
 
 import asyncio
 import subprocess
-import time
 import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
@@ -78,6 +77,10 @@ _POLL_INTERVAL = 5
 
 # Maximum poll attempts before giving up on a single scene (120 × 5s = 10 min)
 _MAX_POLL_ATTEMPTS = 120
+
+
+class _VideoSubmissionUncertain(RuntimeError):
+    """A remote generation may exist; a local failure must not submit it again."""
 
 
 class PipelineOrchestrator:
@@ -516,7 +519,7 @@ class PipelineOrchestrator:
                     exc,
                 )
                 retry_count += 1
-                if retry_count >= MAX_RETRIES:
+                if isinstance(exc, _VideoSubmissionUncertain) or retry_count >= MAX_RETRIES:
                     self._bus.publish(
                         EVENT_SCENE_FAILED,
                         {
@@ -721,28 +724,38 @@ class PipelineOrchestrator:
                 len(ref_images),
             )
 
-        operation_name = await self._sdk.gen_video(  # type: ignore[attr-defined]
-            start_image=start_frame,
-            prompt=final_prompt,
-            project_id=flow_project_id,
-            storage_dir=storage_dir,
-            reference_images=ref_images or None,
-            aspect=getattr(self, "_aspect", "9:16"),
-            duration=float(scene.duration),
-        )
-        logger.info(
-            "PipelineOrchestrator: scene order={} submitted operation={}",
-            scene.order,
-            operation_name,
-        )
+        operation_name = None
+        try:
+            operation_name = await self._sdk.gen_video(  # type: ignore[attr-defined]
+                start_image=start_frame,
+                prompt=final_prompt,
+                project_id=flow_project_id,
+                storage_dir=storage_dir,
+                reference_images=ref_images or None,
+                aspect=getattr(self, "_aspect", "9:16"),
+                duration=float(scene.duration),
+            )
+            logger.info(
+                "PipelineOrchestrator: scene order={} submitted operation={}",
+                scene.order,
+                operation_name,
+            )
 
-        # ── Poll until done ───────────────────────────────────────────────────
-        video_path = await self._poll_until_done(
-            operation_name=operation_name,
-            project_id=flow_project_id,
-            storage_dir=storage_dir,
-        )
-        return video_path
+            return await self._poll_until_done(
+                operation_name=operation_name,
+                project_id=flow_project_id,
+                storage_dir=storage_dir,
+            )
+        except Exception as exc:
+            if operation_name is None and getattr(exc, "request_sent", None) is False:
+                raise
+            # Upload/submit transport failures can occur after Flow accepted the request.
+            # Poll and download failures also leave the original generation intact.
+            raise _VideoSubmissionUncertain(
+                f"Flow request failed ({getattr(exc, 'code', None) or type(exc).__name__}); "
+                "generation may already exist; check the selected Flow project before retrying."
+                + (f" Operation: {operation_name}" if operation_name else "")
+            ) from exc
 
     async def _poll_until_done(
         self,
@@ -806,8 +819,7 @@ class PipelineOrchestrator:
             # Download video
             out_dir = storage_dir / project_id
             out_dir.mkdir(parents=True, exist_ok=True)
-            timestamp = int(time.time())
-            out_path = out_dir / f"video_{timestamp}.mp4"
+            out_path = out_dir / f"video_{uuid.uuid4().hex}.mp4"
 
             saved_path = await download_video(signed_url, out_path)
             logger.info(

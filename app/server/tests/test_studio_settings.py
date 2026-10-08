@@ -99,6 +99,16 @@ def test_series_version_conflict_and_episode_retry_keeps_frozen_snapshot(client)
         assert len(snapshots) == 1 and json.loads(snapshots[0].snapshot_json)["bible"] == first["bible"]
 
 
+def test_series_language_override_revalidates_narration_pace(client):
+    original = series(client, language="en")
+    payload = episode_payload(original)
+    payload["content"].update(language="vi", narration_wpm=300)
+    response = client.post("/api/scripts/brief", json=payload)
+    assert response.status_code == 422, response.text
+    with Session(client.engine) as db:
+        assert db.exec(select(SeriesEpisode)).all() == []
+
+
 def test_series_episode_approval_project_and_canon_roundtrip(client):
     original = series(client)
     root = client.post("/api/scripts/brief", json=episode_payload(original)).json()
@@ -194,3 +204,40 @@ def test_image_receipt_remains_idempotent_after_disconnect(client, monkeypatch):
     assert len(calls) == 1
     with Session(client.engine) as db:
         assert len(db.exec(select(StudioOperation)).all()) == 1
+
+
+@pytest.mark.parametrize("change", ["remove", "add", "rename"])
+def test_image_archives_result_if_character_assets_change_during_generation(client, monkeypatch, change):
+    project = client.post("/api/production/portraits", json={"title": "Fixture", "species": "cat",
+        "identity": "Green eyes", "style": "watercolor"}).json()["id"]
+    assert client.post(f"/api/production/projects/{project}/media", data={"role": "reference"},
+        files={"file": ("ref.png", image_bytes(), "image/png")}).status_code == 201
+    reference = client.root / "character.png"
+    reference.write_bytes(image_bytes())
+    with Session(client.engine) as db:
+        asset = Asset(project_id=project, name="Original identity", type="character", file_path=str(reference))
+        db.add(asset)
+        db.commit()
+        aid = asset.id
+    client.put("/api/studio/connections/image", json={"key": "test-key", "model": "gemini-test-image", "billing_confirmed": True})
+    real_client = httpx.Client
+    def response(request):
+        with Session(client.engine) as db:
+            asset = db.get(Asset, aid)
+            if change == "remove":
+                db.delete(asset)
+            elif change == "rename":
+                asset.name = "Different identity"
+                db.add(asset)
+            else:
+                db.add(Asset(project_id=project, name="New character", type="character", file_path=str(reference)))
+            db.commit()
+        return httpx.Response(200, json={"candidates": [{"content": {"parts": [{"inlineData": {
+            "mimeType": "image/png", "data": base64.b64encode(image_bytes()).decode()}}]}}]})
+    monkeypatch.setattr(studio.httpx, "Client", lambda **kwargs: real_client(transport=httpx.MockTransport(response), **kwargs))
+    result = client.post(f"/api/studio/projects/{project}/generate-image", json={"request_id": rid()})
+    assert result.status_code == 200, result.text
+    assert result.json()["status"] == "needs_attention"
+    with Session(client.engine) as db:
+        visuals = db.exec(select(ProductionMedia).where(ProductionMedia.role == "archived")).all()
+        assert len(visuals) == 1 and not visuals[0].approved

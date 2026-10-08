@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -262,9 +263,8 @@ class VideoPoller:
         """Download the completed video and update the Job to success."""
         from server.flow.downloader import download_video
 
-        timestamp = int(time.time())
         out_dir = pending.storage_dir / pending.project_id
-        out_path = out_dir / f"video_{timestamp}.mp4"
+        out_path = out_dir / f"video_{uuid.uuid4().hex}.mp4"
 
         try:
             saved_path = await download_video(signed_url, out_path)

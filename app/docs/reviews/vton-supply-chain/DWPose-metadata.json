@@ -1,0 +1,108 @@
+{
+  "_id": "673c9a1ab855653f66dd0827",
+  "id": "fashn-ai/DWPose",
+  "private": false,
+  "pipeline_tag": "keypoint-detection",
+  "library_name": "onnxruntime",
+  "tags": [
+    "onnxruntime",
+    "onnx",
+    "pose-estimation",
+    "whole-body",
+    "keypoint-detection",
+    "dataset:coco",
+    "dataset:UBody",
+    "arxiv:2307.15880",
+    "license:apache-2.0",
+    "region:us"
+  ],
+  "downloads": 0,
+  "likes": 1,
+  "modelId": "fashn-ai/DWPose",
+  "author": "fashn-ai",
+  "sha": "548b5df25b84d9f4aac0611dfa1c2a7a12f15571",
+  "lastModified": "2026-01-18T19:47:46.000Z",
+  "gated": false,
+  "disabled": false,
+  "model-index": null,
+  "config": {},
+  "cardData": {
+    "license": "apache-2.0",
+    "library_name": "onnxruntime",
+    "tags": [
+      "pose-estimation",
+      "whole-body",
+      "keypoint-detection",
+      "onnx"
+    ],
+    "datasets": [
+      "coco",
+      "UBody"
+    ]
+  },
+  "siblings": [
+    {
+      "rfilename": ".gitattributes",
+      "blobId": "a6344aac8c09253b3b630fb776ae94478aa0275b",
+      "size": 1519
+    },
+    {
+      "rfilename": "README.md",
+      "blobId": "26bf349a121733f1041c6aaa93f0a069dd7e964d",
+      "size": 3035
+    },
+    {
+      "rfilename": "dw-ll_ucoco_384.onnx",
+      "blobId": "df84ce34881c5701a29e09badd8c96f5c17bd214",
+      "size": 134399116,
+      "lfs": {
+        "sha256": "724f4ff2439ed61afb86fb8a1951ec39c6220682803b4a8bd4f598cd913b1843",
+        "size": 134399116,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "yolox_l.onnx",
+      "blobId": "d6ff7914feb199e342967b877f8b2ea3179db915",
+      "size": 216746733,
+      "lfs": {
+        "sha256": "7860ae79de6c89a3c1eb72ae9a2756c0ccfbe04b7791bb5880afabd97855a411",
+        "size": 216746733,
+        "pointerSize": 134
+      }
+    }
+  ],
+  "spaces": [
+    "fashn-ai/fashn-vton-1.5",
+    "merve/fashn-vton-1.5",
+    "Nymbo/fashn-vton-1.5",
+    "hemil124/virtual-tryon",
+    "vimalvskl7/fashn-vton-1.5",
+    "hmajid2301/fashn-vton-1.5",
+    "luicalencar/fashion",
+    "GrisaKDesai/Tiyara-Backend",
+    "skrithik/fashn8-ai",
+    "Zy131/VTON",
+    "ojas111/fashn-vton-1.5",
+    "araizkhan/fyp_ai_model",
+    "tryitonvirtual/fashn-vton-1.5",
+    "lizzjin/wearimpact-tryon",
+    "weirdwolf22/fashn-vton-1.5",
+    "rv-123/ai-marketplace-vton",
+    "seenless/FashenMass",
+    "huzaifa39/thriftkro-vton-engine",
+    "muse0515/my-heart-vton-zerogpu",
+    "danishhshk/menriq-virtual-tryon",
+    "ChitraBala1989/fashion-ai-tryon",
+    "yumu908/menriq-virtual-tryon",
+    "ehsansalehi63/miniroyal-vton-free",
+    "kritika68/apex-vton",
+    "shaheernges12/fashn-vton-api-dressia",
+    "rogerph/my-fashn-vton-1.5",
+    "alyxsis/fashn-vton-1.5",
+    "amran117388/tryfit-vton",
+    "amran117388/fashn-vton-1.5"
+  ],
+  "createdAt": "2024-11-19T14:00:58.000Z",
+  "usedStorage": 351145849
+}

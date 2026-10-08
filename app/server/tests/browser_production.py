@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from playwright.sync_api import expect, sync_playwright
 from sqlmodel import Session, SQLModel, create_engine
 
-from server.api.routes import production
+from server.api.routes import production, studio
 from server.config import Settings
 from server.tests.test_production import image_bytes
 
@@ -22,10 +22,13 @@ def main():
         SQLModel.metadata.create_all(engine)
         app = FastAPI()
         app.include_router(production.router)
+        app.include_router(studio.router)
         def sessions():
             with Session(engine) as db:
                 yield db
         app.dependency_overrides[production.get_session] = sessions
+        app.dependency_overrides[studio.get_session] = sessions
+        app.dependency_overrides[studio.get_settings] = lambda: Settings(_env_file=None, data_dir=root)
         app.dependency_overrides[production.get_settings] = lambda: Settings(data_dir=root)
         with patch.object(production, "get_engine", return_value=engine), TestClient(app) as client, sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
@@ -46,7 +49,7 @@ def main():
                 route.fulfill(status=response.status_code, body=response.content, headers={"Content-Type": response.headers.get("content-type", "application/json")})
             page.route("**/api/**", handle)
             page.goto("http://127.0.0.1:5177/production")
-            for name, value in [("Tên dự án", "Browser fixture"), ("Kênh / thương hiệu (tùy chọn)", "pets"), ("Loài / giống thú cưng", "Cat"), ("Phong cách", "Watercolor"), ("Đặc điểm nhận diện phải giữ", "Green eyes")]:
+            for name, value in [("Tên dự án", "Browser fixture"), ("Kênh / thương hiệu (tùy chọn)", "pets"), ("Chủ thể / loài / giống", "Cat"), ("Phong cách", "Watercolor"), ("Đặc điểm nhận diện phải giữ", "Green eyes")]:
                 page.get_by_label(name, exact=True).fill(value)
             page.get_by_role("button", name="Tạo dự án chân dung", exact=True).click()
             expect(page.get_by_role("heading", name="Browser fixture", exact=True)).to_be_visible()

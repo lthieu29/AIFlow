@@ -1,0 +1,22 @@
+{
+  "review_date": "2026-10-05",
+  "title": "Portrait of a Woman in Urban Environment",
+  "photographer": "Andy Coffie",
+  "source_page": "https://www.pexels.com/photo/portrait-of-a-woman-in-urban-environment-29134265/",
+  "download_url": "https://images.pexels.com/photos/29134265/pexels-photo-29134265.jpeg",
+  "license": "Pexels License",
+  "license_url": "https://www.pexels.com/license/",
+  "terms_url": "https://www.pexels.com/terms-of-service/",
+  "photographed_at_reported_by_source": "2024-10-13",
+  "width": 4000,
+  "height": 6000,
+  "bytes": 1495039,
+  "sha256": "23600b992096ba0bb959699ec23674cee2fd12a02b09507191567d9bc2e1d749",
+  "local_original": "app/storage/verification/human-character-v2/reference-original.jpg",
+  "purpose": "Local reference-image quality test, not a brand spokesperson or identity owned by the user",
+  "review": "Single adult subject, visible facial texture, sharp face, simple clothing, photograph source with camera/date metadata; somewhat shaded face. Original file retained without upscaling or retouching.",
+  "rights_boundary": "Pexels permits adaptation under its terms; identifiable-person rights and endorsement restrictions remain. This is licensed stock, not a copyright-free fictional character. No model-release document was obtained.",
+  "fictional_mode_boundary": "The separate text mode uses no source photo or active IP-Adapter conditioning. Synthetic output does not carry a guarantee against copyright or likeness claims; applicable model license still applies.",
+  "model_license_source": "https://huggingface.co/SG161222/RealVisXL_V5.0/blob/ac93e0dda1f6d448cae19bbfab8c5e720a5e48bc/README.md",
+  "copyright_context_source": "https://www.copyright.gov/ai/Copyright-and-Artificial-Intelligence-Part-2-Copyrightability-Report.pdf"
+}

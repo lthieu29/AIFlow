@@ -136,11 +136,10 @@ class CapCutExporter:
         for scene in sorted_scenes:
             video_path = self._resolve_scene_video(project, scene)
             if video_path is None:
-                logger.warning(
-                    "[CapCutExporter] scene order={} has no video file — skipping",
-                    scene.order,
+                raise ValueError(
+                    f"Project {project.id}: no valid video files for scene {scene.order + 1}; "
+                    "complete every scene before exporting."
                 )
-                continue
 
             duration_us = _scene_duration_us(scene)
             mat = VideoMaterial(
@@ -270,8 +269,8 @@ class CapCutExporter:
         """
         # 1. Explicit path stored on scene
         video_path = getattr(scene, "video_path", None)
-        if video_path and os.path.exists(video_path):
-            return Path(video_path)
+        if video_path:
+            return Path(video_path) if Path(video_path).is_file() else None
 
         # 2. Look in storage/media/{project_id}/
         media_dir = Path(self._settings.data_dir) / "media" / str(project.id)

@@ -41,6 +41,7 @@ class FlowClient:
             cls._instance._pending: dict[str, asyncio.Future] = {}
             # Reference to the active WS connection (set by ws_server)
             cls._instance._ws: Optional[Any] = None
+            cls._instance._ws_loop: Optional[asyncio.AbstractEventLoop] = None
         return cls._instance
 
     # ── WS reference (set by ws_server) ──────────────────────────────────────
@@ -48,10 +49,15 @@ class FlowClient:
     def set_ws(self, ws: Any) -> None:
         """Store reference to the active WebSocket connection."""
         self._ws = ws
+        try:
+            self._ws_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            self._ws_loop = None
 
     def clear_ws(self) -> None:
         """Clear WS reference and fail all pending futures on disconnect."""
         self._ws = None
+        self._ws_loop = None
         for fut in list(self._pending.values()):
             if not fut.done():
                 fut.set_exception(ConnectionError("extension_disconnected"))
@@ -182,8 +188,14 @@ class FlowClient:
         if self._ws is None:
             return {"error": "extension_disconnected"}
 
-        req_id = str(uuid.uuid4())
         loop = asyncio.get_running_loop()
+        if self._ws_loop is not None and self._ws_loop is not loop:
+            # Sync FastAPI background tasks use asyncio.run in a worker thread.
+            # Keep both WebSocket I/O and callback futures on the socket's loop.
+            request = asyncio.run_coroutine_threadsafe(self._send(method, params, timeout), self._ws_loop)
+            return await asyncio.wrap_future(request)
+
+        req_id = str(uuid.uuid4())
         fut: asyncio.Future = loop.create_future()
         self._pending[req_id] = fut
 
@@ -202,6 +214,8 @@ class FlowClient:
             self._pending.pop(req_id, None)
             logger.warning(f"FlowClient: _send error: {exc}")
             return {"error": str(exc)}
+        finally:
+            self._pending.pop(req_id, None)
 
     async def api_request(
         self,

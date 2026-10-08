@@ -4,10 +4,10 @@ import json
 import re
 import shutil
 import uuid
-from typing import Literal
+from typing import Annotated, Literal
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, ConfigDict, Field, SecretStr
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
@@ -172,17 +172,212 @@ def image_connection(body: ImageConnection):
     return {"configured": bool(IMAGE_CONFIG["key"]) and IMAGE_CONFIG["billing_confirmed"]}
 
 class GenerateImage(BaseModel):
+    model_config = ConfigDict(allow_inf_nan=False, extra="forbid")
     request_id: uuid.UUID
     scene_id: int | None = Field(default=None, gt=0)
     prompt: str = Field(default="", max_length=10000)
+    provider: Literal["gemini", "colab"] = "gemini"
+    generation_mode: Literal["reference", "text", "vton"] = "reference"
+    subject_type: Literal["human", "pet"] = "human"
+    reference_media_ids: list[Annotated[int, Field(gt=0)]] = Field(default_factory=list, max_length=3)
+    person_media_id: int | None = Field(default=None, gt=0)
+    garment_media_id: int | None = Field(default=None, gt=0)
+    garment_category: Literal["tops", "bottoms", "one-pieces"] | None = None
+    garment_photo_type: Literal["flat-lay", "model"] | None = None
+    seed: int = Field(default=0, ge=0, le=2**32 - 1, strict=True)
+    reference_strength: float = Field(default=0.45, ge=0, le=1)
+    negative_prompt: str = Field(default="", max_length=1500)
+    steps: int = Field(default=30, ge=10, le=50, strict=True)
+    guidance_scale: float = Field(default=4.5, ge=1, le=12)
+
+    @model_validator(mode="after")
+    def validate_generation_mode(self):
+        if self.generation_mode == "text" and (self.provider != "colab" or self.subject_type != "human" or self.reference_media_ids):
+            raise ValueError("Tạo người hư cấu từ mô tả cần Colab, loại người và không chọn ảnh tham chiếu.")
+        vton_fields = (self.person_media_id, self.garment_media_id, self.garment_category, self.garment_photo_type)
+        if self.generation_mode == "vton":
+            if (self.provider != "colab" or self.subject_type != "human" or self.reference_media_ids
+                    or any(value is None for value in vton_fields) or self.person_media_id == self.garment_media_id):
+                raise ValueError("Thử đồ cần Colab, người, hai ảnh người/sản phẩm riêng và loại trang phục/ảnh sản phẩm.")
+            if self.garment_photo_type != "flat-lay":
+                raise ValueError("Bản thử đồ hiện tại hỗ trợ ảnh sản phẩm đặt phẳng; ảnh người mẫu chưa có pipeline được duyệt giấy phép.")
+            if "guidance_scale" not in self.model_fields_set:
+                self.guidance_scale = 1.5
+        elif any(value is not None for value in vton_fields):
+            raise ValueError("Ảnh người/sản phẩm và loại trang phục chỉ dành cho chế độ thử đồ.")
+        return self
+
+class ColabImageConnection(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+    url: str
+    token: SecretStr
+
+async def colab_image_credentials(request: Request):
+    raw = bytearray()
+    async for block in request.stream():
+        raw.extend(block)
+        if len(raw) > 8192:
+            raise HTTPException(413, "Cấu hình Colab ảnh vượt giới hạn.")
+    try:
+        return ColabImageConnection.model_validate(json.loads(raw))
+    except (ValueError, TypeError) as exc:
+        # Default validation errors can echo the whole body, including a session token.
+        raise HTTPException(422, "Nhập URL và token phiên Colab ảnh hợp lệ.") from exc
+
+@router.get("/connections/colab-image")
+def colab_image_connection():
+    from server.image.remote import connection
+    return connection.public()
+
+@router.put("/connections/colab-image")
+def save_colab_image_connection(body: ColabImageConnection = Depends(colab_image_credentials)):
+    from server.image.remote import connection, ImageUnavailable
+    try:
+        return connection.configure(body.url, body.token)
+    except ImageUnavailable as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+@router.post("/connections/colab-image/check")
+def check_colab_image_connection():
+    from server.image.remote import connection, ImageUnavailable
+    try:
+        return connection.check()
+    except ImageUnavailable as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+@router.get("/colab-image/worker.zip")
+def colab_image_worker_bundle():
+    from pathlib import Path
+    from fastapi.responses import Response
+    from colab.image_worker.bundle import bundle_bytes
+    base = Path(__file__).resolve().parents[3] / "colab" / "image_worker"
+    try:
+        content = bundle_bytes(base)
+    except (OSError, ValueError) as exc:
+        raise HTTPException(503, "Bộ worker ảnh chưa đủ file đã kiểm tra.") from exc
+    return Response(content, media_type="application/zip",
+                    headers={"Content-Disposition": 'attachment; filename="aiflow-image-worker.zip"'})
+
+@router.get("/colab-image/notebook")
+def colab_image_notebook():
+    import hashlib
+    from pathlib import Path
+    from fastapi.responses import Response
+    from colab.image_worker.bundle import bundle_bytes, notebook_bytes
+    root = Path(__file__).resolve().parents[3] / "colab"
+    try:
+        content = notebook_bytes(root / "serve_image_api.ipynb", hashlib.sha256(bundle_bytes(root / "image_worker")).hexdigest())
+    except (OSError, ValueError) as exc:
+        raise HTTPException(503, "Notebook Colab ảnh chưa sẵn sàng.") from exc
+    return Response(content, media_type="application/x-ipynb+json",
+                    headers={"Content-Disposition": 'attachment; filename="serve_image_api.ipynb"'})
+
+@router.get("/colab-vton/worker.zip")
+def colab_vton_worker_bundle():
+    from pathlib import Path
+    from fastapi.responses import Response
+    from colab.vton_worker.bundle import bundle_bytes
+    root = Path(__file__).resolve().parents[3] / "colab"
+    try:
+        content = bundle_bytes(root)
+    except (OSError, ValueError) as exc:
+        raise HTTPException(503, "Bộ worker thử đồ chưa đủ file đã kiểm tra.") from exc
+    return Response(content, media_type="application/zip",
+                    headers={"Content-Disposition": 'attachment; filename="aiflow-vton-worker.zip"'})
+
+@router.get("/colab-vton/notebook")
+def colab_vton_notebook():
+    import hashlib
+    from pathlib import Path
+    from fastapi.responses import Response
+    from colab.vton_worker.bundle import bundle_bytes, notebook_bytes
+    root = Path(__file__).resolve().parents[3] / "colab"
+    try:
+        content = notebook_bytes(root / "serve_vton_api.ipynb", hashlib.sha256(bundle_bytes(root)).hexdigest())
+    except (OSError, ValueError) as exc:
+        raise HTTPException(503, "Notebook Colab thử đồ chưa sẵn sàng.") from exc
+    return Response(content, media_type="application/x-ipynb+json",
+                    headers={"Content-Disposition": 'attachment; filename="serve_vton_api.ipynb"'})
+
+@router.post("/projects/{project_id}/operations/{request_id}/refresh")
+def refresh_image_operation(project_id: int, request_id: uuid.UUID,
+                            session: Session = Depends(get_session), settings=Depends(get_settings)):
+    from server.image.jobs import refresh
+    return refresh(project_id, request_id, session, settings)
+
+class PromoteReference(BaseModel):
+    media_id: int = Field(gt=0)
+
+@router.post("/projects/{project_id}/references")
+def promote_reference(project_id: int, body: PromoteReference,
+                      session: Session = Depends(get_session), settings=Depends(get_settings)):
+    from server.image.remote import reference_png
+    import hashlib
+    project = project_or_404(session, project_id)
+    source = session.get(ProductionMedia, body.media_id)
+    if project.kind not in ("portrait", "video") or project.status == "generating":
+        raise HTTPException(409, "Chọn dự án chân dung/video chưa chạy tác vụ.")
+    if not source or source.role not in ("portrait", "visual") or not source.approved or not source.mime.startswith("image/"):
+        raise HTTPException(422, "Duyệt ảnh chân dung/ảnh cảnh trước khi dùng làm tham chiếu.")
+    from server.image.jobs import verified_vton_origin
+    try:
+        origin = verified_vton_origin(session, source, settings.data_dir)
+        if origin and "garment_fidelity" not in json.loads(source.review_json).get("checklist", []):
+            raise ValueError("Duyệt độ khớp trang phục trước khi dùng ảnh thử đồ làm tham chiếu.")
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    try:
+        path = contained(settings.data_dir, source.path)
+        if path.stat().st_size > 10 * 1024**2 or sha256(path) != source.sha256:
+            raise ValueError("Changed source")
+        raw = reference_png(path.read_bytes())
+    except (OSError, ValueError) as exc:
+        raise HTTPException(409, "Ảnh nguồn đã đổi hoặc không hợp lệ; nhập lại và duyệt trước khi dùng.") from exc
+    checksum = hashlib.sha256(raw).hexdigest()
+    references = session.exec(select(ProductionMedia).where(ProductionMedia.project_id == project_id,
+        ProductionMedia.role == "reference")).all()
+    old = next((ref for ref in references if ref.sha256 == checksum), None)
+    if old:
+        return media_public(old)
+    if len(references) >= 3:
+        raise HTTPException(422, "Tối đa 3 ảnh tham chiếu; lưu trữ ảnh cũ trước khi thay.")
+    folder = settings.data_dir / "production" / "inputs" / str(project_id)
+    folder.mkdir(parents=True, exist_ok=True)
+    target = folder / f"{uuid.uuid4().hex}.png"
+    try:
+        target.write_bytes(raw)
+        width, height = image_info(target)
+        item = ProductionMedia(project_id=project_id, role="reference", path=str(target.resolve()),
+            sha256=checksum, mime="image/png", width=width, height=height,
+            review_json=json.dumps({"origin": {"kind": "approved_production_image", "media_id": source.id,
+                "source_project_id": source.project_id, "sha256": source.sha256}}))
+        for portrait in session.exec(select(ProductionMedia).where(ProductionMedia.project_id == project_id,
+                ProductionMedia.role == "portrait")).all():
+            portrait.approved = False
+            session.add(portrait)
+        session.add(item); session.commit(); session.refresh(item)
+    except Exception:
+        session.rollback()
+        target.unlink(missing_ok=True)
+        raise
+    return media_public(item)
 
 @router.post("/projects/{project_id}/generate-image")
 def generate_image(project_id: int, body: GenerateImage, session: Session = Depends(get_session), settings=Depends(get_settings)):
+    if body.provider == "colab":
+        from server.image.jobs import submit
+        from server.image.remote import ImageUnavailable
+        try:
+            return submit(project_id, body, session, settings)
+        except ImageUnavailable as exc:
+            raise HTTPException(409, str(exc)) from exc
     inputs = body.model_dump(mode="json")
     def existing_result():
         old = session.get(StudioOperation, str(body.request_id))
         if old:
-            if old.kind != "image" or old.project_id != project_id or json.loads(old.input_json) != inputs:
+            saved = json.loads(old.input_json)
+            if (old.kind != "image" or old.project_id != project_id or saved.get("provider", "gemini") != "gemini"
+                    or GenerateImage.model_validate(saved).model_dump(mode="json") != inputs):
                 raise HTTPException(409, "Request ID đã được dùng cho đầu vào khác.")
             return old
         return None
@@ -209,12 +404,15 @@ def generate_image(project_id: int, body: GenerateImage, session: Session = Depe
         raise HTTPException(422, "Nhập 1–3 ảnh tham chiếu trước khi tạo chân dung.")
     parts = []
     asset_snapshot = []
+    asset_query = select(Asset.id, Asset.name, Asset.type, Asset.file_path, Asset.ref_url).where(
+        Asset.project_id == project_id).order_by(Asset.id)
+    asset_identity_snapshot = session.exec(asset_query).all()
     for ref in references:
         path = contained(settings.data_dir, ref.path)
         if sha256(path) != ref.sha256:
             raise HTTPException(409, "Ảnh tham chiếu đã đổi.")
         parts.append({"inlineData": {"mimeType": ref.mime, "data": base64.b64encode(path.read_bytes()).decode()}})
-    for asset in session.exec(select(Asset).where(Asset.project_id == project_id)).all()[:3]:
+    for asset in session.exec(select(Asset).where(Asset.project_id == project_id).order_by(Asset.id)).all()[:3]:
         if asset.file_path:
             path = contained(settings.data_dir, asset.file_path)
             if path.stat().st_size <= 10 * 1024**2 and path.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"):
@@ -262,6 +460,7 @@ def generate_image(project_id: int, body: GenerateImage, session: Session = Depe
             ProductionMedia.role == "reference")).all() if project.kind == "portrait" else []
         stale = (project.production_brief != frozen or (scene and scene.prompt != scene_prompt)
                  or [(ref.id, ref.sha256) for ref in current_refs] != reference_snapshot
+                 or session.exec(asset_query).all() != asset_identity_snapshot
                  or any(sha256(contained(settings.data_dir, path)) != checksum for path, checksum in asset_snapshot)
                  or any(sha256(contained(settings.data_dir, ref.path)) != ref.sha256 for ref in current_refs))
         item = ProductionMedia(project_id=project_id, scene_id=body.scene_id,
@@ -283,7 +482,9 @@ def generate_image(project_id: int, body: GenerateImage, session: Session = Depe
 def operations(project_id: int, session: Session = Depends(get_session)):
     from server.production.flow_video import ACTIVE_VIDEOS
     rows = session.exec(select(StudioOperation).where(StudioOperation.project_id == project_id)).all()
-    return [{**row.model_dump(), "status": "interrupted" if row.status == "running" and row.request_id not in ACTIVE_IMAGES | ACTIVE_VIDEOS else row.status} for row in rows]
+    return [{**row.model_dump(), "status": "interrupted" if row.status == "running"
+            and json.loads(row.input_json).get("provider") != "colab"
+            and row.request_id not in ACTIVE_IMAGES | ACTIVE_VIDEOS else row.status} for row in rows]
 
 @router.post("/projects/{project_id}/collect-clips")
 def collect_clips(project_id: int, session: Session = Depends(get_session), settings=Depends(get_settings)):

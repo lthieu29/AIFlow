@@ -142,6 +142,9 @@ export default function NewProject() {
   const [title, setTitle] = useState("");
   const [adapter, setAdapter] = useState<AdapterName>("ecommerce_product");
   const [inputValue, setInputValue] = useState("");
+  const [productName, setProductName] = useState("");
+  const [productPrice, setProductPrice] = useState("");
+  const [productDescription, setProductDescription] = useState("");
   const [skillId, setSkillId] = useState("");
   const [voiceId, setVoiceId] = useState("");
   const [aspectRatio, setAspectRatio] = useState<"9:16" | "16:9" | "1:1">("9:16");
@@ -173,13 +176,6 @@ export default function NewProject() {
       s.adapter_type === adapterType ||
       (s.supported_adapters ?? []).includes(adapterType)
   );
-
-  useEffect(() => {
-    if (voices.length > 0 && !voiceId) {
-      const defaultVoice = voices.find((v) => v.id === "Binh") ?? voices[0];
-      setVoiceId(defaultVoice.id);
-    }
-  }, [voices, voiceId]);
 
   useEffect(() => {
     setInputValue("");
@@ -225,6 +221,12 @@ export default function NewProject() {
       errors.skill = "Vui lòng chọn một skill.";
     }
 
+    if (adapter === "ecommerce_product") {
+      if (!productName.trim()) errors.productName = "Bắt buộc nhập tên sản phẩm.";
+      if (!productPrice.trim()) errors.productPrice = "Bắt buộc nhập giá sản phẩm.";
+      if (!productDescription.trim()) errors.productDescription = "Bắt buộc nhập mô tả sản phẩm.";
+    }
+
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   }
@@ -233,7 +235,8 @@ export default function NewProject() {
 
   function buildAdapterInput(): Record<string, unknown> | null {
     if (adapter === "ecommerce_product") {
-      return { product_image_path: inputValue.trim() };
+      return { product_image_path: inputValue.trim(), product_name: productName.trim(),
+        price: productPrice.trim(), description: productDescription.trim() };
     }
     if (adapter === "blog_article") {
       return { url: inputValue.trim() };
@@ -338,7 +341,7 @@ export default function NewProject() {
   }));
 
   const voiceOptions: ComboOption[] = [
-    { value: "", label: "Dùng mặc định của skill" },
+    { value: "", label: "Dùng giọng mặc định" },
     ...voices.map((v) => ({
       value: v.id,
       label: v.name + (v.is_custom ? " ★" : ""),
@@ -472,6 +475,28 @@ export default function NewProject() {
           )}
           {adapter === "storyboard_manual" && <p className="text-xs text-zinc-400">Mỗi cảnh dùng order liên tiếp từ 0, prompt mô tả hình ảnh và duration tính bằng giây: tối thiểu 3 giây, không vượt giới hạn clip cấu hình (mặc định 8 giây). narration là lời dẫn tùy chọn; chia cảnh nếu lời dẫn vượt thời lượng.</p>}
         </div>
+
+        {adapter === "ecommerce_product" && (
+          <div className="space-y-4">
+            {[
+              { id: "productName", label: "Tên sản phẩm", value: productName, setValue: setProductName },
+              { id: "productPrice", label: "Giá sản phẩm", value: productPrice, setValue: setProductPrice },
+              { id: "productDescription", label: "Mô tả sản phẩm", value: productDescription, setValue: setProductDescription },
+            ].map((field) => (
+              <div key={field.id} className="space-y-2">
+                <label htmlFor={field.id} className={fieldLabel}>{field.label} <Required /></label>
+                {field.id === "productDescription" ? (
+                  <textarea id={field.id} value={field.value} onChange={(e) => field.setValue(e.target.value)}
+                    rows={3} aria-required="true" className={inputWith(Boolean(fieldErrors[field.id]))} />
+                ) : (
+                  <input id={field.id} value={field.value} onChange={(e) => field.setValue(e.target.value)}
+                    aria-required="true" className={inputWith(Boolean(fieldErrors[field.id]))} />
+                )}
+                {fieldErrors[field.id] && <p role="alert" className="text-xs text-rose-400">{fieldErrors[field.id]}</p>}
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Skill picker */}
         <div className="space-y-2">

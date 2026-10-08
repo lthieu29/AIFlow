@@ -1,0 +1,130 @@
+{
+  "upstream_revision": "7c0f10af3f91ad4048fe9729c470a13ef905d25a",
+  "files": {
+    "colab/image_worker/__init__.py": "c2023b01a495b039ad9128dc17b4d91701a2d3e9d76b837ac45be327adee9672",
+    "colab/image_worker/app.py": "19f479805ee6640a28c0a70af41119c77210c96b052750c4e396229bf4218c77",
+    "colab/image_worker/bootstrap.py": "5647e7b1983ca82b410e0cf8a00984e63871094621b62709cc9e06661132baab",
+    "colab/image_worker/models.py": "85cda43310fb8e60469d4c1d19b5018fe9b0c51b33ba6ffc0eb192854bc25ed2",
+    "colab/vton_worker/README.md": "1be65c8d64d7f66a37c3686d5fc2f3a9fef7006189e8847492527f4509b49ed4",
+    "colab/vton_worker/__init__.py": "732758e9db562bd915a4b2d58b62d490c6e533eef5e3732a409bdc353033470f",
+    "colab/vton_worker/__main__.py": "8587c309e9d2890d289b1de9915e5b07a5d9002b4763576674fd372e167c083a",
+    "colab/vton_worker/bootstrap.py": "ba8fc985d5f62cdb9b158cd6a71a8a56aff4813d1cc701f901ff36d6f4ed5c7f",
+    "colab/vton_worker/bundle.py": "e984cd7e56434209f598c62fc863091982afe4c4bfe4aba40dc030830225cc46",
+    "colab/vton_worker/engine.py": "bbcfcc39e33093ce14ab3226fd2e01452e40e18ad6ffa104766c0159e70af055",
+    "colab/vton_worker/models.py": "6559ce5c07c85e42a59ffeddba72855f5f4598390d580802fe4bd1589c58e803",
+    "colab/vton_worker/pipeline.py": "5ba8b3a0ac2b514ee6fe67187fbe69aee9598336e79a59a5a1bbbe8d6d3413eb",
+    "colab/vton_worker/schema.py": "b8000f11a1f577df86ac00bc5ffde89249d092e69e6cc0184e69e1fd68ba0387",
+    "colab/vton_worker/vendor/__init__.py": "477d55f464af21ad1b1b5585d6d431b12c302ea77e26c2e430dc98fcd4e798f2",
+    "colab/vton_worker/vendor/fashn_vton/LICENSE": "430abde5fab4be2da86ffcd6eb86892a01f94007c2e87ce4bb266fafbaa6f5ea",
+    "colab/vton_worker/vendor/fashn_vton/NOTICE": "4b7211a40419aa442b40180f3d44814a70ad3be4d168560e59430d4743a1f3fc",
+    "colab/vton_worker/vendor/fashn_vton/__init__.py": "6adce2848c5026bb88d5340329978e5287fce73411e923e80e01139a35e16943",
+    "colab/vton_worker/vendor/fashn_vton/dwpose/__init__.py": "8f3f76ce5c6d5b3792bd373696aad8d1b6559b8d0a9c0091bcb4d049fcd3ef40",
+    "colab/vton_worker/vendor/fashn_vton/dwpose/dwpose.py": "bf9b040a8c63f595791fefcbff8377d9be26e94451dc768e1f298cabe6e43c95",
+    "colab/vton_worker/vendor/fashn_vton/dwpose/onnxdet.py": "0caa04ef1c80a951219c720727dcac5b9c013a2df3e70b4eb90359910a30e92f",
+    "colab/vton_worker/vendor/fashn_vton/dwpose/onnxpose.py": "1ba2cb45fe1027a885a47c7860b461f073478e82a25beafe3f248e73eb9ec175",
+    "colab/vton_worker/vendor/fashn_vton/dwpose/utils.py": "27ffa4e3487dce17283d287e05f31519095d35486d207f5869111aba025aee1d",
+    "colab/vton_worker/vendor/fashn_vton/dwpose/wholebody.py": "650bc6337f1ddfda759ce2d204e9a664a38f8809070c5cb256a96fa810da3980",
+    "colab/vton_worker/vendor/fashn_vton/preprocessing/__init__.py": "64d9ce40a4ca5cdf070292e22aa0a91bd443b8b5c8c06a612cc6e3bd6ba48cb4",
+    "colab/vton_worker/vendor/fashn_vton/preprocessing/transforms.py": "fa8ae13311bb11d0957696f3c8e6e2fef2ce2ae8710abbea27560474a388a9f6",
+    "colab/vton_worker/vendor/fashn_vton/tryon_mmdit.py": "a8b491192a73a58725348bca3a910d77108bad7f4b330da9f4251f5bc02e9cd9",
+    "colab/vton_worker/vendor/fashn_vton/utils/__init__.py": "8c86bf2273b99b9a37b8b2e6501b8c2ee81a46e34488e16de057b445c839e602",
+    "colab/vton_worker/vendor/fashn_vton/utils/checkpoint.py": "67cb0d23b96b6f418e0841fed78dc5aeeaa0475452c4c5a15bed8d1a55d640b4",
+    "colab/vton_worker/vendor/fashn_vton/utils/common.py": "7b086724af95e3bf8fa6cb985ffba735d4a3c45b4f65a67931a24a2773db2369",
+    "colab/vton_worker/vendor/fashn_vton/utils/keypoints.py": "f81a392de54d05b6fa094a439e97d7126c8d1bc8b4280b2d6ffd004712783db1",
+    "colab/vton_worker/vendor/fashn_vton/utils/logger.py": "2097412c961ffa8c5dd062ee75361cc30cc87cb229c24b8dc7e18159e8795cfa",
+    "colab/vton_worker/vendor/fashn_vton/utils/sampling.py": "106d93eb07880368b0b01f47bbbee9be089ece8309a3a5b676025d42e3492d8d",
+    "colab/vton_worker/vendor/fashn_vton/utils/tensor.py": "bd4bd36fecede63156789215dd7c3abc01ce4507359f789d982a8e20f99bd05d"
+  },
+  "upstream_files": {
+    "tryon_mmdit.py": {
+      "upstream_sha256": "a8b491192a73a58725348bca3a910d77108bad7f4b330da9f4251f5bc02e9cd9",
+      "vendored_sha256": "a8b491192a73a58725348bca3a910d77108bad7f4b330da9f4251f5bc02e9cd9",
+      "modified": false
+    },
+    "__init__.py": {
+      "upstream_sha256": "75131057d8cce7023bdd321093036bcd3c4b885b9050d90b72973c6079d5f92a",
+      "vendored_sha256": "6adce2848c5026bb88d5340329978e5287fce73411e923e80e01139a35e16943",
+      "modified": true
+    },
+    "dwpose/dwpose.py": {
+      "upstream_sha256": "756217b7094f7316e643274b63976c5735b1edebd11df62624be1e4594c4f335",
+      "vendored_sha256": "bf9b040a8c63f595791fefcbff8377d9be26e94451dc768e1f298cabe6e43c95",
+      "modified": true
+    },
+    "dwpose/onnxdet.py": {
+      "upstream_sha256": "0caa04ef1c80a951219c720727dcac5b9c013a2df3e70b4eb90359910a30e92f",
+      "vendored_sha256": "0caa04ef1c80a951219c720727dcac5b9c013a2df3e70b4eb90359910a30e92f",
+      "modified": false
+    },
+    "dwpose/onnxpose.py": {
+      "upstream_sha256": "1ba2cb45fe1027a885a47c7860b461f073478e82a25beafe3f248e73eb9ec175",
+      "vendored_sha256": "1ba2cb45fe1027a885a47c7860b461f073478e82a25beafe3f248e73eb9ec175",
+      "modified": false
+    },
+    "dwpose/utils.py": {
+      "upstream_sha256": "c2d473508a32fe50550e480561723263f870e78c8626fa8c91f356cb1d8b3375",
+      "vendored_sha256": "27ffa4e3487dce17283d287e05f31519095d35486d207f5869111aba025aee1d",
+      "modified": true
+    },
+    "dwpose/wholebody.py": {
+      "upstream_sha256": "650bc6337f1ddfda759ce2d204e9a664a38f8809070c5cb256a96fa810da3980",
+      "vendored_sha256": "650bc6337f1ddfda759ce2d204e9a664a38f8809070c5cb256a96fa810da3980",
+      "modified": false
+    },
+    "dwpose/__init__.py": {
+      "upstream_sha256": "8f3f76ce5c6d5b3792bd373696aad8d1b6559b8d0a9c0091bcb4d049fcd3ef40",
+      "vendored_sha256": "8f3f76ce5c6d5b3792bd373696aad8d1b6559b8d0a9c0091bcb4d049fcd3ef40",
+      "modified": false
+    },
+    "preprocessing/transforms.py": {
+      "upstream_sha256": "fa8ae13311bb11d0957696f3c8e6e2fef2ce2ae8710abbea27560474a388a9f6",
+      "vendored_sha256": "fa8ae13311bb11d0957696f3c8e6e2fef2ce2ae8710abbea27560474a388a9f6",
+      "modified": false
+    },
+    "preprocessing/__init__.py": {
+      "upstream_sha256": "69afe274f242f6b6b336c1c80141c0a1048ebb4ad427cfad2bd50a514507ae95",
+      "vendored_sha256": "64d9ce40a4ca5cdf070292e22aa0a91bd443b8b5c8c06a612cc6e3bd6ba48cb4",
+      "modified": true
+    },
+    "utils/checkpoint.py": {
+      "upstream_sha256": "9a0666d183cb216dc40edf4d2b20ebabcab9d59d94b78ccb348d3c8ff72dec7b",
+      "vendored_sha256": "67cb0d23b96b6f418e0841fed78dc5aeeaa0475452c4c5a15bed8d1a55d640b4",
+      "modified": true
+    },
+    "utils/common.py": {
+      "upstream_sha256": "7b086724af95e3bf8fa6cb985ffba735d4a3c45b4f65a67931a24a2773db2369",
+      "vendored_sha256": "7b086724af95e3bf8fa6cb985ffba735d4a3c45b4f65a67931a24a2773db2369",
+      "modified": false
+    },
+    "utils/keypoints.py": {
+      "upstream_sha256": "f81a392de54d05b6fa094a439e97d7126c8d1bc8b4280b2d6ffd004712783db1",
+      "vendored_sha256": "f81a392de54d05b6fa094a439e97d7126c8d1bc8b4280b2d6ffd004712783db1",
+      "modified": false
+    },
+    "utils/logger.py": {
+      "upstream_sha256": "2097412c961ffa8c5dd062ee75361cc30cc87cb229c24b8dc7e18159e8795cfa",
+      "vendored_sha256": "2097412c961ffa8c5dd062ee75361cc30cc87cb229c24b8dc7e18159e8795cfa",
+      "modified": false
+    },
+    "utils/sampling.py": {
+      "upstream_sha256": "106d93eb07880368b0b01f47bbbee9be089ece8309a3a5b676025d42e3492d8d",
+      "vendored_sha256": "106d93eb07880368b0b01f47bbbee9be089ece8309a3a5b676025d42e3492d8d",
+      "modified": false
+    },
+    "utils/tensor.py": {
+      "upstream_sha256": "bd4bd36fecede63156789215dd7c3abc01ce4507359f789d982a8e20f99bd05d",
+      "vendored_sha256": "bd4bd36fecede63156789215dd7c3abc01ce4507359f789d982a8e20f99bd05d",
+      "modified": false
+    },
+    "utils/__init__.py": {
+      "upstream_sha256": "8c86bf2273b99b9a37b8b2e6501b8c2ee81a46e34488e16de057b445c839e602",
+      "vendored_sha256": "8c86bf2273b99b9a37b8b2e6501b8c2ee81a46e34488e16de057b445c839e602",
+      "modified": false
+    }
+  },
+  "grayscale_ast_sha256": {
+    "draw_bodypose_gray": "bf0056763622a8d83324c31b7b530a0bab15ac439ffde1289122d2713fdcc085",
+    "draw_handpose_gray": "136d973ef755e56677bec14e1a14d7ed8a8a491fb07820f90bcd22c26c35c318",
+    "draw_facepose_gray": "543a17e6c7d2daecd197c408fa04b0118272eb0cfd88a520c2782445ddf20214"
+  }
+}

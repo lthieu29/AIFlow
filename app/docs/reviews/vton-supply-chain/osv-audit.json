@@ -1,0 +1,456 @@
+{
+  "queries": [
+    {
+      "package": {
+        "name": "diffusers",
+        "ecosystem": "PyPI"
+      },
+      "version": "0.40.0"
+    },
+    {
+      "package": {
+        "name": "huggingface_hub",
+        "ecosystem": "PyPI"
+      },
+      "version": "1.33.0"
+    },
+    {
+      "package": {
+        "name": "transformers",
+        "ecosystem": "PyPI"
+      },
+      "version": "5.18.0"
+    },
+    {
+      "package": {
+        "name": "accelerate",
+        "ecosystem": "PyPI"
+      },
+      "version": "1.15.0"
+    },
+    {
+      "package": {
+        "name": "safetensors",
+        "ecosystem": "PyPI"
+      },
+      "version": "0.8.0"
+    },
+    {
+      "package": {
+        "name": "fastapi",
+        "ecosystem": "PyPI"
+      },
+      "version": "0.142.2"
+    },
+    {
+      "package": {
+        "name": "uvicorn",
+        "ecosystem": "PyPI"
+      },
+      "version": "0.54.0"
+    },
+    {
+      "package": {
+        "name": "pydantic",
+        "ecosystem": "PyPI"
+      },
+      "version": "2.13.5"
+    },
+    {
+      "package": {
+        "name": "pillow",
+        "ecosystem": "PyPI"
+      },
+      "version": "12.3.0"
+    },
+    {
+      "package": {
+        "name": "pydantic_core",
+        "ecosystem": "PyPI"
+      },
+      "version": "2.46.5"
+    },
+    {
+      "package": {
+        "name": "click",
+        "ecosystem": "PyPI"
+      },
+      "version": "8.5.0"
+    },
+    {
+      "package": {
+        "name": "hf-xet",
+        "ecosystem": "PyPI"
+      },
+      "version": "1.6.0"
+    },
+    {
+      "package": {
+        "name": "httpx",
+        "ecosystem": "PyPI"
+      },
+      "version": "0.28.1"
+    },
+    {
+      "package": {
+        "name": "httpcore",
+        "ecosystem": "PyPI"
+      },
+      "version": "1.0.9"
+    },
+    {
+      "package": {
+        "name": "tokenizers",
+        "ecosystem": "PyPI"
+      },
+      "version": "0.23.2"
+    },
+    {
+      "package": {
+        "name": "annotated-doc",
+        "ecosystem": "PyPI"
+      },
+      "version": "0.0.5"
+    },
+    {
+      "package": {
+        "name": "annotated-types",
+        "ecosystem": "PyPI"
+      },
+      "version": "0.8.0"
+    },
+    {
+      "package": {
+        "name": "filelock",
+        "ecosystem": "PyPI"
+      },
+      "version": "4.0.11"
+    },
+    {
+      "package": {
+        "name": "fsspec",
+        "ecosystem": "PyPI"
+      },
+      "version": "2026.9.0"
+    },
+    {
+      "package": {
+        "name": "h11",
+        "ecosystem": "PyPI"
+      },
+      "version": "0.16.0"
+    },
+    {
+      "package": {
+        "name": "numpy",
+        "ecosystem": "PyPI"
+      },
+      "version": "2.5.3"
+    },
+    {
+      "package": {
+        "name": "opentelemetry-api",
+        "ecosystem": "PyPI"
+      },
+      "version": "1.45.0"
+    },
+    {
+      "package": {
+        "name": "packaging",
+        "ecosystem": "PyPI"
+      },
+      "version": "26.3"
+    },
+    {
+      "package": {
+        "name": "PyYAML",
+        "ecosystem": "PyPI"
+      },
+      "version": "6.0.3"
+    },
+    {
+      "package": {
+        "name": "regex",
+        "ecosystem": "PyPI"
+      },
+      "version": "2026.9.29"
+    },
+    {
+      "package": {
+        "name": "starlette",
+        "ecosystem": "PyPI"
+      },
+      "version": "1.7.0"
+    },
+    {
+      "package": {
+        "name": "anyio",
+        "ecosystem": "PyPI"
+      },
+      "version": "4.15.1"
+    },
+    {
+      "package": {
+        "name": "idna",
+        "ecosystem": "PyPI"
+      },
+      "version": "3.20"
+    },
+    {
+      "package": {
+        "name": "networkx",
+        "ecosystem": "PyPI"
+      },
+      "version": "3.7"
+    },
+    {
+      "package": {
+        "name": "setuptools",
+        "ecosystem": "PyPI"
+      },
+      "version": "84.0.0"
+    },
+    {
+      "package": {
+        "name": "sympy",
+        "ecosystem": "PyPI"
+      },
+      "version": "1.14.0"
+    },
+    {
+      "package": {
+        "name": "mpmath",
+        "ecosystem": "PyPI"
+      },
+      "version": "1.3.0"
+    },
+    {
+      "package": {
+        "name": "tqdm",
+        "ecosystem": "PyPI"
+      },
+      "version": "4.70.1"
+    },
+    {
+      "package": {
+        "name": "typing_extensions",
+        "ecosystem": "PyPI"
+      },
+      "version": "4.16.0"
+    },
+    {
+      "package": {
+        "name": "typing-inspection",
+        "ecosystem": "PyPI"
+      },
+      "version": "0.4.4"
+    },
+    {
+      "package": {
+        "name": "certifi",
+        "ecosystem": "PyPI"
+      },
+      "version": "2026.7.22"
+    },
+    {
+      "package": {
+        "name": "colorama",
+        "ecosystem": "PyPI"
+      },
+      "version": "0.4.6"
+    },
+    {
+      "package": {
+        "name": "importlib_metadata",
+        "ecosystem": "PyPI"
+      },
+      "version": "9.0.1"
+    },
+    {
+      "package": {
+        "name": "zipp",
+        "ecosystem": "PyPI"
+      },
+      "version": "4.1.1"
+    },
+    {
+      "package": {
+        "name": "Jinja2",
+        "ecosystem": "PyPI"
+      },
+      "version": "3.1.6"
+    },
+    {
+      "package": {
+        "name": "MarkupSafe",
+        "ecosystem": "PyPI"
+      },
+      "version": "3.0.4"
+    },
+    {
+      "package": {
+        "name": "psutil",
+        "ecosystem": "PyPI"
+      },
+      "version": "7.2.2"
+    },
+    {
+      "package": {
+        "name": "requests",
+        "ecosystem": "PyPI"
+      },
+      "version": "2.34.2"
+    },
+    {
+      "package": {
+        "name": "charset-normalizer",
+        "ecosystem": "PyPI"
+      },
+      "version": "3.5.2"
+    },
+    {
+      "package": {
+        "name": "urllib3",
+        "ecosystem": "PyPI"
+      },
+      "version": "2.8.0"
+    },
+    {
+      "package": {
+        "name": "typer",
+        "ecosystem": "PyPI"
+      },
+      "version": "0.27.2"
+    },
+    {
+      "package": {
+        "name": "rich",
+        "ecosystem": "PyPI"
+      },
+      "version": "15.0.0"
+    },
+    {
+      "package": {
+        "name": "Pygments",
+        "ecosystem": "PyPI"
+      },
+      "version": "2.21.0"
+    },
+    {
+      "package": {
+        "name": "markdown-it-py",
+        "ecosystem": "PyPI"
+      },
+      "version": "4.2.0"
+    },
+    {
+      "package": {
+        "name": "mdurl",
+        "ecosystem": "PyPI"
+      },
+      "version": "0.1.2"
+    },
+    {
+      "package": {
+        "name": "shellingham",
+        "ecosystem": "PyPI"
+      },
+      "version": "1.5.4"
+    },
+    {
+      "package": {
+        "name": "einops",
+        "ecosystem": "PyPI"
+      },
+      "version": "0.8.2"
+    },
+    {
+      "package": {
+        "name": "opencv-python-headless",
+        "ecosystem": "PyPI"
+      },
+      "version": "5.0.0.93"
+    },
+    {
+      "package": {
+        "name": "onnxruntime",
+        "ecosystem": "PyPI"
+      },
+      "version": "1.30.0"
+    },
+    {
+      "package": {
+        "name": "protobuf",
+        "ecosystem": "PyPI"
+      },
+      "version": "7.36.2"
+    },
+    {
+      "package": {
+        "name": "flatbuffers",
+        "ecosystem": "PyPI"
+      },
+      "version": "25.12.19"
+    }
+  ],
+  "result": {
+    "results": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ]
+  }
+}

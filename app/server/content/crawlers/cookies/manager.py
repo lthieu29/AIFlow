@@ -130,6 +130,8 @@ def _parse_netscape_file(file_path: Path) -> list[dict]:
 
     for line in text.splitlines():
         line = line.strip()
+        if line.startswith("#HttpOnly_"):
+            line = line[len("#HttpOnly_"):]
         if not line or line.startswith("#"):
             continue
         parts = line.split("\t")

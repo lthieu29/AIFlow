@@ -154,6 +154,10 @@ async def main() -> None:
     print()
 
     flow_client = FlowClient()
+    if not flow_client.is_connected():
+        print("[UNSUPPORTED] This standalone legacy script cannot access the server's browser bridge. "
+              "Use the Production UI at /production; no generation was submitted.")
+        sys.exit(1)
     sdk = FlowSDK(client=flow_client)
 
     # ── Step 1: Wait for extension ────────────────────────────────────────────

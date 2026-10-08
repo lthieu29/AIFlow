@@ -13,7 +13,7 @@ import asyncio
 import json
 from typing import Any
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from loguru import logger
 
 router = APIRouter(tags=["websocket"])
@@ -57,6 +57,11 @@ async def ws_project_events(
         websocket: The WebSocket connection.
         project_id: The project short_id or integer id to subscribe to.
     """
+    try:
+        resolved_project_id = await asyncio.to_thread(_resolve_project_id, project_id)
+    except HTTPException:
+        await websocket.close(code=1008)
+        return
     await websocket.accept()
     logger.info("[ws] client connected for project_id=%s", project_id)
 
@@ -69,17 +74,20 @@ async def ws_project_events(
 
     # Queue for thread-safe event delivery from EventBus callbacks
     queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
+    loop = asyncio.get_running_loop()
+    active = True
 
-    def _on_event(data: dict) -> None:
+    def _enqueue(data: dict) -> None:
+        if active:
+            queue.put_nowait(data)
+
+    def _on_event(event_type: str, data: dict) -> None:
         """EventBus callback — enqueue event for async delivery."""
         # Only forward events for this project (if project_id is in data)
         event_project = str(data.get("project_id", ""))
-        if event_project and event_project != str(project_id):
+        if event_project != str(resolved_project_id):
             return
-        try:
-            queue.put_nowait(data)
-        except asyncio.QueueFull:
-            logger.warning("[ws] event queue full for project_id=%s — dropping event", project_id)
+        loop.call_soon_threadsafe(_enqueue, {**data, "_event_type": event_type})
 
     # Subscribe to all known event types
     _EVENT_TYPES = [
@@ -91,9 +99,11 @@ async def ws_project_events(
         "gate_status_changed",
     ]
 
+    handlers = {event_type: (lambda data, event_type=event_type: _on_event(event_type, data))
+                for event_type in _EVENT_TYPES}
     if event_bus is not None:
         for event_type in _EVENT_TYPES:
-            event_bus.subscribe(event_type, _on_event)
+            event_bus.subscribe(event_type, handlers[event_type])
         logger.debug("[ws] subscribed to %d event types for project_id=%s", len(_EVENT_TYPES), project_id)
 
     try:
@@ -117,6 +127,7 @@ async def ws_project_events(
 
                 for task in pending:
                     task.cancel()
+                await asyncio.gather(*pending, return_exceptions=True)
 
                 for task in done:
                     result = task.result()
@@ -150,14 +161,24 @@ async def ws_project_events(
     except Exception as exc:
         logger.error("[ws] error for project_id=%s: %s", project_id, exc)
     finally:
+        active = False
         # Unsubscribe from all event types
         if event_bus is not None:
             for event_type in _EVENT_TYPES:
-                event_bus.unsubscribe(event_type, _on_event)
+                event_bus.unsubscribe(event_type, handlers[event_type])
             logger.debug("[ws] unsubscribed from event bus for project_id=%s", project_id)
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
+
+
+def _resolve_project_id(project_id: str) -> int:
+    from sqlmodel import Session
+    from server.api.routes.projects import _find_project, get_settings
+    from server.db.session import get_engine
+
+    with Session(get_engine(get_settings())) as session:
+        return _find_project(session, project_id).id
 
 
 async def _heartbeat(websocket: WebSocket) -> None:

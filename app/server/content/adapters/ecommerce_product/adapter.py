@@ -193,10 +193,18 @@ class EcommerceProductAdapter:
         if product_image is not None:
             if not isinstance(product_image, Path):
                 errors.append("assets['product_image'] must be a Path object")
-            elif not product_image.exists():
+            elif not product_image.is_file():
                 errors.append(
                     f"assets['product_image'] path does not exist: {product_image}"
                 )
+            else:
+                from PIL import Image
+
+                try:
+                    with Image.open(product_image) as image:
+                        image.verify()
+                except (OSError, ValueError):
+                    errors.append("assets['product_image'] must be a readable image")
 
         return errors
 

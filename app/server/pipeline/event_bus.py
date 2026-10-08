@@ -143,3 +143,11 @@ class EventBus:
     def subscriber_count(self, event_type: str) -> int:
         """Return the number of subscribers for an event type (useful in tests)."""
         return len(self._subscribers.get(event_type, []))
+
+
+_shared_bus = EventBus()
+
+
+def get_event_bus() -> EventBus:
+    """Process-wide pipeline bus shared by workers and UI subscriptions."""
+    return _shared_bus

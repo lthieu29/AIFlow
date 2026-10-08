@@ -47,6 +47,36 @@ class TestStyleLock:
         assert lock is not None
         assert lock.prefix  # non-empty prefix
 
+    def test_shipped_style_reaches_generation_prompt(self):
+        from server.api.routes.projects import _resolve_style_json
+        from server.ai.prompts.style_lock import StyleLock
+
+        style_json = _resolve_style_json("ecommerce-fashion")
+        style = json.loads(style_json)
+        lock = StyleLock.load(style_json)
+        assert lock.data.camera == style["camera_rules"]
+        assert lock.data.post_processing == style["post"]
+        final_prompt = lock.inject("A model holds a cotton shirt.")
+        assert style["post"].lower() in final_prompt.lower()
+        assert style["camera_rules"].lower() in final_prompt.lower()
+        for restriction in style["negative_prompts"]:
+            assert restriction in final_prompt
+
+    def test_aliases_preserve_explicit_fields_and_input(self):
+        from server.ai.prompts.style_lock import StyleData
+
+        values = {"camera": "explicit camera", "camera_rules": "skill camera",
+                  "post_processing": "explicit post", "post": "skill post",
+                  "negative_prompt": "explicit negative", "negative_prompts": ["skill negative"],
+                  "art_style": "editorial", "color_palette": ["navy", "cream"]}
+        original = dict(values)
+        data = StyleData.model_validate(values)
+        assert data.camera == "explicit camera"
+        assert data.post_processing == "explicit post"
+        assert data.negative_prompt == "explicit negative"
+        assert data.color_palette == "navy, cream"
+        assert values == original
+
     def test_inject_prepends_prefix(self):
         from server.ai.prompts.style_lock import StyleLock
         lock = StyleLock.load(self._make_style_json())

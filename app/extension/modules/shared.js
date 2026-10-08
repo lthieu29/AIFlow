@@ -156,7 +156,7 @@ export function sendWs(state, msg) {
 }
 
 export async function postCallback(state, payload) {
-  const response = await fetch(CALLBACK_URL, {
+  const response = await fetch(dynamicConfig?.callback_url || CALLBACK_URL, {
     method:  'POST',
     headers: {
       'Content-Type':      'application/json',

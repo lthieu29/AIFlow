@@ -27,6 +27,8 @@ Phase 5.1 — Task 5.1
 from __future__ import annotations
 
 import json
+import re
+import shutil
 import zipfile
 from pathlib import Path
 from typing import Literal, Optional
@@ -80,9 +82,17 @@ class VoicePackageManifest(BaseModel):
     @field_validator("voice_id")
     @classmethod
     def _validate_voice_id(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("voice_id must not be empty")
-        return v.strip()
+        v = v.strip()
+        if not re.fullmatch(r"[a-zA-Z0-9_-]{1,100}", v) or not _safe_component(v):
+            raise ValueError("voice_id must be a safe directory name (letters, digits, hyphens or underscores)")
+        return v
+
+    @field_validator("demo_file")
+    @classmethod
+    def _validate_demo_file(cls, v: str) -> str:
+        if not _safe_component(v):
+            raise ValueError("demo_file must be a safe filename")
+        return v
 
     @field_validator("language")
     @classmethod
@@ -96,6 +106,15 @@ class VoicePackageManifest(BaseModel):
 # ─── Required zip members ─────────────────────────────────────────────────────
 
 _REQUIRED_FILES = {"metadata.json", "voices.json"}
+MAX_PACKAGE_BYTES = 512 * 1024**2
+MAX_EXTRACTED_BYTES = 1024**3
+
+
+def _safe_component(value: str) -> bool:
+    # ZIP packages can be uploaded on either Windows or Linux.
+    return (bool(value) and value not in (".", "..") and not value.endswith((".", " "))
+            and not re.search(r'[\\/<>:"|?*\x00-\x1f\x7f]', value)
+            and not re.fullmatch(r"(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?", value, re.I))
 
 
 # ─── validate_voice_package ───────────────────────────────────────────────────
@@ -129,20 +148,19 @@ def validate_voice_package(zip_path: Path) -> tuple[bool, list[str]]:
 
     try:
         with zipfile.ZipFile(zip_path, "r") as zf:
+            infos = zf.infolist()
+            if sum(info.file_size for info in infos) > MAX_EXTRACTED_BYTES:
+                return False, ["Voice package exceeds the extracted size limit"]
+            for info in infos:
+                if any(not _safe_component(part) for part in info.filename.rstrip("/").split("/")):
+                    return False, [f"Unsafe path in voice package: {info.filename!r}"]
+                if (info.external_attr >> 16) & 0o170000 == 0o120000:
+                    return False, ["Symbolic links are not allowed in voice packages"]
             names_in_zip = set(zf.namelist())
-
-            # Normalise: strip leading directory component if all files share one
-            # e.g. "custom_voice_foo/metadata.json" → "metadata.json"
-            top_dirs = {n.split("/")[0] for n in names_in_zip if "/" in n}
-            if top_dirs and all(n.startswith(next(iter(top_dirs)) + "/") for n in names_in_zip if "/" in n):
-                # Check if required files are under a single top-level folder
-                top = next(iter(top_dirs))
-                flat_names = {
-                    n[len(top) + 1:] if n.startswith(top + "/") else n
-                    for n in names_in_zip
-                }
-            else:
-                flat_names = names_in_zip
+            if len(names_in_zip) != len(infos):
+                return False, ["Duplicate archive members are not allowed"]
+            top_prefix = _detect_top_prefix(list(names_in_zip))
+            flat_names = {name[len(top_prefix):] for name in names_in_zip}
 
             # 3. Required files present
             for required in _REQUIRED_FILES:
@@ -164,6 +182,9 @@ def validate_voice_package(zip_path: Path) -> tuple[bool, list[str]]:
             except (UnicodeDecodeError, json.JSONDecodeError) as exc:
                 errors.append(f"metadata.json is not valid JSON: {exc}")
                 return False, errors
+
+            if not isinstance(data, dict):
+                return False, ["metadata.json must contain a JSON object"]
 
             # Map spec field names to model fields
             _normalise_metadata(data)
@@ -225,13 +246,16 @@ def extract_voice_package(zip_path: Path, output_dir: Path) -> VoicePackageManif
                 continue
 
             target = output_dir / rel
+            if not target.resolve().is_relative_to(output_dir.resolve()):
+                raise ValueError("Invalid voice package: extraction path leaves output directory")
 
             if member.endswith("/"):
                 # Directory entry
                 target.mkdir(parents=True, exist_ok=True)
             else:
                 target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(zf.read(member))
+                with zf.open(member) as source, target.open("wb") as output:
+                    shutil.copyfileobj(source, output)
 
         # Read and parse manifest from extracted file
         manifest_path = output_dir / "metadata.json"
